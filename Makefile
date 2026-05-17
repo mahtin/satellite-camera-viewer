@@ -14,9 +14,21 @@ NAME_ = "satellite_camera_viewer"
 
 SOURCE = src/SatelliteCameraViewer
 
-
-all:
+all: CHANGELOG.md
 	${FORCE}
+
+CHANGELOG.md: FORCE
+	@tmp=/tmp/_$$$$.md ; \
+	( \
+		cp /dev/null $$tmp ; \
+		echo '# Change Log' ; \
+		echo '' ; \
+		git log --date=iso-local --pretty=format:' - %ci [%h](../../commit/%H) %s' ; \
+		echo '' ; \
+	)  >> $$tmp ; \
+	diff $$tmp CHANGELOG.md || ( cp $$tmp CHANGELOG.md ; echo "CHANGELOG.md - updated" ) ; \
+	rm $$tmp
+FORCE:
 
 lint:
 	${PYLINT} --unsafe-load-any-extension=y ${SOURCE}
