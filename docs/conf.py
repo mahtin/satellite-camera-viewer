@@ -33,21 +33,28 @@ release = str(version)
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
     'sphinx_rtd_theme',
     'myst_parser',
     'sphinx_copybutton',
     'sphinx_design',
     'sphinx_togglebutton',
+    'numpydoc',
 ]
 
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'PyVista': ('https://docs.pyvista.org/', None),
-    'SciPy': ('https://docs.scipy.org/doc/scipy/', None),
-}
+autosummary_generate = True
+
+# removed ... don't work ...
+#   'sphinx.ext.todo',
+#   'sphinx.ext.intersphinx',
+#   'sphinx.ext.viewcode',
+
+#intersphinx_mapping = {
+#    'python': ('https://docs.python.org/3', None),
+#}
+
+#   'PyVista': ('https://docs.pyvista.org/', None),
+#   'SciPy': ('https://docs.scipy.org/doc/scipy/', None),
 
 # removed ... don't work ...
 #   'matplotlib.pyplot': ('https://matplotlib.org/3.5.3/api/_as_gen/matplotlib.pyplot.html', None),
@@ -62,6 +69,8 @@ exclude_patterns = [
     'Thumbs.db',
     '.DS_Store'
 ]
+
+master_doc = 'index'
 
 autoclass_content = 'both'
 

@@ -1,16 +1,27 @@
-""" bsc5_stars """
+"""
 
-import math
+BSC5Stars - a wrapper for The Yale Bright Star Catalog, 5th Edition (BSC5).
+
+"""
+
 import numpy as np
 from astropy.coordinates import SkyCoord
 
 from .StarCatalog import StarCatalog
 
 class BSC5Stars:
-	""" BSC5Stars """
+	"""
+	BSC5Stars - a wrapper for The Yale Bright Star Catalog, 5th Edition (BSC5).
+	:param max_mag: Maximum star magnitude to process.
+	:type max_mag: float
+	"""
 
 	def __init__(self, max_mag=4):
-		""" BSC5Stars """
+		"""
+		BSC5Stars - a wrapper for The Yale Bright Star Catalog, 5th Edition (BSC5).
+		:param max_mag: Maximum star magnitude to process.
+		:type max_mag: float
+		"""
 		self._sc = StarCatalog('BSC5', use_database=True, force_reload=False)
 		self._stars = None
 		self._skycoords = None
@@ -24,12 +35,14 @@ class BSC5Stars:
 		self._const_mag = []
 
 	def _proceess_stars(self):
+		""" _proceess_stars """
 		if self._stars is not None:
 			# done already
 			return
 		self._stars = self._sc.select_max_mag(self._max_mag)
 
 	def _proceess_skycoords(self):
+		""" _proceess_skycoords """
 		if self._skycoords is not None:
 			# done already
 			return
@@ -38,6 +51,7 @@ class BSC5Stars:
 		self._skycoords = SkyCoord([(v.ra,v.dec) for v in self.stars], unit='rad', frame='icrs')
 
 	def __len__(self):
+		""" __len__ """
 		self._proceess_stars()
 		return len(self._stars)
 
@@ -48,12 +62,20 @@ class BSC5Stars:
 
 	@property
 	def max_mag(self):
-		""" max_mag """
+		"""
+		max_mag - get maximum magnitude.
+		:return: Maximum star magnitude to process.
+		:rtype: float
+		"""
 		return self._max_mag
 
 	@max_mag.setter
 	def max_mag(self, value):
-		""" max_mag """
+		"""
+		max_mag - set maximum magnitude.
+		:param max_mag: Maximum star magnitude to process.
+		:type max_mag: float
+		"""
 		if self._max_mag == value:
 			return
 		self._max_mag = value
@@ -71,23 +93,38 @@ class BSC5Stars:
 
 	@property
 	def stars(self):
-		""" stars """
+		"""
+		stars - return an array of stars.
+		:return: array of stars.
+		:rtype: list[Stars]
+		"""
 		self._proceess_stars()
 		return self._stars
 
 	@property
 	def skycoords(self):
-		""" skycoords """
+		"""
+		skycoords - return an array of stars (in SkyCoord format).
+		:return: array of stars in SkyCoord format.
+		:rtype: list[SkyCoord]
+		"""
 		self._proceess_skycoords()
 		return self._skycoords
 
 	def get_stars(self):
-		""" get_stars """
+		""" get_stars - return an array of stars.
+		:return: array of stars.
+		:rtype: np.array
+		"""
 		self._precompute_stars()
 		return np.array(self._stars_ra_rad), np.array(self._stars_dec_rad), np.array(self._stars_mag)
 
 	def get_constellations(self, constellations=['Ori','Lib']):
-		""" get_constellations """
+		"""
+		get_constellations - return an array of constellations.
+		:return: array of constellations.
+		:rtype: np.array
+		"""
 		self._precompute_constellation(constellations)
 		return np.array(self._const_ra_rad), np.array(self._const_dec_rad), np.array(self._const_mag)
 

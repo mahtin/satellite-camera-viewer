@@ -93,5 +93,5 @@ docs: all
 	sphinx-build ${MULTIPROCESSING} -b ${HTML} ${DOCS} ${DOCS}/_build/html
 
 clean-docs: all
-	#rm -rf ${DOCS}/SatelliteCameraViewer*.rst ${DOCS}/_build/
+	rm -rf ${DOCS}/SatelliteCameraViewer*.rst ${DOCS}/_build/
 

@@ -16,11 +16,13 @@ sphinx:
    builder: 'dirhtml'
 
 # Optionally build your docs in additional formats such as PDF and ePub
-formats:
-  - pdf
-  - epub
+#formats:
+#  - pdf
+#  - epub
 
 python:
-   install:
-   - path: .
-   - requirements: docs/requirements.txt
+  install:
+  - path: .
+  - requirements: docs/requirements.txt
+  - method: pip
+    path: .
