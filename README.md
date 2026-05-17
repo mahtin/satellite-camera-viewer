@@ -27,6 +27,17 @@ $ satellitecameraviewer
 $
 ```
 
+Or use a release file directly.
+
+```bash
+$ RELEASE='0.4.1'
+$ pip install https://github.com/mahtin/satellite-camera-viewer/releases/download/$RELEASE/satellite_camera_viewer-$RELEASE-py3-none-any.whl
+...
+...
+$ satellitecameraviewer
+$
+```
+
 ### run via pypi and regular pip install
 
 ```bash
