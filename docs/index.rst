@@ -25,10 +25,11 @@ The code starts with `satellite_camera_viewer()`.
    :caption: Modules:
 
    modules
-   # installation
-   # usage
-   # api
-   # changelog
+.. removed these for now ...
+.. installation
+.. usage
+.. api
+.. changelog
 
 Indices and tables
 ==================

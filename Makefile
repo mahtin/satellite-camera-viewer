@@ -81,17 +81,17 @@ upload-pypi: sdist bdist
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
 	${TWINE} upload --repository ${NAME} `ls -t dist/${NAME_}-*-py3-none-any.whl|head -1`
 
-HTML = singlehtml
+DOCS = "docs"
 HTML = html
 
 MULTIPROCESSING = -j auto
 MULTIPROCESSING = -j 1
 
 docs: all
-	sphinx-apidoc -Mfe -o docs ${SOURCE}
-	sphinx-build ${MULTIPROCESSING} -b ${HTML} docs docs/_build/html
+	mkdir -p ${DOCS}/_build/_static
+	sphinx-apidoc -Mfe -o ${DOCS} ${SOURCE}
+	sphinx-build ${MULTIPROCESSING} -b ${HTML} ${DOCS} ${DOCS}/_build/html
 
 clean-docs: all
-	# this is still wrong - index.rst needs to be kept
-	#rm -rf docs/*.rst docs/_build/
+	#rm -rf ${DOCS}/SatelliteCameraViewer*.rst ${DOCS}/_build/
 

@@ -33,12 +33,27 @@ release = str(version)
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
     'myst_parser',
     'sphinx_copybutton',
     'sphinx_design',
     'sphinx_togglebutton',
 ]
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'PyVista': ('https://docs.pyvista.org/', None),
+    'SciPy': ('https://docs.scipy.org/doc/scipy/', None),
+}
+
+# removed ... don't work ...
+#   'matplotlib.pyplot': ('https://matplotlib.org/3.5.3/api/_as_gen/matplotlib.pyplot.html', None),
+#   'astropy': ('https://docs.astropy.org/', None),
+#   'NumPy': ('https://numpy.org/doc/stable/dev/', None),
+#   'SGP4': ('https://pypi.org/project/sgp4/', None),
 
 templates_path = ['_templates']
 exclude_patterns = [
@@ -50,12 +65,14 @@ exclude_patterns = [
 
 autoclass_content = 'both'
 
+todo_include_todos = True
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 #html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_static_path = ['_build/_static/']
 
 html_use_index = False
 html_domain_indices = False
