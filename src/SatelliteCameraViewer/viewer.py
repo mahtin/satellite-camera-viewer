@@ -17,11 +17,11 @@ def viewer(args=None):
 
 	# {'family': '.AppleSystemUIFont', 'size': 13, 'weight': 'normal', 'slant': 'roman', 'underline': 0, 'overstrike': 0}
 
-	root.title('Satellite Camera Emulator')
+	root.title('Satellite Camera Viewer')
 
 	UserInterface.register_full_sky(full_sky)
 
-	UserInterface.title_label(root, 'Satellite Camera Emulator')
+	UserInterface.title_label(root, 'Satellite Camera Viewer')
 
 	top_frame = ttk.Frame(root, borderwidth=0, relief='solid')		# flat, groove, raised, ridge, solid, or sunken
 	top_frame.pack(padx=5, pady=2, anchor='n')
@@ -88,11 +88,11 @@ def viewer(args=None):
 	setup_focal_length(choices_frame)
 	setup_star_magnitude(choices_frame)
 
-	# slider info
-	rpy_label = '\nRoll / Pitch / Yaw controls for satellite body and camera.\n'
-	col = 0
-	UserInterface.rpy_label(adjustments_frame, rpy_label, row, col)
-	row += 1
+	# # slider info
+	# rpy_label = '\nRoll / Pitch / Yaw controls for satellite body and camera.\n'
+	# col = 0
+	# UserInterface.rpy_label(adjustments_frame, rpy_label, row, col)
+	# row += 1
 
 	# three sliders for camera yaw/pitch/roll
 	UserInterface.rpy_sliders(adjustments_frame, row, col)
@@ -135,7 +135,7 @@ def viewer(args=None):
 
 	# key values for cubesat display
 	u = 1
-	w = 300
+	w = 225
 	h = 200
 
 	#  place satellite image here ...

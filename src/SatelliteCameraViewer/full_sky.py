@@ -27,7 +27,7 @@ from .stars_in_polygon_icrs import stars_in_polygon_icrs
 # theta = np.arcsin(y / np.sqrt(2))
 
 # Turn all RuntimeWarnings into exceptions
-warnings.filterwarnings("error", category=RuntimeWarning)
+warnings.filterwarnings('error', category=RuntimeWarning)
 
 class UserInterface:
 	""" UserInterface """
@@ -129,8 +129,8 @@ class UserInterface:
 	def realtime_button(cls, parent, row, col):
 		""" realtime_button """
 		cls._realtime_state = tk.BooleanVar()
-		b = ttk.Checkbutton(parent, text="Accelerate?", variable=cls._realtime_state, command=lambda value=cls._realtime_state: cls.do_realtime(value))
-		b.grid(row=row, column=col, padx=5, pady=2, sticky="nw")
+		b = ttk.Checkbutton(parent, text='Accelerate?', variable=cls._realtime_state, command=lambda value=cls._realtime_state: cls.do_realtime(value))
+		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 		cls._realtime_button = b
 
 	@classmethod
@@ -147,8 +147,8 @@ class UserInterface:
 	def stars_button(cls, parent, row, col):
 		""" stars_button """
 		cls._stars_state = tk.BooleanVar()
-		b = ttk.Checkbutton(parent, text="Stars?", variable=cls._stars_state, command=lambda value=cls._stars_state: cls.do_stars(value))
-		b.grid(row=row, column=col, padx=5, pady=2, sticky="nw")
+		b = ttk.Checkbutton(parent, text='Stars?', variable=cls._stars_state, command=lambda value=cls._stars_state: cls.do_stars(value))
+		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 		cls._stars_button = b
 
 	@classmethod
@@ -165,8 +165,8 @@ class UserInterface:
 	def match_stars_button(cls, parent, row, col):
 		""" match_stars_button """
 		cls._match_stars_state = tk.BooleanVar()
-		b = ttk.Checkbutton(parent, text="Match stars?", variable=cls._match_stars_state, command=lambda value=cls._match_stars_state: cls.do_match_stars(value))
-		b.grid(row=row, column=col, padx=5, pady=2, sticky="nw")
+		b = ttk.Checkbutton(parent, text='Match stars?', variable=cls._match_stars_state, command=lambda value=cls._match_stars_state: cls.do_match_stars(value))
+		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 		cls._match_stars_button = b
 
 	@classmethod
@@ -249,7 +249,7 @@ class UserInterface:
 			cls.v_sliders[k] = tk.IntVar(value=int(v))
 			s = tk.Scale(parent, label=cls._cam_slider_rpy_text[k], variable=cls.v_sliders[k], from_=-90, to=90, resolution=10.0, showvalue=True,
 				orient='horizontal', command=lambda val,k=k: cls.do_rpy(val, k))
-			s.grid(row=row, column=col, padx=5, pady=2, sticky="ew")
+			s.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
 			cls._rpy_sliders[k] = s
 			row += 1
 
@@ -284,14 +284,14 @@ class UserInterface:
 	@classmethod
 	def reset_everyting_button(cls, parent, row, col):
 		""" eeset_everyting_button """
-		font = tk.font.nametofont("TkDefaultFont").actual()
+		font = tk.font.nametofont('TkDefaultFont').actual()
 		style = ttk.Style()
 		style.configure('Reset.TButton',
 			foreground=FullSky.COLORS['reset-color'],
 			font=(font['family'], font['size'], 'bold'),
 		)
 		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=lambda: cls.do_reset())
-		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
+		b.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
 		cls._reset_everything_button = b
 
 class FullSky:
@@ -370,7 +370,7 @@ class FullSky:
 		""" _create_subplot """
 		# plt.style.use('classic')
 		# plt.rcParams['toolbar'] = 'None'	# was 'toolbar2' but we don't need the controls
-		self._fig = Figure(figsize=(16.0, 8.0), dpi=65, layout='tight')
+		self._fig = Figure(figsize=(14.0, 7.04), dpi=65, layout='tight')
 		self._fig.patch.set_linewidth(0)
 		self._fig.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
 		self._fig.set_layout_engine(layout='tight')
