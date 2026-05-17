@@ -63,6 +63,10 @@ $ source .venv/bin/activate
 $
 ```
 
+## Runing the software
+
+![Satellite Camera Viewer](/img/satellite-camera-viewer.png)
+
 ## SatelliteCamera module
 
 All the camera pointing math is done within `SatelliteCamera` and that contains it's own [[README]](src/SatelliteCameraViewer/SatelliteCamera/README.md)
