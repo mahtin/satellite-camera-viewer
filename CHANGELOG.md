@@ -1,5 +1,8 @@
 # Change Log
 
+ - 2026-05-16 22:38:30 -0700 [b25939f](../../commit/b25939f5591a31b3485da60c79809f6dbf6d6371) added diff to version and removed backed file
+ - 2026-05-16 22:30:59 -0700 [619c826](../../commit/619c8266e335cb593d9af26e6f1481c8d0c3feac) added version
+ - 2026-05-16 22:30:22 -0700 [b6be1d9](../../commit/b6be1d9d18183314e6512d6b7e5e3a0de13e9953) 0.4.0
  - 2026-05-16 22:05:04 -0700 [d69cd89](../../commit/d69cd89a0480a18c560599c48f8cc0c2a1f611b6) clean fixed
  - 2026-05-16 21:59:28 -0700 [ec10bc5](../../commit/ec10bc560ce8b775b2e3652819306ca18815348b) source code ready to commit
  - 2026-05-16 21:53:10 -0700 [1bc2548](../../commit/1bc25482c48cf7c3b8c10be73b653e78873cd341) 0.2.2
