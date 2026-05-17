@@ -1,5 +1,8 @@
 # Change Log
 
+ - 2026-05-16 22:05:04 -0700 [d69cd89](../../commit/d69cd89a0480a18c560599c48f8cc0c2a1f611b6) clean fixed
+ - 2026-05-16 21:59:28 -0700 [ec10bc5](../../commit/ec10bc560ce8b775b2e3652819306ca18815348b) source code ready to commit
+ - 2026-05-16 21:53:10 -0700 [1bc2548](../../commit/1bc25482c48cf7c3b8c10be73b653e78873cd341) 0.2.2
  - 2026-05-16 18:21:21 -0700 [2f26040](../../commit/2f26040ef6c92a42ace1d0068c498b7d79e8da91) 0.2.2
  - 2026-05-16 18:19:47 -0700 [300086e](../../commit/300086e6bdaad44a282450b66bf7ae1c61d480d2) pyproject.toml - first pass
  - 2026-05-16 18:19:21 -0700 [2f354ef](../../commit/2f354ef33df0b9d8c8b36397e1fd518bf4a71819) added CHANEGELOG logic
