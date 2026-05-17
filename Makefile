@@ -28,6 +28,16 @@ CHANGELOG.md: FORCE
 	)  >> $$tmp ; \
 	diff $$tmp CHANGELOG.md || ( cp $$tmp CHANGELOG.md ; echo "CHANGELOG.md - updated" ) ; \
 	rm $$tmp
+
+version:
+	@v1=`egrep '^version' < pyproject.toml | head -1 | sed -e 's/.*= *//' -e 's/["'"'"']//g'` ; \
+	v2=`egrep '^__version__' < ${SOURCE}/__init__.py | head -1 | sed -e 's/.*= *//' -e 's/["'"'"']//g'` ; \
+	if [ "$$v1" != "$$v2" ] ; then \
+		echo "VERSION UPDATE NEEDED: $$v2 (in __init__.py) newer than $$v1 (in pyproject.toml)" 1>&2 ; \
+		sed -i -e "/^version/s/'$$v1'/'$$v2'/" pyproject.toml ; \
+		egrep '^version' < pyproject.toml ; \
+	fi
+
 FORCE:
 
 lint:
