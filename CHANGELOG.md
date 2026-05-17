@@ -1,5 +1,6 @@
 # Change Log
 
+ - 2026-05-16 23:28:14 -0700 [8e3da1c](../../commit/8e3da1ce841256117a0137e537d995fd7ab79f9c) 0.4.1
  - 2026-05-16 23:28:01 -0700 [f3928ad](../../commit/f3928ad6a6dc44f28bc63415d3adf6f2316b7b7a) 0.4.1
  - 2026-05-16 23:23:08 -0700 [5040920](../../commit/50409205299d39948204318fb9fcd5b674f24830) more requirements
  - 2026-05-16 23:18:11 -0700 [31c3a04](../../commit/31c3a0480819adac3a9f2f219d6627bdb912acc2) fixing the missing extensions
