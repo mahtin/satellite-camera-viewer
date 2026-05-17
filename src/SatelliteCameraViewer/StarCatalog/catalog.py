@@ -50,7 +50,7 @@ class Catalog():
         if not os.path.exists(self.directory()):
             os.mkdir(self.directory())
 
-        self._key = NOT_REALLY_A_SECRET_KEY
+        self._key = self.NOT_REALLY_A_SECRET_KEY
         self._db = None
         self._stars = None
 
