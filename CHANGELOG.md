@@ -1,5 +1,12 @@
 # Change Log
 
+ - 2026-05-16 23:28:01 -0700 [f3928ad](../../commit/f3928ad6a6dc44f28bc63415d3adf6f2316b7b7a) 0.4.1
+ - 2026-05-16 23:23:08 -0700 [5040920](../../commit/50409205299d39948204318fb9fcd5b674f24830) more requirements
+ - 2026-05-16 23:18:11 -0700 [31c3a04](../../commit/31c3a0480819adac3a9f2f219d6627bdb912acc2) fixing the missing extensions
+ - 2026-05-16 23:02:09 -0700 [867a6ca](../../commit/867a6ca5c2631ba96fcdd0b37f5d2695317852b8) removed clean-docs - its not correct
+ - 2026-05-16 23:01:42 -0700 [0160701](../../commit/0160701db9278a9129cce71d708662746e8c2478) classifiers
+ - 2026-05-16 23:01:11 -0700 [b50c8a6](../../commit/b50c8a68d837bd301436fad3f18c57a68c766065) adding readthedocs
+ - 2026-05-16 22:39:16 -0700 [a90b393](../../commit/a90b393b7fccaf8ce4c436b91c7b99578d4112f0) 0.4.0
  - 2026-05-16 22:38:30 -0700 [b25939f](../../commit/b25939f5591a31b3485da60c79809f6dbf6d6371) added diff to version and removed backed file
  - 2026-05-16 22:30:59 -0700 [619c826](../../commit/619c8266e335cb593d9af26e6f1481c8d0c3feac) added version
  - 2026-05-16 22:30:22 -0700 [b6be1d9](../../commit/b6be1d9d18183314e6512d6b7e5e3a0de13e9953) 0.4.0
