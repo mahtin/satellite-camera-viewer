@@ -43,9 +43,9 @@ dev = [ 'pytest>=7.0.0' ]
 satellitecameraviewer = 'SatelliteCameraViewer.satellite_camera_viewer:satellite_camera_viewer'
 
 [project.urls]
-'Documentation' = "https://example.com"
 'Homepage' = 'https://github.com/mahtin/satellite-camera-viewer'
 'Repository' = 'https://github.com/mahtin/satellite-camera-viewer'
+'Documentation' = 'https://satellite-camera-viewer.readthedocs.io/'
 'Bug Tracker' = 'https://github.com/mahtin/satellite-camera-viewer/issues'
 'Changelog' = "https://github.com/mahtin/satellite-camera-viewer/blob/main/CHANGELOG.md"
 
