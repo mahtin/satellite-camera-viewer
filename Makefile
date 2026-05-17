@@ -92,5 +92,6 @@ docs: all
 	sphinx-build ${MULTIPROCESSING} -b ${HTML} docs docs/_build/html
 
 clean-docs: all
-	rm -rf docs/*.rst docs/_build/
+	# this is still wrong - index.rst needs to be kept
+	#rm -rf docs/*.rst docs/_build/
 
