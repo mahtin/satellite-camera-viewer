@@ -36,7 +36,7 @@ lint:
 clean:
 	rm -rf build dist
 	mkdir build dist
-	rm -rf ${NAME_}.egg-info
+	rm -rf src/${NAME_}.egg-info
 
 test: all
 	${FORCE}
@@ -47,12 +47,12 @@ sdist: all
 	# $(TWINE)
 	$(BUILD)
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
-	@ rm -rf ${NAME_}.egg-info build
+	@ rm -rf src/${NAME_}.egg-info build
 
 bdist: all
 	${PIP} wheel . -w dist --no-deps
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
-	@ rm -rf ${NAME_}.egg-info build
+	@ rm -rf src/${NAME_}.egg-info build
 
 showtag: sdist
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1 | sed -e "s/dist\/${NAME_}-//" -e 's/-py3-none-any.whl//'` ; echo "\tDIST VERSION =" $$v ; (git tag | fgrep -q "$$v") && echo "\tGIT TAG EXISTS"
