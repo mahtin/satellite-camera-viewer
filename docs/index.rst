@@ -6,33 +6,56 @@
 SatelliteCameraViewer
 =====================
 
-A full sky star chart showing the view from a camera mounted on a earth orbiting satellite.
+**SatelliteCameraViewer** is a full sky star chart showing the view from a camera mounted on a earth orbiting satellite.
+
+Release v\ |version|. (:ref:`Installation <install>`)
+
+.. image:: https://img.shields.io/pypi/v/satellite-camera-viewer.svg?maxAge=86400
+    :target: https://pypi.org/project/satellite-camera-viewer/
+    :alt: PyPI Version Badge
+
+.. image:: https://img.shields.io/pypi/pyversions/satellite-camera-viewer.svg
+    :target: https://pypi.org/project/satellite-camera-viewer/
+    :alt: Supported Versions Badge
+
+.. image:: https://static.pepy.tech/badge/satellite-camera-viewer/month
+    :target: https://pepy.tech/project/satellite-camera-viewer
+    :alt: Downloads Per Month Badge
+
+.. image:: https://img.shields.io/github/contributors/psf/satellite-camera-viewer.svg
+    :target: https://github.com/psf/satellite-camera-viewer/graphs/contributors
+    :alt: Contributors Badge
+
+.. image:: https://readthedocs.org/projects/satellite-camera-viewer/badge/?version=latest
+    :target: https://satellite-camera-viewer.readthedocs.io
+    :alt: Documentation Badge
 
 Description
-===========
+-----------
 
-This is a Python program using `Tkinter`, `matplotlib.pyplot`, `PyVista`, and various astronomy, scientific, and satellite packages (i.e. `Astropy`, `SciPy`, and `SGP4`).
+**SatelliteCameraViewer** is a Python program using `Tkinter`, `matplotlib.pyplot`, `PyVista`, and various astronomy, scientific, and satellite packages (i.e. `Astropy`, `SciPy`, and `SGP4`).
 It's goal is to run a simulation of a satellite in earth orbit with an attached camera and caculate which stars would be seen in the cameras sensor.
 Visualization is provided by default with camera paramaters (like focus length) being capable of being adjusted on the fly.
 
-Modules
-=======
+Install Guide
+-------------
 
-The code starts with `satellite_camera_viewer()`.
+Install is via standard Python methods; however, you can also install from source or github directly.
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Modules:
+   :maxdepth: 2
+   :caption: Install:
+
+   install
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
    modules
-.. removed these for now ...
-.. installation
-.. usage
-.. api
-.. changelog
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

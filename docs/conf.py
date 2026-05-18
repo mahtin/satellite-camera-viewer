@@ -34,6 +34,9 @@ release = str(version)
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     'myst_parser',
     'sphinx_copybutton',
@@ -43,6 +46,12 @@ extensions = [
 ]
 
 autosummary_generate = True
+
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'show-inheritance': True,
+}
 
 # removed ... don't work ...
 #   'sphinx.ext.todo',
@@ -83,8 +92,8 @@ todo_include_todos = True
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_build/_static/']
 
-html_use_index = False
-html_domain_indices = False
+html_use_index = True
+html_domain_indices = True
 html_copy_source = True
 html_show_sourcelink = False
-html_search_language = ''
+html_search_language = 'en'
