@@ -32,7 +32,7 @@ release = str(version)
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
+    # 'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -46,16 +46,17 @@ extensions = [
 ]
 
 autosummary_generate = True
-autodoc_default_options = {
-    'members': True,
-    'undoc-members': True,
-    'show-inheritance': True,
-}
 
-autodoc_mock_imports = [
-    'numpy',
-    'pyvista',
-]
+#autodoc_default_options = {
+#    'members': True,
+#    'undoc-members': True,
+#    'show-inheritance': True,
+#}
+
+#autodoc_mock_imports = [
+#    'numpy',
+#    'pyvista',
+#]
 
 
 # removed ... don't work ...

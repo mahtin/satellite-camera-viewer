@@ -2,7 +2,7 @@
 # Copyright (C) 2023-2026 Martin J Levy - W6LHI/G8LHI - @mahtin - https://github.com/mahtin
 #
 
-PYTHON = python
+PYTHON = python3.10
 PIP = pip
 PYLINT = pylint
 TWINE = twine
@@ -88,8 +88,8 @@ MULTIPROCESSING = -j auto
 MULTIPROCESSING = -j 1
 
 docs: all
-	mkdir -p ${DOCS}/_build/_static ${DOCS}/docs/_autosummary/
-	sphinx-apidoc -Mfe -o ${DOCS} ${SOURCE}
+	mkdir -p ${DOCS}/_build/_static ${DOCS}/_autosummary/
+	sphinx-apidoc -Mfe -d 2 -o ${DOCS} ${SOURCE}
 	sphinx-build ${MULTIPROCESSING} -b ${HTML} ${DOCS} ${DOCS}/_build/html
 
 clean-docs: all

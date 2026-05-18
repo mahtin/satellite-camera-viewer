@@ -40,22 +40,30 @@ Visualization is provided by default with camera paramaters (like focus length) 
 Install Guide
 -------------
 
-Install is via standard Python methods; however, you can also install from source or github directly.
+Install is via standard Python methods; however, you can also install from source or github directly. See specific install pages below.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Install:
 
    install
 
+Modules etc
+-----------
+
+Everything starts with `SatelliteCameraViewer` and the `viewer.py` file. The camera, satellite 3d image, star display, and controls are kicked off from there.
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
 
-   modules
+   All modules <modules>
+   SatelliteCameraViewer <SatelliteCameraViewer>
+   CameraImage <SatelliteCameraViewer.CameraImage>
+   Cubesat <SatelliteCameraViewer.Cubesat>
+   SatelliteCamera <SatelliteCameraViewer.SatelliteCamera>
+   StarCatalog <SatelliteCameraViewer.StarCatalog>
 
-Indices and tables
-------------------
+Index
+-----
 
 * :ref:`genindex`
 * :ref:`modindex`
