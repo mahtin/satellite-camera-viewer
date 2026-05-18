@@ -88,7 +88,7 @@ MULTIPROCESSING = -j auto
 MULTIPROCESSING = -j 1
 
 docs: all
-	mkdir -p ${DOCS}/_build/_static
+	mkdir -p ${DOCS}/_build/_static ${DOCS}/docs/_autosummary/
 	sphinx-apidoc -Mfe -o ${DOCS} ${SOURCE}
 	sphinx-build ${MULTIPROCESSING} -b ${HTML} ${DOCS} ${DOCS}/_build/html
 

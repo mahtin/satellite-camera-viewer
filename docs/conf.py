@@ -15,10 +15,8 @@ import sys
 import re
 
 _src = '.' + '.' + '/' + 'src'
-_version_file = _src + '/' + 'SatelliteCameraViewer/__init__.py'
-
 sys.path.insert(0, os.path.abspath(_src))
-
+_version_file = _src + '/' + 'SatelliteCameraViewer/__init__.py'
 with open(_version_file, 'r') as f:
     _version_re = re.compile(r"__version__\s=\s'(.*)'")
     version = _version_re.search(f.read()).group(1)
@@ -46,6 +44,10 @@ extensions = [
 ]
 
 autosummary_generate = True
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+}
 
 autodoc_default_options = {
     'members': True,
