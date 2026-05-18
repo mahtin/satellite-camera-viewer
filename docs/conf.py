@@ -14,7 +14,9 @@ import os
 import sys
 import re
 
-_src = '.' + '.' + '/' + 'src'
+_dotdot = '.' + '.'
+sys.path.insert(0, os.path.abspath(_dotdot))
+_src = _dotdot + '/' + 'src'
 sys.path.insert(0, os.path.abspath(_src))
 _version_file = _src + '/' + 'SatelliteCameraViewer/__init__.py'
 with open(_version_file, 'r') as f:
@@ -47,13 +49,14 @@ autosummary_generate = True
 autodoc_default_options = {
     'members': True,
     'undoc-members': True,
-}
-
-autodoc_default_options = {
-    'members': True,
-    'undoc-members': True,
     'show-inheritance': True,
 }
+
+autodoc_mock_imports = [
+    'numpy',
+    'pyvista',
+]
+
 
 # removed ... don't work ...
 #   'sphinx.ext.todo',
