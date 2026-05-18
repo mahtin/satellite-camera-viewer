@@ -16,7 +16,7 @@ class BSC5Stars:
 	:type max_mag: float
 	"""
 
-	def __init__(self, max_mag=4):
+	def __init__(self, max_mag=4.0):
 		"""
 		BSC5Stars - a wrapper for The Yale Bright Star Catalog, 5th Edition (BSC5).
 
@@ -26,7 +26,7 @@ class BSC5Stars:
 		self._sc = StarCatalog('BSC5', use_database=True, force_reload=False)
 		self._stars = None
 		self._skycoords = None
-		self._max_mag = math.floor(max_mag)
+		self._max_mag = max_mag
 
 		self._stars_ra_rad = []
 		self._stars_dec_rad = []
