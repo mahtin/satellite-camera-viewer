@@ -19,6 +19,7 @@ class BSC5Stars:
 	def __init__(self, max_mag=4):
 		"""
 		BSC5Stars - a wrapper for The Yale Bright Star Catalog, 5th Edition (BSC5).
+
 		:param max_mag: Maximum star magnitude to process.
 		:type max_mag: float
 		"""
@@ -64,6 +65,7 @@ class BSC5Stars:
 	def max_mag(self):
 		"""
 		max_mag - get maximum magnitude.
+
 		:return: Maximum star magnitude to process.
 		:rtype: float
 		"""
@@ -73,6 +75,7 @@ class BSC5Stars:
 	def max_mag(self, value):
 		"""
 		max_mag - set maximum magnitude.
+
 		:param max_mag: Maximum star magnitude to process.
 		:type max_mag: float
 		"""
@@ -95,6 +98,7 @@ class BSC5Stars:
 	def stars(self):
 		"""
 		stars - return an array of stars.
+
 		:return: array of stars.
 		:rtype: list[Stars]
 		"""
@@ -105,6 +109,7 @@ class BSC5Stars:
 	def skycoords(self):
 		"""
 		skycoords - return an array of stars (in SkyCoord format).
+
 		:return: array of stars in SkyCoord format.
 		:rtype: list[SkyCoord]
 		"""
@@ -113,6 +118,7 @@ class BSC5Stars:
 
 	def get_stars(self):
 		""" get_stars - return an array of stars.
+
 		:return: array of stars.
 		:rtype: np.array
 		"""
@@ -122,6 +128,9 @@ class BSC5Stars:
 	def get_constellations(self, constellations=['Ori','Lib']):
 		"""
 		get_constellations - return an array of constellations.
+
+		:param constellations: Which constellations to return.
+		:type constellations: list
 		:return: array of constellations.
 		:rtype: np.array
 		"""
