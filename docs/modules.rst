@@ -1,8 +1,7 @@
 SatelliteCameraViewer
 =====================
 
-.. autosummary::
-   :toctree: _autosummary
-   :recursive:
+.. toctree::
+   :maxdepth: 4
 
    SatelliteCameraViewer
