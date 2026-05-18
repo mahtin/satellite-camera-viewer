@@ -1,6 +1,6 @@
 """ SatelliteCameraViewer """
 
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 from .satellite_camera_viewer import satellite_camera_viewer
 
