@@ -8,7 +8,15 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from .full_sky import FullSky, UserInterface
 
 def viewer(args=None):
-	""" viewer """
+	"""
+	viewer - main code to start all of SatelliteCameraViewer app.
+
+	:param args: Any CLI args
+	:type args: list[str] | None
+
+	This code only exits when the window is close and/or via ^C.
+
+	"""
 	root = tk.Tk()
 
 	# --- Matplotlib figure ---
