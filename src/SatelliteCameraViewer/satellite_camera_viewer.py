@@ -10,8 +10,12 @@ def satellite_camera_viewer(args=None):
 	"""
 	satellite_camera_viewer - main CLI entry point
 
+	Via pyproject.toml, this function is called from the CLI command.
+
 	:param args: Command line arguments
-	:type args: list[str]
+	:type args: list[str] | None
+
+	:return: None
 
 	"""
 
