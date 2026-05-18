@@ -2,10 +2,8 @@
 # Copyright (C) 2023-2026 Martin J Levy - W6LHI/G8LHI - @mahtin - https://github.com/mahtin
 #
 
-PYTHON = python3.10
-PIP = pip
+PYTHON = python3
 PYLINT = pylint
-TWINE = twine
 TWINE = ${PYTHON} -m twine
 BUILD = ${PYTHON} -m build -C--quiet
 
@@ -45,30 +43,24 @@ lint:
 	${PYLINT} --unsafe-load-any-extension=y ${SOURCE}
 
 clean:
-	rm -rf build dist
-	mkdir build dist
+	rm -rf dist
+	mkdir dist
 	rm -rf src/${NAME_}.egg-info
 
 test: all
 	${FORCE}
 
-sdist: all
+whl: all
 	# make clean
 	# make test
-	# $(TWINE)
 	$(BUILD)
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
-	@ rm -rf src/${NAME_}.egg-info build
+	@ rm -rf src/${NAME_}.egg-info 
 
-bdist: all
-	${PIP} wheel . -w dist --no-deps
-	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
-	@ rm -rf src/${NAME_}.egg-info build
-
-showtag: sdist
+showtag: whl
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1 | sed -e "s/dist\/${NAME_}-//" -e 's/-py3-none-any.whl//'` ; echo "\tDIST VERSION =" $$v ; (git tag | fgrep -q "$$v") && echo "\tGIT TAG EXISTS"
 
-tag: sdist
+tag: whl
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1 | sed -e "s/dist\/${NAME_}-//" -e 's/-py3-none-any.whl//'` ; echo "\tDIST VERSION =" $$v ; (git tag | fgrep -q "$$v") || git tag "$$v"
 
 upload: clean all tag upload-github upload-pypi
@@ -77,7 +69,7 @@ upload-github:
 	git push
 	git push origin --tags
 
-upload-pypi: sdist bdist
+upload-pypi: whl
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
 	${TWINE} upload --repository ${NAME} `ls -t dist/${NAME_}-*-py3-none-any.whl|head -1`
 

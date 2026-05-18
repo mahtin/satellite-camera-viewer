@@ -1,5 +1,25 @@
 # Change Log
 
+ - 2026-05-18 16:46:24 -0700 [1fa5882](../../commit/1fa588209523d35839e4ee69802ee7f8096ad2d6) more docs tuning
+ - 2026-05-18 16:31:11 -0700 [e83dd2f](../../commit/e83dd2fa9e62832c9085a03d4e818957e7095a41) more doc strings
+ - 2026-05-18 10:57:56 -0700 [91fb042](../../commit/91fb042d34820544d0d384dd7c3b37b741754631) upgrade to newer package versions
+ - 2026-05-18 10:56:05 -0700 [3b741a5](../../commit/3b741a56a0e67dabfe1634dc988854d14285257d) make max_mag float - as it was meant to be
+ - 2026-05-18 10:39:33 -0700 [1d7ad6f](../../commit/1d7ad6f4377a4b847f0d8799d4440c3ed7ee43d2) more docs tweeks to get rtd working
+ - 2026-05-18 10:39:08 -0700 [ed4361d](../../commit/ed4361d1dd8b50ad1abae90dabee0acdc4c2c56f) 0.4.2 started
+ - 2026-05-18 10:21:14 -0700 [98cb52e](../../commit/98cb52e36497936739fdd67cb5c60816897bf687) removed redundant search, updated modules
+ - 2026-05-18 10:12:22 -0700 [068f238](../../commit/068f238f6c94a369e92e4858d2f8a1c6eb0b4c25) more formatting of doc strings
+ - 2026-05-18 10:11:52 -0700 [7cc0eb8](../../commit/7cc0eb8e3633fa366349357ecc3942ec20e2cef2) more docs updates
+ - 2026-05-18 09:45:18 -0700 [41d66fc](../../commit/41d66fcc3908109d0e50e98f2d04ee6d4fe06edb) remove docs/SatelliteCameraViewer* from git uploads - not needed
+ - 2026-05-18 09:44:48 -0700 [f633b0c](../../commit/f633b0c34a5bba0ab2f28fd663201b89ec0d3d04) more docs strings
+ - 2026-05-18 09:44:03 -0700 [7ab4f83](../../commit/7ab4f833275963a125bfa7ef641324b8b119ba34) lots more docs updates to make readthedocs work
+ - 2026-05-17 12:36:51 -0700 [13760db](../../commit/13760db18ce593c40689eb797f9e601b70c0c6e4) more doc changes with added docstrings
+ - 2026-05-17 11:41:29 -0700 [258001a](../../commit/258001a430b75d118a4bf509ab4cbde64a07203e) typo and indent error, added docstrings
+ - 2026-05-17 11:40:54 -0700 [00292d1](../../commit/00292d1983ef2ab3c75124d79d53aea96689fe1b) fixing errors in document creation
+ - 2026-05-17 00:16:52 -0700 [4d2f823](../../commit/4d2f82365630ac23475a2310126d2703eea6d207) window size cleanup, lable removed, name updated, etc
+ - 2026-05-17 00:12:14 -0700 [fedee35](../../commit/fedee3516510982130e0cbc443e99d40d8b522a8) added image to README
+ - 2026-05-16 23:56:26 -0700 [6426727](../../commit/64267271fa0ad80e8340b13982d04f9b147d4e68) typo
+ - 2026-05-16 23:53:04 -0700 [a42a77d](../../commit/a42a77d1f080e9f3f748d717403c02685a1c54f4) added release install info
+ - 2026-05-16 23:44:02 -0700 [67a1f73](../../commit/67a1f731321e8a00622d09940241e405042de7f2) 0.4.1
  - 2026-05-16 23:28:14 -0700 [8e3da1c](../../commit/8e3da1ce841256117a0137e537d995fd7ab79f9c) 0.4.1
  - 2026-05-16 23:28:01 -0700 [f3928ad](../../commit/f3928ad6a6dc44f28bc63415d3adf6f2316b7b7a) 0.4.1
  - 2026-05-16 23:23:08 -0700 [5040920](../../commit/50409205299d39948204318fb9fcd5b674f24830) more requirements

@@ -6,7 +6,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'satellite-camera-viewer'
-version = '0.4.1'
+version = '0.4.2'
 description = 'A full sky star chart showing the view from a camera mounted on a earth orbiting satellite'
 readme = 'README.md'
 requires-python = '>=3.10'
