@@ -6,9 +6,9 @@ import sys
 
 from .viewer import viewer
 
-def _main(args=None):
+def main(args=None):
 	"""
-	_main - main CLI entry point
+	main - main CLI entry point
 
 	:param args: Command line arguments
 	:type args: list(str)
@@ -18,4 +18,4 @@ def _main(args=None):
 	sys.exit(viewer(args))
 
 if __name__ == '__main__':
-	_main()
+	main()

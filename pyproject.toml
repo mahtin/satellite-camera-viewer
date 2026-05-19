@@ -40,7 +40,7 @@ include = [ 'SatelliteCameraViewer', 'SatelliteCameraViewer.SatelliteCamera', 'S
 dev = [ 'pytest>=7.0.0' ]
 
 [project.scripts]
-satellitecameraviewer = 'SatelliteCameraViewer.satellite_camera_viewer:satellite_camera_viewer'
+satellitecameraviewer = 'SatelliteCameraViewer.__main__:main'
 
 [project.urls]
 'Homepage' = 'https://github.com/mahtin/satellite-camera-viewer'
