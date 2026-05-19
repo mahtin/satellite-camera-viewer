@@ -9,7 +9,7 @@ build:
     python: '3.11'
   jobs:
     pre_build:
-     - sphinx-apidoc -Mfe -d 2 -o docs ../src/SatelliteCameraViewer
+     - sphinx-apidoc -Mfe -d 2 -o docs src/SatelliteCameraViewer
 
 sphinx:
    configuration: docs/conf.py
