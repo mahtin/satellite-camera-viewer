@@ -32,7 +32,7 @@ release = str(version)
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
+    #'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -97,8 +97,22 @@ todo_include_todos = True
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-#html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    "titles_only": True,
+    "prev_next_buttons_location": None,
+}
+
+#html_theme = 'alabaster'
+#html_theme_options = {
+#    "show_powered_by": False,
+#    "github_user": "mahtin",
+#    "github_repo": "satellite-camera-viewer",
+#    "github_banner": True,
+#    "show_related": False,
+#    "note_bg": "#FFF59C",
+#}
+
 html_static_path = ['_build/_static/']
 
 html_use_index = True
