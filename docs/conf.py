@@ -53,10 +53,13 @@ autosummary_generate = True
 #    'show-inheritance': True,
 #}
 
-#autodoc_mock_imports = [
-#    'numpy',
-#    'pyvista',
-#]
+autodoc_mock_imports = [
+    'numpy',
+    'pyvista',
+    'astropy',
+    'scipy',
+    'sgp4',
+]
 
 
 # removed ... don't work ...
@@ -79,7 +82,7 @@ autosummary_generate = True
 
 templates_path = ['_templates']
 exclude_patterns = [
-    'src/SatelliteCameraViewer/__init__.py',
+    # 'src/SatelliteCameraViewer/__init__.py',
     '_build',
     'Thumbs.db',
     '.DS_Store'
