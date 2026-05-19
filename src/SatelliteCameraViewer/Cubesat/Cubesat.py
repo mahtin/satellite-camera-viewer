@@ -11,14 +11,33 @@ from PIL import Image, ImageTk, ImageDraw
 
 @dataclass
 class WDH:
-    """ WDH used to store sizes of satellite cube """
+    """
+    WDH - Width, Depth, Height - used to store sizes of satellite cube.
+
+    :param w: Width.
+    :type w: float
+    :param d: Height.
+    :type d: float
+    :param h: Depth.
+    :type h: float
+
+    Used intenally to Cubesat class, not really useful outside of core Cubesat code.
+    """
     w: float = 0.0
+    """ w - Width. """
     d: float = 0.0
+    """ d - Depth. """
     h: float = 0.0
+    """ h - Height. """
 
     @property
     def array(self):
-        """ array """
+        """
+        array - return [w, d, h] as an array.
+
+        :return: [w, d, h] as an array
+        :type: list[float] | np.array
+        """
         return np.array([[self.w, self.d, self.h]], dtype=float)
 
     def __array__(self, dtype=None):
@@ -34,11 +53,16 @@ class WDH:
         return 'WDH[%f,%f,%f]' % (self.w, self.d, self.h)
 
 class Cubesat:
-    """ Cubesat """
+    """
+    Cubesat - Draw a cubesat in 3d via pyvista. This expects to be called with a tk window (using Label) as the location to paint the 3d image.
+    """
 
     CM = 0.01
+    """ CM - Centimeter (with Meter == 1). """
     MM = 0.001
+    """ MM - Milimeter (with Meter == 1). """
     U = 10 * 0.01      # Cubesat basic measurement is a 'U' or 10cm
+    """ U - Size of a single U (in Meters) from the Cubesat definition. """
 
     # CubeSat Design Specification (Rev. 14.1) from Cal Poly – San Luis Obispo, CA
     # 1U 1.5U 2U 3U 6U 12U
@@ -55,7 +79,21 @@ class Cubesat:
     }
 
     def __init__(self, u=3, width=800, height=800, isometric_view=False, show_axes=False):
-        """ Cubesat """
+        """
+        Cubesat - Draw a cubesat in 3d via pyvista.
+
+        :param u: Cubesat U size.
+        :type u: int
+        :param width: Width of graphics area.
+        :type width: int
+        :param height: Height of graphics area.
+        :type height: int
+        :param isometric_view: If True, visually representing three-dimensional objects in two dimensions.
+        :type isometric_view: bool
+        :param show_axes: If True, show the pyvista XYZ axis graphic.
+        :type show_axes: bool
+        """
+
         try:
             self._u = self._CubesatSpecSizes[u]
         except KeyError:
@@ -90,7 +128,12 @@ class Cubesat:
             self._plotter.reset_camera(render=False)     # we will render later
 
     def render(self):
-        """ render """
+        """
+        render - Do the render of the 3d object.
+
+        :return: The image of the 3d object as a screenshot from the current camera position.
+        :type: pyvista.pyvista_ndarray
+        """
         # PyVista off-screen plotter can be rendered to an image
         self._plotter.render()
         return self._plotter.screenshot(return_img=True, transparent_background=True)
@@ -441,7 +484,17 @@ class Cubesat:
 
     # XXX TODO  it's actually ['pitch'] ['roll'] ['yaw']
     def apply_orientation(self, roll=0.0, pitch=0.0, yaw=0.0):
-        """ apply_orientation """
+        """
+        apply_orientation - Rotate the cubesat
+
+        :param roll: Roll.
+        :type roll: float
+        :param pitch: Pitch.
+        :type pitch: float
+        :param yaw: Yaw.
+        :type yaw: float
+
+        """
         q = self._euler_to_quaternion(roll, pitch, yaw)
         R = self._quaternion_to_matrix(q)
 
@@ -516,7 +569,17 @@ class CubesatViewer:
         self.update_orientation()
 
     def update_orientation(self, roll:float=0.0, pitch:float=0.0, yaw:float=0.0):
-        """ update_orientation """
+        """
+        update_orientation - Rotate the cubesat
+
+        :param roll: Roll.
+        :type roll: float
+        :param pitch: Pitch.
+        :type pitch: float
+        :param yaw: Yaw.
+        :type yaw: float
+
+        """
         self._cubesat.apply_orientation(roll, pitch, yaw)
         self._render_to_tk()
 
