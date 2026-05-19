@@ -53,13 +53,13 @@ autosummary_generate = True
 #    'show-inheritance': True,
 #}
 
-autodoc_mock_imports = [
-    'numpy',
-    'pyvista',
-    'astropy',
-    'scipy',
-    'sgp4',
-]
+#autodoc_mock_imports = [
+#    'numpy',
+#    'pyvista',
+#    'astropy',
+#    'scipy',
+#    'sgp4',
+#]
 
 
 # removed ... don't work ...
