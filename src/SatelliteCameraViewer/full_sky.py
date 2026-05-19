@@ -333,6 +333,8 @@ class FullSky:
 			raise ValueError('FullSky() needs root value')
 		self._root = root
 
+		self._timer_id = None
+
 		self._font_family = font_family
 		self._font_size = font_size
 
@@ -445,6 +447,7 @@ class FullSky:
 		# camera view /box/polygon
 		show_box = False
 		show_poly = False
+		show_hull = False
 		if show_box:
 			# A box does not show edges correctly
 			p = self.plot_corners()
@@ -453,18 +456,19 @@ class FullSky:
 			# Four dots in the corners
 			p = self.plot_polygons()
 			self.items_plotted_add(p)
-
-		# another view
-		if False:
+		if show_hull:
 			p = self.plot_hull()
 			self.items_plotted_add(p)
 
-		# matrix of pixels (at points)
+		# matrix of pixels (a matrix of pixels)
 		p = self.plot_pixels(nsteps=1)
 		self.items_plotted_add(p)
 
 		if self._switch_match_stars:
-			p = self.plot_matched_stars()
+			p = self.plot_matched_closest_star()
+			if p:
+				self.items_plotted_add(p)
+			p = self.camera_image_matched_stars()
 			if p:
 				self.items_plotted_add(p)
 
@@ -474,7 +478,7 @@ class FullSky:
 		s = '%s\n%s' % (self.nikon.obs_time.strftime('%Y-%m-%d %H:%M:%S %Z'), str(self.nikon.camera))
 		s += '\n%.1f deg width by %.1f deg height |' % (angular_width, angular_height)
 		s += ' %.1f%% of whole sky' % (100.0*solid_angle_steradians/(4*math.pi))
-		return s
+		UserInterface.camera_info(s)
 
 	_sun = None
 	_moon = None
@@ -697,8 +701,8 @@ class FullSky:
 		found_stars = self._scbsc5.skycoords[inside_mask]
 		return found_stars, inside_mask
 
-	def plot_matched_stars(self):
-		""" plot_matched_stars """
+	def camera_image_matched_stars(self):
+		""" camera_image_matched_stars """
 		# now find all stars inside camara view ...
 		found_stars, inside_mask = self._match_stars_in_polygon()
 		if len(found_stars) == 0:
@@ -752,6 +756,53 @@ class FullSky:
 		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky.COLORS['stars-found'], zorder=5)
 		return p1
 
+	def plot_matched_closest_star(self):
+		""" plot_matched_closest_star """
+		# look for matched (closest) star
+		matches = self._match_against_bsc5()
+
+		ra_rad = []
+		dec_rad = []
+		for m in matches:
+			center_ra_rad = m['coords'].ra.radian
+			center_dec_rad = m['coords'].dec.radian
+			star_ra_rad = m['star_coord'].ra.radian
+			star_dec_rad = m['star_coord'].dec.radian
+			star = matches[0]['bsc5']
+			if star.constellation:
+				c = ConstellationDatabase.fullmatch(star.constellation)
+				c = c[0].constellation + ' (' + c[0].meaning + ')'
+			else:
+				c = None
+
+			s = 'camera [%.1f,%.1f] deg\n  star [%.1f,%.1f] deg +/- %.3f deg\n       %s%s @ %.1f mag' % (
+				math.degrees(center_ra_rad), math.degrees(center_dec_rad),
+				math.degrees(star_ra_rad), math.degrees(star_dec_rad),
+				math.degrees(arcseconds_to_radians(m['separation_arcsec'])),
+				star.name if star.name else '-',
+				' in ' + c if c else '',
+				star.mag
+			)
+			UserInterface.star_found_text(s)
+
+			ra_rad.append(center_ra_rad)
+			dec_rad.append(center_dec_rad)
+			ra_rad.append(star_ra_rad)
+			dec_rad.append(star_dec_rad)
+			# TODO - only one for now
+			break
+
+		# TODO powered down for now - does not unpaint itself (yet)
+		if self._switch_match_stars:
+			star = matches[0]['bsc5']
+			diameter = mag_map(star.mag, multiplier=4.0)
+			ra_rad = ra_fix(ra_rad)
+			p1 = self._ax.plot(ra_rad, dec_rad, label='Star match', alpha=1.0, color=FullSky.COLORS['match'], linewidth=3.0)
+			p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1:], facecolors='none', edgecolors=FullSky.COLORS['match'], s=diameter)
+			p3 = self._ax.scatter(ra_rad[0:1], dec_rad[0:1], facecolors=FullSky.COLORS['plot-center'], edgecolors=FullSky.COLORS['plot-center'], s=60)
+		return [p1, p2, p3]
+		return None
+
 	def do_match_stars(self, value):
 		""" do_match_stars """
 		match_stars_show = value.get()
@@ -761,6 +812,10 @@ class FullSky:
 			self._do_stars_real(False)
 			UserInterface.stars_button_set(True)
 			self._do_stars_real(True)
+		else:
+			s = ''
+			UserInterface.star_found_text(s)
+			UserInterface.misc_text(s)
 
 	def do_mag(self, value):
 		""" do_mag """
@@ -775,9 +830,8 @@ class FullSky:
 		self.nikon.camera.reload(focal_length_mm=float(focal_length))
 
 		# refresh everything
-		s = self.update_full_sky()
+		self.update_full_sky()
 		self.draw()
-		UserInterface.camera_info(s)
 
 	def do_realtime(self, value):
 		""" do_realtime """
@@ -785,6 +839,8 @@ class FullSky:
 		# reset line data - otherwise it's messy
 		self.plot_center_clear()
 		self.draw()
+		# reset timer interval
+		self.timer_reset()
 
 	def do_stars(self, value):
 		""" do_stars """
@@ -809,9 +865,8 @@ class FullSky:
 		""" do_rpy """
 		UserInterface.rpy_values_deg[k] = float(val)
 		# refresh everything
-		s = self.update_full_sky()
+		self.update_full_sky()
 		self.draw()
-		UserInterface.camera_info(s)
 		self._cv.update_orientation(
 			UserInterface.rpy_values_deg['pitch'],
 			UserInterface.rpy_values_deg['roll'],
@@ -846,6 +901,8 @@ class FullSky:
 		# RESET match
 		self._switch_match_stars = False
 		UserInterface.match_stars_button_set(False)
+
+		# RESET text boxes
 		s = ''
 		UserInterface.star_found_text(s)
 		UserInterface.misc_text(s)
@@ -853,16 +910,18 @@ class FullSky:
 		# RESET camera image
 		self._ci.reset()
 
-		# Now redraw everything
+		# Now redraw everything - by reseting the timer.
 		self.plot_center_clear()
-		s = self.update_full_sky()
-		self.draw()
-		UserInterface.camera_info(s)
+		# self.update_full_sky()
+		# self.draw()
 		self._cv.update_orientation(
 			UserInterface.rpy_values_deg['pitch'],
 			UserInterface.rpy_values_deg['roll'],
 			UserInterface.rpy_values_deg['yaw']
 		)
+
+		# RESET timer interval
+		self.timer_reset()
 
 	def _match_against_bsc5(self):
 		""" _match_against_bsc5 """
@@ -897,79 +956,39 @@ class FullSky:
 			})
 		return matches
 
-	def timer_went_off(self):
+	def timer_reset(self):
+		""" timer_reset """
+		if self._timer_id is not None:
+			self.root.after_cancel(self._timer_id)
+			self._timer_id = None
+		# reprime
+		self.timer_went_off()
+
+	def timer_went_off(self, repaint=True):
 		""" timer_went_off """
+		self._timer_id = None
 		# update the time and recaculate the attitude (based on the new time)
+		# and deal with time interval and timers
 		if self._switch_accelerate_time is True:
-			# jump time ahead quickly
-			self.nikon.adjust_by_seconds(120)
+			# jump time ahead quickly - TODO this value should be based on orbital params
+			seconds = (60 - self.nikon.obs_time.second) + 60
+			self.nikon.adjust_by_seconds(seconds)
+			# hence step is half a second
+			timer_step = 500
 		else:
 			# realtime
 			self.nikon.now()
-
-		# updated sky
-		s = self.update_full_sky()
-		self.plot_sun_moon()	# sun and moon move when time changes (slightly)
-		self.draw()
-		# update text
-		UserInterface.camera_info(s)
-
-		# look for matched (closest) star
-		matches = self._match_against_bsc5()
-
-		ra_rad = []
-		dec_rad = []
-		for m in matches:
-			center_ra_rad = m['coords'].ra.radian
-			center_dec_rad = m['coords'].dec.radian
-			star_ra_rad = m['star_coord'].ra.radian
-			star_dec_rad = m['star_coord'].dec.radian
-			star = matches[0]['bsc5']
-			if star.constellation:
-				c = ConstellationDatabase.fullmatch(star.constellation)
-				c = c[0].constellation + ' (' + c[0].meaning + ')'
-			else:
-				c = None
-
-			s = 'camera [%.1f,%.1f] deg\n  star [%.1f,%.1f] deg +/- %.3f deg\n       %s%s @ %.1f mag' % (
-				math.degrees(center_ra_rad), math.degrees(center_dec_rad),
-				math.degrees(star_ra_rad), math.degrees(star_dec_rad),
-				math.degrees(arcseconds_to_radians(m['separation_arcsec'])),
-				star.name if star.name else '-',
-				' in ' + c if c else '',
-				star.mag
-			)
-
-			ra_rad.append(center_ra_rad)
-			dec_rad.append(center_dec_rad)
-			ra_rad.append(star_ra_rad)
-			dec_rad.append(star_dec_rad)
-			# TODO - only one for now
-			break
-
-		UserInterface.star_found_text(s)
-
-		# XXX TODO powered down for now - does not unpaint itself (yet)
-		#if self._switch_match_stars:
-		#	star = matches[0]['bsc5']
-		#	diameter = mag_map(star.mag, multiplier=4.0)
-		#	ra_rad = ra_fix(ra_rad)
-		#	_star = self._ax.plot(ra_rad, dec_rad, label='Star match', alpha=1.0, color=FullSky.COLORS['match'], linewidth=3.0)
-		#	_star = self._ax.scatter(ra_rad[-1:], dec_rad[-1:], facecolors='none', edgecolors=FullSky.COLORS['match'], s=diameter)
-		#	_star = self._ax.scatter(ra_rad[0:1], dec_rad[0:1], facecolors=FullSky.COLORS['plot-center'], edgecolors=FullSky.COLORS['plot-center'], s=60)
-
-		# deal with time interval and timers
-
-		if self._switch_accelerate_time is True:
-			# half a second
-			timer_step = 500
-		else:
-			# five seconds
+			# hence step is five seconds
 			timer_step = 5 * 1000
 
-		# trigger the next timer
-		self.root.after(timer_step, lambda: self.timer_went_off())
-		self.draw()
+		if repaint:
+			# now repaint/update sky
+			self.update_full_sky()
+			self.plot_sun_moon()	# add sun and moon move when time changes (slightly)
+			self.draw()
+
+		# and finally, setup trigger the next timer
+		self._timer_id = self.root.after(timer_step, lambda: self.timer_went_off())
 
 class StarsConstellationsBSC5:
 	""" StarsConstellationsBSC5 """

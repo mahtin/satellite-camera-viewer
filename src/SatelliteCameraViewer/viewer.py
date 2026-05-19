@@ -192,7 +192,7 @@ def viewer(args=None):
 		root.focus_force()
 		root.attributes('-topmost', False)	# Optional: set to False to allow other apps over it
 
-	root.after(1, lambda: center_and_delayed_bring_to_front_and_make_focus(root))
+	_ = root.after(1, lambda: center_and_delayed_bring_to_front_and_make_focus(root))
 
 	root.mainloop()
 

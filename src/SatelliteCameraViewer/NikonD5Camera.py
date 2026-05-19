@@ -40,7 +40,6 @@ class NikonD5Camera:
 			tle = iss_tle
 
 		# map SatelliteCamera() into this class
-		self.obs_time = self._sc.obs_time
 		self.now = self._sc.now
 		self.datetime = self._sc.datetime
 		self.adjust_by_seconds = self._sc.adjust_by_seconds
@@ -53,6 +52,11 @@ class NikonD5Camera:
 		self.tle = tle
 		self.now()
 		self.choose_attitude('vv')
+
+	@property
+	def obs_time(self):
+		""" obs_time """
+		return self._sc.obs_time
 
 	@property
 	def camera(self):
