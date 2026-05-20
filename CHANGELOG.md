@@ -1,5 +1,8 @@
 # Change Log
 
+ - 2026-05-19 17:45:59 -0700 [0dc40c8](../../commit/0dc40c8faf035398ddfad9ba1a50719d33da4579) 0.5.1
+ - 2026-05-19 17:45:24 -0700 [105a0b2](../../commit/105a0b2186d075b277bfd778d4bf9b59cac18460) finally got numpy version number correct - load before matplotlib
+ - 2026-05-19 17:26:59 -0700 [adcedda](../../commit/adceddacf463e2677647d3d39e87597551b5d3ba) 0.5.0
  - 2026-05-19 17:26:49 -0700 [7bd84df](../../commit/7bd84dfa19b078b91887104dfe93c3e6e5bb74bd) 0.5.0
  - 2026-05-19 17:18:47 -0700 [6b41467](../../commit/6b414674ffd75ca033bd26fd1d4effa9895b5b67) more doc strings, cleanup on _COLORS for doc strings, one typo
  - 2026-05-19 16:31:30 -0700 [d6c82e5](../../commit/d6c82e58d05c0e093dc4bf08b2e0743313150858) testing sphinx.ext.autodoc on RTD - it conflicts
