@@ -106,7 +106,7 @@ class SatelliteCamera():
         elif self._sat_attitude is not None and self._cam_attitude is not None:
             self._attitude = self.CameraAttitude(sat_attitude=self._sat_attitude, cam_attitude=self._cam_attitude)
         else:
-            # hopefully this will be recaculated again 
+            # hopefully this will be recaculated again
             pass
 
     def _reset_attitude(self):

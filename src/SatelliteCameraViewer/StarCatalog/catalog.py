@@ -132,7 +132,7 @@ class Catalog():
                 l = self._database_open(fresh=True)
             else:
                 l = self._database_open()
-            if l > 0:
+            if l is not None and l > 0:
                 self._database_read()
             else:
                 _ = self._prime_from_files(dont_pickle=True)
@@ -233,7 +233,7 @@ class Catalog():
             self._writepickle()
         return len(self._stars)
 
-    def _readstarfile(self, max_mag):
+    def _readstarfile(self, directory, max_mag, star_append):
         """ _readstarfile() """
 
         # this is expected to be implemented by the catalog-specific code
@@ -297,7 +297,8 @@ class Catalog():
         """ _database_open() """
 
         if self._db:
-            return
+            # we've already returned a count on the previous try - let's not do it again
+            return None
 
         if memory:
             if shared:

@@ -11,8 +11,6 @@ import numpy as np
 
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
 
-from .CameraAttitude import CameraAttitude
-
 @dataclass
 class SatelliteOrbit:
     """ SatelliteOrbit """
@@ -37,7 +35,7 @@ class SatelliteOrbit:
     # Earth-Centered Inertial (ECI) position and velocity define a satellite's state vector ([r,v]) using Cartesian
     # coordinates (x,y,z) relative to the center of the Earth, which does not rotate with the planet, remaining fixed
     # relative to stars. It provides an inertial, non-accelerating frame where Z points to the North Pole and the
-    # XY-plane is the equatorial plane. 
+    # XY-plane is the equatorial plane.
     #
     # In an Earth-centered inertial (ECI) frame, the X-axis (often denoted as I) points towards the vernal equinox
     # (or First Point of Aries). This direction is the intersection of the equatorial plane and the ecliptic plane,
@@ -49,7 +47,7 @@ class SatelliteOrbit:
     # Z-axis (K): Passes through the North Pole.
     # Purpose: It is non-rotating, ideal for determining satellite orbits and celestial navigation.
     # Note: The specific inertial reference frame used is often the J2000 frame, meaning the X-axis points to the
-    # vernal equinox at the epoch of Jan 1, 2000, at noon. 
+    # vernal equinox at the epoch of Jan 1, 2000, at noon.
 
     def eci_position_vector(self, obs_time: datetime):
         """
@@ -82,8 +80,3 @@ class SatelliteOrbit:
         # r_teme_km, v_teme_km_s are in TEME; for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return np.array(v_teme_km_s)
-
-        # # 3. If satellite orbit is provided, convert TEME -> GCRS
-        # r_teme_km, _ = self.eci_position_vector(obs_time)
-        # r_gcrs_km = CameraAttitude.teme_to_gcrs_vector(r_teme_km, obs_time)
-        # return r_gcrs_km

@@ -1,4 +1,4 @@
-
+""" fetch_constellation """
 # https://en.wikipedia.org/wiki/List_of_stars_in_Ursa_Major
 # List of stars in Ursa Major
 # This is the list of notable stars in the constellation Ursa Major, sorted by decreasing brightness.
@@ -7,7 +7,6 @@ import re
 import sys
 import math
 from pathlib import Path
-from dataclasses import dataclass
 
 from .star import Star
 
@@ -18,7 +17,7 @@ from .star import Star
 #
 
 class FetchConstellationError(Exception):
-	pass
+	""" FetchConstellationError """
 
 class FetchConstellation:
 	""" FetchConstellation """
@@ -40,11 +39,13 @@ class FetchConstellation:
 		self._s = None
 
 	def name(self):
+		""" name """
 		if not self._s:
 			self._read()
 		return self._name
 
 	def stars(self):
+		""" stars """
 		if not self._s:
 			self._read()
 		return self._s
@@ -74,10 +75,10 @@ class FetchConstellation:
 		# empty fields have nothing in them - this fixes that
 		while '\t\t' in l:
 			l = l.replace('\t\t', '\t-\t')
-		if u'\u2212' in l:
+		if '\u2212' in l:
 			# becuase copying from webpages sometimes exposes special characters
 			# U+2212 Minus Sign
-			l = l.replace(u'\u2212', '-')
+			l = l.replace('\u2212', '-')
 		v = l.split('\t')
 		star_name = v[0]
 		if len(v[0]) > 0:
@@ -95,7 +96,7 @@ class FetchConstellation:
 			star_hd = None
 		# 12h 54m 01.63s	+55° 57′ 35.4″
 		# 05h 14m 32.27s	−08° 12′ 05.9″
-		# degree symbol - ascii decimal 176, '\xb0', or u'\u00b0', ditto for ′ and ″ (vs ' and ")
+		# degree symbol - ascii decimal 176, '\xb0', or '\u00b0', ditto for ′ and ″ (vs ' and ")
 		h, m, s, _ = re.split(r'[hms]', v[6])
 		ra = math.radians((float(h) + float(m)/60.0 + float(s)/3600.0)/24.0*360.0)
 		d, m, s, _ = re.split(r'[°′″]', v[7])

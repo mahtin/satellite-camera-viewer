@@ -93,9 +93,6 @@ class CameraImage:
 def _main(args=None):
 	""" _main """
 
-	from PIL import __version__
-	print('PIL version =', __version__)
-
 	w = 400
 	h = 400
 	ci = CameraImage(w, h)

@@ -123,8 +123,8 @@ class ConstellationDatabase:
 		['Volans',		'Vol',		'Voln',		'Volantis',		'1598,Plancius,Keyser,de Houtman, as Piscis Volans',	'flying fish',	'γ2Volantis',	'3.75'],
 		['Vulpecula',		'Vul',		'Vulp',		'Vulpeculae',		'1690,Firmamentum Sobiescianum,Hevelius, as Vulpecula cum Ansere',	"littlefox(originally, 'little fox with the goose')",	'α Vulpeculae',	'4.40'],
 	]
-	_constellations = None
-	_index = None
+	_constellations = []
+	_index = {}
 
 	def __init__(self):
 		""" ConstellationDatabase """
@@ -132,7 +132,7 @@ class ConstellationDatabase:
 	@classmethod
 	def _build(cls):
 		""" _build """
-		if ConstellationDatabase._constellations:
+		if ConstellationDatabase._constellations and len(ConstellationDatabase._constellations) > 0:
 			return
 		ConstellationDatabase._constellations = [Constellation(*v) for v in ConstellationDatabase._data[1:]]
 		ConstellationDatabase._index = {}
@@ -202,7 +202,7 @@ def _main(args=None):
 	print('')
 
 	for c in cd.all():
-		if c.constellation == c.iau_abbreviations or c.constellation == c.nasa_abbreviations:
+		if c.constellation in [c.iau_abbreviations, c.nasa_abbreviations]:
 			print('same:', c.constellation, c.iau_abbreviations, c.nasa_abbreviations, c.meaning)
 	print('')
 
