@@ -29,7 +29,7 @@ class Star:
 
 	"""
 
-	number: int = None
+	number: int|list[int] = None
 	""" Star catalog number (if known). """
 	name: str = None
 	""" Star name (if known). """
@@ -47,22 +47,22 @@ class Star:
 		if isinstance(self.number, int):
 			num = str(self.number)
 		else:
-			if self.number:
+			if self.number is not None:
 				num = '-'.join([str(v) for v in self.number])
 			else:
 				num = ''
 
-		if self.name and self.constellation and self.constellation != '':
+		if self.name is not None and self.constellation is not None and self.constellation != '':
 			name = self.name + ' in ' + self.constellation
 		else:
 			name = self.name
 
-		if self.ra and not math.isnan(self.ra) or self.dec and not math.isnan(self.dec):
+		if self.ra is not None and not math.isnan(self.ra) or self.dec is not None and not math.isnan(self.dec):
 			pos = '[%9.5f,%9.5f]' % (round(math.degrees(self.ra), 5), round(math.degrees(self.dec), 5))
 		else:
 			pos = '[%9s,%9s]' % ('', '')
 
-		if self.mag and not math.isnan(self.mag):
+		if self.mag is not None and not math.isnan(self.mag):
 			mag = '%6.3f' % (self.mag)
 		else:
 			mag = ''
@@ -75,3 +75,16 @@ class Star:
 			r = '%s @ %6s ; %6s %s' % (pos, mag, num, '"' + name + '"')
 
 		return r
+
+def _main(args=None):
+	""" _main """
+	s = Star()
+	print(s)
+	s = Star(1, 'Twinkle', 'Lullaby', 0.0, 0.0, 1.0)
+	print(s)
+	s = Star([1,2,3], 'Little Star', 'Poem', 0.0, 0.0, 1.0)
+	print(s)
+
+
+if __name__ == '__main__':
+	_main()
