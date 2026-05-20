@@ -4,10 +4,6 @@ CameraIntrinsics.py
 # Camera model
 """
 
-#
-# UserWarning: A NumPy version >=1.26.4 and <2.7.0 is required for this version of SciPy (detected version 1.26.3)
-#
-
 import math
 from datetime import datetime
 from dataclasses import dataclass
