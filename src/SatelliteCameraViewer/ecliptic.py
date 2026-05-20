@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import numpy as np
-from astropy.coordinates import SkyCoord, get_sun, get_body
+from astropy.coordinates import SkyCoord, get_body
 from astropy.time import Time
 import astropy.units as u
 
@@ -38,7 +38,7 @@ def body(which:str, obs_time:datetime):
 	:rtype: tuple(float, float)
 	"""
 	t = Time(obs_time)
-	# Get Sun position in GCRS frame
+	# Get sun or moon or planets  position in GCRS frame
 	body_gcrs = get_body(which, t)
 	# Transform to ICRS (Equatorial) and extract RA/Dec in degrees
 	body_icrs = body_gcrs.transform_to('icrs')
@@ -88,7 +88,7 @@ def moon_illumination(obs_time:datetime):
 	:rtype: float
 	"""
 	t = Time(obs_time)
-	sun = get_sun(t)
+	sun = get_body('sun', t)
 	moon = get_body('moon', t)
 	elongation = sun.separation(moon)
 	i = np.arctan2(sun.distance*np.sin(elongation), moon.distance - sun.distance*np.cos(elongation))
@@ -100,14 +100,24 @@ def _main(args=None):
 	import math
 	from datetime import timezone, timedelta
 	now_utc = datetime.now(timezone.utc)
+
 	midnight_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 	for d in range(31):
 		new_date = midnight_utc + timedelta(days=d)
 		illum_percent = moon_illumination(new_date)
-		ra_rad, dec_rad = body('moon', new_date)
-		ra = math.degrees(ra_rad)
-		dec = math.degrees(dec_rad)
-		print('%3d: %s [%5.1f,%5.1f] Moon Illumination: %5.1f%% %s' % (d, new_date.strftime('%Y-%m-%d %H:%M'), ra, dec, illum_percent*100, '\u2592' * int(illum_percent*100+0.5)))
+		moon_ra_rad, moon_dec_rad = body('moon', new_date)
+		moon_ra_deg = math.degrees(moon_ra_rad)
+		moon_dec_deg = math.degrees(moon_dec_rad)
+		earth_ra_rad, earth_dec_rad = body('earth', new_date)
+		earth_ra_deg = math.degrees(earth_ra_rad)
+		earth_dec_deg = math.degrees(earth_dec_rad)
+		print('%3d: %s [%5.1f,%5.1f] [%5.1f,%5.1f] Moon Illumination: %5.1f%% %s' % (
+			d,
+			new_date.strftime('%Y-%m-%d %H:%M'),
+			earth_ra_deg, earth_dec_deg,
+			moon_ra_deg, moon_dec_deg,
+			illum_percent*100,
+			'\u2592' * int(illum_percent*100+0.5)))
 
 if __name__ == '__main__':
 	_main()

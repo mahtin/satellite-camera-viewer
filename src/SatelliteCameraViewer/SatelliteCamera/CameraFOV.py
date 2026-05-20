@@ -105,7 +105,7 @@ class CameraFOV:
         # Dummy polygon object
         class FallbackPoly:
             """ FallbackPoly """
-            def area(self_inner):
+            def area(self):
                 """ area """
                 return E
 
