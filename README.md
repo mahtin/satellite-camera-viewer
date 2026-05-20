@@ -53,7 +53,6 @@ $ satellitecameraviewer
 $ mkdir ~/whatever
 $ cd ~/whatever
 $ python3 -m venv .venv
-$ cd .venv
 $ source .venv/bin/activate
 (.venv) $ pip install git+https://github.com/mahtin/satellite-camera-viewer.git
 ...
