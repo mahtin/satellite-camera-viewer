@@ -1,5 +1,19 @@
 # Change Log
 
+ - 2026-05-19 17:26:49 -0700 [7bd84df](../../commit/7bd84dfa19b078b91887104dfe93c3e6e5bb74bd) 0.5.0
+ - 2026-05-19 17:18:47 -0700 [6b41467](../../commit/6b414674ffd75ca033bd26fd1d4effa9895b5b67) more doc strings, cleanup on _COLORS for doc strings, one typo
+ - 2026-05-19 16:31:30 -0700 [d6c82e5](../../commit/d6c82e58d05c0e093dc4bf08b2e0743313150858) testing sphinx.ext.autodoc on RTD - it conflicts
+ - 2026-05-19 16:29:29 -0700 [3d0f587](../../commit/3d0f587ceb560fd467ffe9f6d7e185e79dac8b46) obs_time incorrect on NikonD5, timer logic improved, repaint corrected, reset, match, etc logic improved
+ - 2026-05-19 12:59:12 -0700 [f68e704](../../commit/f68e704c5e86ebadc8dcbd22a42b422a69224c31) more doc strings, added check code
+ - 2026-05-19 11:53:01 -0700 [220be23](../../commit/220be23193ab1ec7a3599f5ff805af6b1472d107) simplify
+ - 2026-05-19 11:52:40 -0700 [ec60b7b](../../commit/ec60b7b0964d7dfe27d42687c265b615772f1462) more doc strings
+ - 2026-05-19 09:09:38 -0700 [e7f58e9](../../commit/e7f58e99677ce7c16a8ee0a3302984793ec19147) simplified the entry point for satellite-camera-viewer to __main__.py
+ - 2026-05-19 08:34:19 -0700 [39ff9a2](../../commit/39ff9a2e01fb0ac969fcbc680904568c5470ab5a) trying to get matplotlib and numpy working correctly
+ - 2026-05-19 08:22:38 -0700 [29735b4](../../commit/29735b4b83cfadd0af4abfa31947a3e79fd7bd23) directory typo
+ - 2026-05-19 08:18:54 -0700 [ad4057a](../../commit/ad4057a175af3c03af3162035adbf59066287f82) added a pre build to run sphinx-apidoc
+ - 2026-05-19 08:05:58 -0700 [8cbae30](../../commit/8cbae3052fb22bc0d6572266a7dfbc80000533d5) added back in autodoc_mock_imports and removed exclude_patterns __init__.py
+ - 2026-05-19 07:44:32 -0700 [c38a305](../../commit/c38a3053c98ada1b772b8d0ee34c2c15dce4b48f) added back in sphinx.ext.autodoc
+ - 2026-05-18 16:58:02 -0700 [ca5272e](../../commit/ca5272ea98ab8933068c201cc78e48a8028cb1c3) 0.4.2
  - 2026-05-18 16:46:24 -0700 [1fa5882](../../commit/1fa588209523d35839e4ee69802ee7f8096ad2d6) more docs tuning
  - 2026-05-18 16:31:11 -0700 [e83dd2f](../../commit/e83dd2fa9e62832c9085a03d4e818957e7095a41) more doc strings
  - 2026-05-18 10:57:56 -0700 [91fb042](../../commit/91fb042d34820544d0d384dd7c3b37b741754631) upgrade to newer package versions
