@@ -50,6 +50,7 @@ class UserInterface:
 		'pitch': 0.0,
 		'yaw': 0.0
 	}
+	""" rpy_values_deg - values of Roll, Pitch, and Yaw sliders. """
 
 	_cam_slider_rpy_text = {
 		'roll': 'Roll (X) side-to-side',
@@ -282,12 +283,12 @@ class UserInterface:
 		cls._full_sky.do_reset()
 
 	@classmethod
-	def reset_everyting_button(cls, parent, row, col):
-		""" eeset_everyting_button """
+	def reset_everything_button(cls, parent, row, col):
+		""" reset_everything_button """
 		font = tk.font.nametofont('TkDefaultFont').actual()
 		style = ttk.Style()
 		style.configure('Reset.TButton',
-			foreground=FullSky.COLORS['reset-color'],
+			foreground=FullSky._COLORS['reset-color'],
 			font=(font['family'], font['size'], 'bold'),
 		)
 		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=lambda: cls.do_reset())
@@ -295,10 +296,19 @@ class UserInterface:
 		cls._reset_everything_button = b
 
 class FullSky:
-	""" FullSky """
+	"""
+	FullSky - the core drawing code for the stars - also includes logic for the user interface
+
+	:param root: The tk root value.
+	:type root: Tk
+	:param font_family: Name of font to use inside pyplot area.
+	:type font_familiy: str
+	:param font_size: Size of font to use inside pyplot area.
+	:type font_size: str
+	"""
 
 	# https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors
-	COLORS = {
+	_COLORS = {
 		'fig-facecolor': '#ebebeb',
 		'sky-facecolor': 'whitesmoke',
 		'sky-grid': 'lightgrey',
@@ -328,7 +338,16 @@ class FullSky:
 	_switch_match_stars = False
 
 	def __init__(self, root=None, font_family='san-serif', font_size=10):
-		""" FullSky """
+		"""
+		FullSky - the core drawing code for the stars - also includes logic for the user interface
+
+		:param root: The tk root value.
+		:type root: Tk
+		:param font_family: Name of font to use inside pyplot area.
+		:type font_familiy: str
+		:param font_size: Size of font to use inside pyplot area.
+		:type font_size: str
+		"""
 		if root is None:
 			raise ValueError('FullSky() needs root value')
 		self._root = root
@@ -361,40 +380,48 @@ class FullSky:
 		self._scbsc5 = StarsConstellationsBSC5(mag)
 
 	def cubesat_viewer_register(self, u=3, label=None, w=400, h=300):
-		""" cubesat_viewer_register """
+		"""
+		cubesat_viewer_register - setup Cubesat.
+		"""
 		self._cv = DoCubesatViewer(u=u, label=label, w=w, h=h)
 
 	def camera_image_register(self, label=None, nx=400, ny=300, w=400, h=300):
-		""" camera_image_register """
+		"""
+		camera_image_register - setup Camera Image.
+		"""
 		self._ci = DoCameraImage(label=label, nx=nx, ny=ny, w=w, h=h)
 
+	def pyplot_canvas_area_register(self, canvas):
+		""" pyplot_canvas_area_register """
+		self._canvas = canvas
+
 	def _create_subplot(self):
-		""" _create_subplot """
+		""" _create_subplot - core logic to build the pyplot area. """
 		# plt.style.use('classic')
 		# plt.rcParams['toolbar'] = 'None'	# was 'toolbar2' but we don't need the controls
 		self._fig = Figure(figsize=(14.0, 7.04), dpi=65, layout='tight')
 		self._fig.patch.set_linewidth(0)
 		self._fig.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
 		self._fig.set_layout_engine(layout='tight')
-		self._fig.patch.set_facecolor(FullSky.COLORS['fig-facecolor'])
+		self._fig.patch.set_facecolor(FullSky._COLORS['fig-facecolor'])
 		# projection='mollweide' is an equal-area, pseudocylindrical projection where parallels are straight lines.
 		self._ax = self._fig.add_subplot(1, 1, 1, projection='mollweide')
-		self._ax.set_facecolor(FullSky.COLORS['sky-facecolor'])
+		self._ax.set_facecolor(FullSky._COLORS['sky-facecolor'])
 
 	def _paint_axis(self):
-		""" _paint_axis """
+		""" _paint_axis - x and y axis (which is really ra and dec). """
 		# grid lines
-		self._ax.grid(color=FullSky.COLORS['sky-grid'], alpha=0.5)
+		self._ax.grid(color=FullSky._COLORS['sky-grid'], alpha=0.5)
 		# x axis (ra)
 		# 24 hours is 360 degrees - one hour is 15 degrees. Mark every other hour (i.e 30 degrees)
 		# note that this projection is -180 to +180 - we need to handle that later on - for now we simply change the lables
 		# When dealing with astronomical coordinates the right ascension increases eastward, located conventionally left on celestial charts.
 		x_values = [math.radians(v) for v in range(-180,180+30,30)]
 		x_labels = ['', '10h','8h','6h','4h','2h','0h','22h','20h','18h','16h','14h', '']
-		self._ax.set_xticks(x_values, x_labels, rotation='vertical', color=FullSky.COLORS['sky-axis'], alpha=0.5,
+		self._ax.set_xticks(x_values, x_labels, rotation='vertical', color=FullSky._COLORS['sky-axis'], alpha=0.5,
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
 		)
-		self._ax.set_xlabel('Right Ascension (hours)', color=FullSky.COLORS['sky-label'],
+		self._ax.set_xlabel('Right Ascension (hours)', color=FullSky._COLORS['sky-label'],
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'top'}
 		)
 
@@ -404,19 +431,15 @@ class FullSky:
 		# remove 90 and 80 and -80 and -90 (as they don't draw correctly - and aren't needed)
 		for ii in [0, 1, -1, -2]:
 			y_labels[ii] = ''
-		self._ax.set_yticks(y_values, y_labels, color=FullSky.COLORS['sky-axis'],
+		self._ax.set_yticks(y_values, y_labels, color=FullSky._COLORS['sky-axis'],
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
 		)
-		self._ax.set_ylabel('Declination (degrees)', color=FullSky.COLORS['sky-label'],
+		self._ax.set_ylabel('Declination (degrees)', color=FullSky._COLORS['sky-label'],
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'right', 'verticalalignment':'center'}
 		)
 
-	def register_canvas(self, canvas):
-		""" register_canvas """
-		self._canvas = canvas
-
 	def update_full_sky(self):
-		""" update_full_sky """
+		""" update_full_sky - primary logic to redraw the sky plot. """
 		# Key Details for Mollweide Projection in Matplotlib:
 		# Input Data Formats: Data must be in radians, not degrees, for proper positioning
 		# X-Axis (Longitude): Ranges from -PI to +PI
@@ -484,14 +507,14 @@ class FullSky:
 	_moon = None
 
 	def plot_sun_moon(self):
-		""" plot_sun_moon """
+		""" plot_sun_moon - add sun and moon to the sky plot. """
 		fraction = moon_illumination(self.nikon.obs_time)
 		moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time)
 		moon_ra_rad = ra_fix([moon_ra_rad])[0]
 		if self._moon:
 			self._moon.set_offsets([[moon_ra_rad, moon_dec_rad]])
 		else:
-			self._moon = self._ax.scatter([moon_ra_rad], [moon_dec_rad], color=FullSky.COLORS['moon'], alpha=1.0, s=50.0)
+			self._moon = self._ax.scatter([moon_ra_rad], [moon_dec_rad], color=FullSky._COLORS['moon'], alpha=1.0, s=50.0)
 
 		sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time)
 		sun_ra_rad = ra_fix([sun_ra_rad])[0]
@@ -499,26 +522,26 @@ class FullSky:
 		if self._sun:
 			self._sun.set_offsets([[sun_ra_rad, sun_dec_rad]])
 		else:
-			self._sun = self._ax.scatter([sun_ra_rad], [sun_dec_rad], color=FullSky.COLORS['sun'], alpha=1.0, s=300.0)
+			self._sun = self._ax.scatter([sun_ra_rad], [sun_dec_rad], color=FullSky._COLORS['sun'], alpha=1.0, s=300.0)
 
 	def plot_galactic_plane(self):
-		""" plot_galactic_plane """
+		""" plot_galactic_plane - add galactic plan line to the sky plot. """
 		ra_dec_rad = galactic_plane()
 		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
 		for ra_rad, dec_rad in segments:
 			ra_rad = ra_fix(ra_rad)
-			self._ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.2, color=FullSky.COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
+			self._ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.2, color=FullSky._COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
 
 	def plot_ecliptic(self):
-		""" plot_ecliptic """
+		""" plot_ecliptic - add ecliptic line to the sky plot """
 		ra_dec_rad = ecliptic()
 		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
 		for ra_rad, dec_rad in segments:
 			ra_rad = ra_fix(ra_rad)
-			self._ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=FullSky.COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
+			self._ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=FullSky._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
 
 	def plot_stars(self):
-		""" plot_stars """
+		""" plot_star - add all the stars to the sky plot """
 		# BSC5 stars
 		stars_ra_rad, stars_dec_rad, stars_mag = self._scbsc5.get_stars()
 		stars_ra_rad = ra_fix(stars_ra_rad)
@@ -528,17 +551,17 @@ class FullSky:
 		const_ra_rad = ra_fix(const_ra_rad)
 		const_size_pixels = mag_map(const_mag)
 
-		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky.COLORS['stars'], zorder=5)
-		p2 = self._ax.scatter(const_ra_rad, const_dec_rad, s=const_size_pixels, alpha=1, color=FullSky.COLORS['constellations'], zorder=5)
+		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky._COLORS['stars'], zorder=5)
+		p2 = self._ax.scatter(const_ra_rad, const_dec_rad, s=const_size_pixels, alpha=1, color=FullSky._COLORS['constellations'], zorder=5)
 		return p1, p2
 
 	def draw(self):
-		""" draw """
+		""" draw - flush everything to the screen. """
 		self._canvas.draw()
 
 	@property
 	def nikon(self):
-		""" nikon """
+		""" nikon - return NikonD5 class. """
 		return self._nikon
 
 	@property
@@ -597,7 +620,7 @@ class FullSky:
 		""" plot_center """
 		if self._center_line_plot is None:
 			# this is an empty plot
-			p = self._ax.plot([], [], color=FullSky.COLORS['plot-center'], alpha=1.0, linewidth=1.5, zorder=10)
+			p = self._ax.plot([], [], color=FullSky._COLORS['plot-center'], alpha=1.0, linewidth=1.5, zorder=10)
 			self._center_line_plot = p
 		if self._center_line_data is None:
 			return
@@ -645,7 +668,7 @@ class FullSky:
 		dec_rad = [math.radians(v['dec_deg']) for v in corners]
 		ra_rad = ra_fix(ra_rad)
 		# not fixed for wrap yet
-		p = self._ax.plot(ra_rad, dec_rad, color=FullSky.COLORS['plot-corners'], alpha=0.25, linewidth=3.0, linestyle='dashed')
+		p = self._ax.plot(ra_rad, dec_rad, color=FullSky._COLORS['plot-corners'], alpha=0.25, linewidth=3.0, linestyle='dashed')
 		return p
 
 	def plot_polygons(self):
@@ -654,7 +677,7 @@ class FullSky:
 		ra_rad = [math.radians(float(v)) for v in polygon[0]]
 		dec_rad = [math.radians(float(v)) for v in polygon[1]]
 		ra_rad = ra_fix(ra_rad)
-		p = self._ax.scatter(ra_rad, dec_rad, color=FullSky.COLORS['plot-polygon'], alpha=0.5, s=40.0)
+		p = self._ax.scatter(ra_rad, dec_rad, color=FullSky._COLORS['plot-polygon'], alpha=0.5, s=40.0)
 		return p
 
 	def plot_hull(self):
@@ -664,7 +687,7 @@ class FullSky:
 		dec_rad = [math.radians(float(v)) for v in hull_coords[1]]
 		ra_rad = ra_fix(ra_rad)
 		# not fixed for wrap yet
-		p = self._ax.plot(ra_rad, dec_rad, color=FullSky.COLORS['plot-hull'], alpha=0.15, linewidth=2.0, linestyle='solid')
+		p = self._ax.plot(ra_rad, dec_rad, color=FullSky._COLORS['plot-hull'], alpha=0.15, linewidth=2.0, linestyle='solid')
 		return p
 
 	def plot_pixels(self, nsteps=3):
@@ -674,11 +697,11 @@ class FullSky:
 		dec_rad = [math.radians(v[1]) for v in pixels.values()]
 		ra_rad = ra_fix(ra_rad)
 		# all points
-		p3 = self._ax.scatter(ra_rad, dec_rad, color=FullSky.COLORS['plot-pixels'], alpha=0.75, s=20.0)
+		p3 = self._ax.scatter(ra_rad, dec_rad, color=FullSky._COLORS['plot-pixels'], alpha=0.75, s=20.0)
 		# learing left point/corner
-		p1 = self._ax.scatter(ra_rad[nsteps:nsteps+1], dec_rad[nsteps:nsteps+1], color=FullSky.COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
+		p1 = self._ax.scatter(ra_rad[nsteps:nsteps+1], dec_rad[nsteps:nsteps+1], color=FullSky._COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
 		# learing right point/corner
-		p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1], color=FullSky.COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
+		p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1], color=FullSky._COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
 		return [p1,p2,p3]
 
 	def plot_border_vectors(self):
@@ -753,7 +776,7 @@ class FullSky:
 		stars_ra_rad = ra_fix(stars_ra_rad)
 		stars_size_pixels = mag_map(stars_mag)
 		# plot
-		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky.COLORS['stars-found'], zorder=5)
+		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky._COLORS['stars-found'], zorder=5)
 		return p1
 
 	def plot_matched_closest_star(self):
@@ -797,9 +820,9 @@ class FullSky:
 			star = matches[0]['bsc5']
 			diameter = mag_map(star.mag, multiplier=4.0)
 			ra_rad = ra_fix(ra_rad)
-			p1 = self._ax.plot(ra_rad, dec_rad, label='Star match', alpha=1.0, color=FullSky.COLORS['match'], linewidth=3.0)
-			p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1:], facecolors='none', edgecolors=FullSky.COLORS['match'], s=diameter)
-			p3 = self._ax.scatter(ra_rad[0:1], dec_rad[0:1], facecolors=FullSky.COLORS['plot-center'], edgecolors=FullSky.COLORS['plot-center'], s=60)
+			p1 = self._ax.plot(ra_rad, dec_rad, label='Star match', alpha=1.0, color=FullSky._COLORS['match'], linewidth=3.0)
+			p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1:], facecolors='none', edgecolors=FullSky._COLORS['match'], s=diameter)
+			p3 = self._ax.scatter(ra_rad[0:1], dec_rad[0:1], facecolors=FullSky._COLORS['plot-center'], edgecolors=FullSky._COLORS['plot-center'], s=60)
 		return [p1, p2, p3]
 		return None
 

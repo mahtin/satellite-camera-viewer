@@ -46,7 +46,7 @@ def viewer(args=None):
 	canvas_for_graph.get_tk_widget().grid(row=0, column=0, padx=5, pady=2, sticky='nsew')
 	canvas_for_graph.draw()
 
-	full_sky.register_canvas(canvas_for_graph)
+	full_sky.pyplot_canvas_area_register(canvas_for_graph)
 
 	# various buttons
 	row = 0
@@ -107,7 +107,7 @@ def viewer(args=None):
 	row += 3
 
 	# reset button
-	UserInterface.reset_everyting_button(adjustments_frame, row, col)
+	UserInterface.reset_everything_button(adjustments_frame, row, col)
 	row += 1
 
 	bottom_frame = ttk.Frame(root, borderwidth=0)	# flat, groove, raised, ridge, solid, or sunken
