@@ -549,13 +549,30 @@ class Cubesat:
 class CubesatViewer:
     """ CubesatViewer """
 
-    def __init__(self, u=None, cubesat=None, image_canvas=None, width:int=800, height:int=800):
-        """ CubesatViewer """
+    def __init__(self, u=None, cubesat=None, image_canvas=None, width:int=800, height:int=800, isometric_view=False, show_axes=False):
+        """
+	CubesatViewer
+
+        :param u: Cubesat U size.
+        :type u: int
+        :param cubesat: prebuilt Cubesat or None
+        :type cubesat: Cubesat
+        :param image_canvas: tk label to paint into
+        :type image_canvas: tk.Label
+        :param width: Width of graphics area.
+        :type width: int
+        :param height: Height of graphics area.
+        :type height: int
+        :param isometric_view: If True, visually representing three-dimensional objects in two dimensions.
+        :type isometric_view: bool
+        :param show_axes: If True, show the pyvista XYZ axis graphic.
+        :type show_axes: bool
+	"""
         if u is not None and cubesat is not None:
             raise ValueError('both u or cubesat value provided') from None
         elif u is not None:
             # we create the Cubesat() here vs externally
-            self._cubesat = Cubesat(u=u, width=width, height=height)
+            self._cubesat = Cubesat(u=u, width=width, height=height, isometric_view=isometric_view, show_axes=show_axes)
         elif cubesat is not None:
             self._cubesat = cubesat
         else:
