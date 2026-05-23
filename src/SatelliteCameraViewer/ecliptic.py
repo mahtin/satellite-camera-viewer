@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import numpy as np
-from astropy.coordinates import SkyCoord, get_body
+from astropy.coordinates import SkyCoord, get_body, EarthLocation
 from astropy.time import Time
 import astropy.units as u
 
@@ -28,16 +28,23 @@ def ecliptic(nsteps:int=180):
 	#return np.array([ra_rad, dec_rad]).T
 	return np.array([ra_rad, dec_rad])
 
-def body(which:str, obs_time:datetime):
+def body(which:str, obs_time:datetime, location=None):
 	"""
 	body - return the position (in RA/DEC) for a specific solar system body (Sun and Moon being the use cases).
 
+	:param which: Which body (sun, moon, etc).
+	:type which: str
 	:param obs_time: Time of observation.
 	:type obs_time: datetime`
+	:param location: Location of observer on the Earth in x,y,z coords.
+	:type location: tuple[float, float, float]
 	:return: The RA/DEC of the body
 	:rtype: tuple(float, float)
 	"""
 	t = Time(obs_time)
+	if location:
+		# Location on Earth, initialized from geocentric coordinates.
+		location = EarthLocation.from_geocentric(location[0], location[1], location[2], unit='km')
 	# Get sun or moon or planets  position in GCRS frame
 	body_gcrs = get_body(which, t)
 	# Transform to ICRS (Equatorial) and extract RA/Dec in degrees
@@ -55,6 +62,16 @@ def sun(obs_time:datetime):
 	"""
 	# now handled by body('sun')
 	return body('sun', obs_time)
+
+def earth_vector(obs_time:datetime, location=None):
+	""" earth_vector """
+	t = Time(obs_time)
+	if location:
+		# Location on Earth, initialized from geocentric coordinates.
+		location = EarthLocation.from_geocentric(location[0], location[1], location[2], unit='km')
+	earth_icrs = get_body('earth', t, location=location).transform_to("icrs")
+	earth_vec = earth_icrs.cartesian.xyz.value
+	return earth_vec
 
 def galactic_plane(nsteps:int=180):
 	"""
@@ -99,16 +116,20 @@ def _main(args=None):
 	""" _main """
 	import math
 	from datetime import timezone, timedelta
+	location = [1000000.0, 1000000.0, 1000000000.0]
+	location = None
 	now_utc = datetime.now(timezone.utc)
-
 	midnight_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 	for d in range(31):
 		new_date = midnight_utc + timedelta(days=d)
+		ev = earth_vector(new_date, location)
+		print(ev)
+		continue
 		illum_percent = moon_illumination(new_date)
-		moon_ra_rad, moon_dec_rad = body('moon', new_date)
+		moon_ra_rad, moon_dec_rad = body('moon', new_date, location)
 		moon_ra_deg = math.degrees(moon_ra_rad)
 		moon_dec_deg = math.degrees(moon_dec_rad)
-		earth_ra_rad, earth_dec_rad = body('earth', new_date)
+		earth_ra_rad, earth_dec_rad = body('earth', new_date, location)
 		earth_ra_deg = math.degrees(earth_ra_rad)
 		earth_dec_deg = math.degrees(earth_dec_rad)
 		print('%3d: %s [%5.1f,%5.1f] [%5.1f,%5.1f] Moon Illumination: %5.1f%% %s' % (
