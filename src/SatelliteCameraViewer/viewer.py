@@ -96,10 +96,9 @@ def viewer(args=None):
 	setup_focal_length(choices_frame)
 	setup_star_magnitude(choices_frame)
 
-	# # slider info
-	# rpy_label = '\nRoll / Pitch / Yaw controls for satellite body and camera.\n'
+	# # slider info text - presently not displayed
 	# col = 0
-	# UserInterface.rpy_label(adjustments_frame, rpy_label, row, col)
+	# UserInterface.rpy_label(adjustments_frame, row, col)
 	# row += 1
 
 	# three sliders for camera yaw/pitch/roll
