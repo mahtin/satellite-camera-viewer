@@ -54,18 +54,34 @@ class CameraIntrinsics:
 
     @property
     def pixel_size_x_mm(self):
-        """ pixel_size_x_mm """
+        """ pixel_size_x_mm - x size of sensor in mm """
         return self.sensor_size_x_mm / self.nx
 
     @property
     def pixel_size_y_mm(self):
-        """ pixel_size_y_mm """
+        """ pixel_size_y_mm - y size of sensor in mm """
         return self.sensor_size_y_mm / self.ny
 
     @property
     def aspect_ratio(self):
-        """ aspect_ratio """
+        """ aspect_ratio - return sensor aspect ratio """
         return self.sensor_size_x_mm / self.sensor_size_y_mm
+
+    @property
+    def fov_x_deg(self):
+        """ fov_x_deg - return x axis FOV in degrees """
+        return 2 * math.degrees(np.arctan((self.sensor_size_x_mm / 2) / self.focal_length_mm))
+
+    @property
+    def fov_y_deg(self):
+        """ fov_y_deg - return y axis FOV in degrees """
+        return 2 * math.degrees(np.arctan((self.sensor_size_y_mm / 2) / self.focal_length_mm))
+
+    @property
+    def fov_diag_deg(self):
+        """ fov_diag_deg - return diagonal axis FOV in degrees """
+        diag = np.sqrt(self.sensor_size_x_mm**2 + self.sensor_size_y_mm**2)
+        return 2 * math.degrees(np.arctan((diag / 2) / self.focal_length_mm))
 
     def _pixel_to_sensor_mm(self, px: float, py: float):
         """
