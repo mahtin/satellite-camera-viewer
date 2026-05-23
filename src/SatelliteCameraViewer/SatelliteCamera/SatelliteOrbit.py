@@ -6,8 +6,10 @@ Satellite orbit from TLE
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from astropy.time import Time
 import numpy as np
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, TEME, GCRS, ITRS, EarthLocation
+import astropy.units as u
 
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
 
@@ -54,14 +56,14 @@ class SatelliteOrbit:
         Returns ECI (Earth-Centered Inertial) position (km) at UTC time obs_time.
         """
         # Convert datetime -> Julian date and fractional Julian date
-        ts = Time(obs_time.replace(tzinfo=timezone.utc))
+        t = Time(obs_time.replace(tzinfo=timezone.utc))
         # e: nonzero for any dates that produced errors, 0 otherwise.
         # r: position vectors in kilometers.
         # v: velocity vectors in kilometers per second.
-        e, r_teme_km, v_teme_km_s = self._sat.sgp4(ts.jd1, ts.jd2)
+        e, r_teme_km, _ = self._sat.sgp4(t.jd1, t.jd2)
         if e != 0:
             raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e]))
-        # r_teme_km, v_teme_km_s are in TEME; for many RA/Dec uses, direction is close enough,
+        # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return np.array(r_teme_km)
 
@@ -70,13 +72,68 @@ class SatelliteOrbit:
         Returns ECI (Earth-Centered Inertial) velocity (km/s) at UTC time obs_time.
         """
         # Convert datetime -> Julian date and fractional Julian date
-        ts = Time(obs_time.replace(tzinfo=timezone.utc))
+        t = Time(obs_time.replace(tzinfo=timezone.utc))
         # e: nonzero for any dates that produced errors, 0 otherwise.
         # r: position vectors in kilometers.
         # v: velocity vectors in kilometers per second.
-        e, r_teme_km, v_teme_km_s = self._sat.sgp4(ts.jd1, ts.jd2)
+        e, _, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
         if e != 0:
             raise RuntimeError('SGP4 error value/code: %s' % (e))
-        # r_teme_km, v_teme_km_s are in TEME; for many RA/Dec uses, direction is close enough,
+        # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return np.array(v_teme_km_s)
+
+    def icrs(self, obs_time: datatime):
+        """ icrs - convert satellite and time into a ICRS value """
+        # ICRS is International Celestial Reference System (ICRS)
+        # Convert datetime -> Julian date and fractional Julian date
+        t = Time(obs_time.replace(tzinfo=timezone.utc))
+        # e: nonzero for any dates that produced errors, 0 otherwise.
+        # r: position vectors in kilometers.
+        # v: velocity vectors in kilometers per second.
+        e, r_teme_km, _ = self._sat.sgp4(t.jd1, t.jd2)
+        if e != 0:
+            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e]))
+        sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
+        return sat_icrs
+
+    def lon_lat_alt(self, obs_time):
+        """
+        Return satellite geodetic lat, lon, alt.
+
+        Parameters
+        ----------
+        obs_time : astropy Time
+            Observation time.
+
+        Returns
+        -------
+        lat_deg : float
+        lon_deg : float
+        alt_km : float
+        """
+
+        sat_eci_km = self.eci_position_vector(obs_time)
+
+        # 1. Wrap ECI vector in a GCRS SkyCoord using CartesianRepresentation
+        sat_gcrs = SkyCoord(
+            x=sat_eci_km[0] * u.km,
+            y=sat_eci_km[1] * u.km,
+            z=sat_eci_km[2] * u.km,
+            frame=GCRS(obstime=obs_time),
+            representation_type='cartesian'
+        )
+
+        # 2. Convert to Earth-fixed International Terrestrial Reference System (ITRS)
+        sat_itrs = sat_gcrs.transform_to(ITRS(obstime=obs_time))
+
+        # 3. Convert to geodetic lat/lon/alt
+        sat_loc = EarthLocation.from_geocentric(sat_itrs.x, sat_itrs.y, sat_itrs.z)
+
+        sat_lon_deg = sat_loc.lon.to_value(u.deg)
+        sat_lat_deg = sat_loc.lat.to_value(u.deg)
+        sat_alt_km = sat_loc.height.to_value(u.km)
+
+        if sat_lon_deg < 0.0:
+            sat_lon_deg += 360.0
+        return sat_lon_deg, sat_lat_deg, sat_alt_km
