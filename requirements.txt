@@ -2,6 +2,7 @@ astropy>=7.2.0
 healpy>=1.19.0
 numpy>=2.4.0
 matplotlib>=3.10.0
+cartopy>=0.25.0
 pyvista>=0.47.0
 requests>=2.33.0
 scipy>=1.17.0
