@@ -1,6 +1,7 @@
 """ NikonD5Camera """
 
 from .SatelliteCamera import SatelliteCamera, SatelliteCameraError
+from .static_tles import static_tles
 
 class NikonD5Camera:
 	""" NikonD5Camera """
@@ -16,7 +17,7 @@ class NikonD5Camera:
 		# This high-performance sensor is designed for professional photography,
 		# offering a maximum resolution of 5568 x 3712 pixels and a native ISO range up to 102,400
 
-		# 1. Define camera
+		# Define camera
 		self._sc = SatelliteCamera(
 			focal_length_mm=focal_length,
 			sensor_size_x_mm = 35.9, sensor_size_y_mm = 23.9,
@@ -25,19 +26,8 @@ class NikonD5Camera:
 		)
 
 		if tle is None:
-			# 3. Define satellite orbit from TLE
-			geos15_tle = [
-				'GOES-15',
-				'1 25338U          26100.31887920 +.00000000 +00000-0 +76021-4 0 00001',
-				'2 25338  98.5125 122.7694 0010246 179.7285 180.3903 14.27125825    07'
-			]
-			iss_tle = [
-				# https://live.ariss.org/iss.txt
-				'ISS (ZARYA)',
-				'1 25544U 98067A   26132.19887560  .00004713  00000-0  93039-4 0  9991',
-				'2 25544  51.6312 118.2489 0007476  49.7974 310.3668 15.49191856566178'
-			]
-			tle = iss_tle
+			# Define satellite orbit from TLE from a static set
+			tle = static_tles[0].as_array
 
 		# map SatelliteCamera() into this class
 		self.now = self._sc.now
@@ -47,6 +37,10 @@ class NikonD5Camera:
 		self.pixel_to_radec = self._sc.pixel_to_radec
 		self.sensor_to_radec = self._sc.sensor_to_radec
 		self.radec_to_pixel = self._sc.radec_to_pixel
+
+		self.earth_center_radec = self._sc.earth_center_radec
+		self.earth_angular_radius = self._sc.earth_angular_radius
+		self.lon_lat_alt = self._sc.lon_lat_alt
 
 		# set everything up
 		self.tle = tle
@@ -73,6 +67,17 @@ class NikonD5Camera:
 		""" tle """
 		self._sc.tle = value
 
+	def find_tle(self, satellite_name):
+		""" find_tle """
+		ii = 0
+		for t in static_tles:
+			if satellite_name == t.name:
+				break
+			ii += 1
+		if ii >= len(static_tles):
+			raise ValueError('%s not in satellites list' % (satellite_name))
+		self.tle = static_tles[ii].as_array
+
 	def camera_fov_radec_box(self):
 		""" camera_fov_radec_box """
 		self._box = self._sc.camera_fov_radec_box()
@@ -95,3 +100,10 @@ class NikonD5Camera:
 		""" camera_fov_border_vectors """
 		polygon = self._sc.camera_fov_border_vectors(border_step=border_step)
 		return [(float(v.ra.value), float(v.dec.value)) for v in polygon]
+
+	def camera_fov_intercept_earth(self, border_step=40):
+		""" camera_fov_intercept_earth """
+		polygon = self._sc.camera_fov_intercept_earth(border_step=border_step)
+		return polygon
+		# TODO 
+		# return [(float(v.ra.value), float(v.dec.value)) for v in polygon]
