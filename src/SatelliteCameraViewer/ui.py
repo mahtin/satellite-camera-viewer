@@ -14,6 +14,7 @@ class UserInterface:
 	_realtime_button = None
 	_focal_length_buttons = {}
 	_star_mag_buttons = {}
+	_satellite_attitude_buttons ={}
 	_rpy_label = None
 	_sat_label = None
 	_photo_label = None
@@ -206,21 +207,40 @@ class UserInterface:
 	# SATELLITE SELECTION
 
 	@classmethod
-	def do_satellite_selection(cls, val, satellites):
+	def do_satellite_selection(cls, val):
 		""" do_satellite_selection """
 		cls._core_code.do_satellite_selection(val)
 
 	@classmethod
-	def satellite_selection(cls, parent, row, col, satellites):
+	def satellite_selection(cls, parent, row, col, satellite_names):
 		""" satellite_selection """
 		l = ttk.Label(parent, text='Satellite Selection', justify='left')
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
+		l.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='nsew')
 		row += 1
-		s_default = satellites[0]
+		s_default = satellite_names[0]
 		cls._satellite_selected = tk.StringVar(value=s_default)
-		drop = tk.OptionMenu(parent, cls._satellite_selected, *satellites, command=lambda val, satellites=satellites: cls.do_satellite_selection(val, satellites))
-		drop.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
+		drop = tk.OptionMenu(parent, cls._satellite_selected, *satellite_names, command=lambda val: cls.do_satellite_selection(val))
+		drop.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='ew')
 		cls._satellite_selection_drop = drop
+
+	# SATELLITE BUTTONS
+
+	@classmethod
+	def do_satellite_attitude(cls, a):
+		""" do_satellite_attitude """
+		cls._core_code.do_satellite_attitude(a)
+
+	@classmethod
+	def satellite_attitude_buttons(cls, parent, row, col, attitude_names):
+		""" satellite_attitude_buttons """
+		a_default = attitude_names[0]
+		cls._satellite_attitude_buttons_variable = tk.IntVar(value=a_default)
+		for a in attitude_names:
+			# radiobutton
+			b = tk.Radiobutton(parent, text=a, variable=cls._satellite_attitude_buttons_variable, justify='left', value=a, command=lambda a=a: cls.do_satellite_attitude(a))
+			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
+			cls._satellite_attitude_buttons[a] = b
+			col += 1
 
 	# ROLL PITCH YAW
 

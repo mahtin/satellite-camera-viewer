@@ -92,7 +92,7 @@ def viewer(args=None):
 
 	def setup_focal_length(parent):
 		focal_length_frame = ttk.Frame(parent, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
-		focal_length_frame.grid(row=0, column=1, padx=2, pady=2, sticky='ne')
+		focal_length_frame.grid(row=0, column=1, padx=2, pady=2, sticky='nsew')
 		focal_lengths = [35, 50, 100, 200, 400]
 		f_row = 0
 		f_col = 0
@@ -103,9 +103,20 @@ def viewer(args=None):
 	setup_star_magnitude(choices_frame)
 
 	# satellite selection
-	satellites = [v.name for v in static_tles]
-	UserInterface.satellite_selection(adjustments_frame, row, col, satellites)
-	row += 2
+	def setup_satellite_selection(parent):
+		""" setup_satellite_selection """
+		satellite_frame = ttk.Frame(parent, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
+		satellite_frame.grid(row=row, column=col, padx=2, pady=2, sticky='nsew')
+		satellite_names = [v.name for v in static_tles]
+		s_row = 0
+		s_col = 0
+		UserInterface.satellite_selection(satellite_frame, s_row, s_col, satellite_names)
+		s_row += 2
+		attitude_names = ['vv', 'nadir', 'ground', 'star']
+		UserInterface.satellite_attitude_buttons(satellite_frame, s_row, s_col, attitude_names)
+
+	setup_satellite_selection(adjustments_frame)
+	row += 1
 
 	# # slider info text - presently not displayed
 	# col = 0

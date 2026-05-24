@@ -121,6 +121,7 @@ class CoreCode:
 		self._switch_accelerate_time = False
 		self._switch_match_stars = False
 
+		self._pointing = 'vv'
 		self._stars_plot = None
 
 		mag = 5.0
@@ -225,10 +226,20 @@ class CoreCode:
 		self.plot_starfield_centerline()
 
 		# adjust camera/satellite attitude
-		point_satellite_only = False
-		if point_satellite_only:
+		if self._pointing == 'vv':
+			# follow satellite path (it's velocity vector)
 			self.nikon.camera.choose_attitude(
-				'arbitrary',
+				self._pointing,
+				# XYZ for satellite == set by vv (velocity vector)
+				# XYZ for camera == roll, pitch, yaw
+				# but cubesat implements the camera on the +Y side - TODO
+				cam_yaw_deg=UserInterface.rpy_values_deg['roll'],
+				cam_pitch_deg=UserInterface.rpy_values_deg['pitch'],
+				cam_roll_deg=UserInterface.rpy_values_deg['yaw'],
+			)
+		else:
+			self.nikon.camera.choose_attitude(
+				self._pointing,
 				# XYZ for satellite == roll, pitch, yaw
 				sat_yaw_deg=UserInterface.rpy_values_deg['roll'],
 				sat_pitch_deg=UserInterface.rpy_values_deg['pitch'],
@@ -237,19 +248,6 @@ class CoreCode:
 				cam_yaw_deg=0.0,
 				cam_pitch_deg=90.0,	# Cubesat implements the camera on the +Y side
 				cam_roll_deg=0.0,
-			)
-		else:
-			pointing = 'nadir'
-			pointing = 'vv'
-			# follow satellite path (it's velocity vector)
-			self.nikon.camera.choose_attitude(
-				pointing,
-				# XYZ for satellite == set by vv (velocity vector)
-				# XYZ for camera == roll, pitch, yaw
-				# but cubesat implements the camera on the +Y side - TODO
-				cam_yaw_deg=UserInterface.rpy_values_deg['roll'],
-				cam_pitch_deg=UserInterface.rpy_values_deg['pitch'],
-				cam_roll_deg=UserInterface.rpy_values_deg['yaw'],
 			)
 
 		# other forms of pointing - yet to be coded
@@ -754,6 +752,14 @@ class CoreCode:
 		self.plot_starfield_centerline_clear()
 		self.plot_earth_dot_clear()
 		# refresh everything
+		self.update_starfield_and_more()
+		self.draw()
+
+	def do_satellite_attitude(self, val):
+		""" do_satellite_attitude """
+		print('CORE: do_satellite_attitude:', val)
+		self._pointing = val
+		self.plot_starfield_centerline_clear()
 		self.update_starfield_and_more()
 		self.draw()
 
