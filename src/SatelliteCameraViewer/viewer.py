@@ -1,11 +1,17 @@
 """ viewer """
 
 import sys
+import warnings
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from .full_sky import FullSky, UserInterface
+from .core import CoreCode
+from .ui import UserInterface
+from .static_tles import static_tles
+
+# Turn all RuntimeWarnings into exceptions
+warnings.filterwarnings('error', category=RuntimeWarning)
 
 def viewer(args=None):
 	"""
@@ -21,32 +27,32 @@ def viewer(args=None):
 
 	# --- Matplotlib figure ---
 	font = tk.font.nametofont("TkDefaultFont").actual()
-	full_sky = FullSky(root=root, font_family=font['family'], font_size=font['size'])
+	core_code = CoreCode(root=root, font_family=font['family'], font_size=font['size'])
 
 	# {'family': '.AppleSystemUIFont', 'size': 13, 'weight': 'normal', 'slant': 'roman', 'underline': 0, 'overstrike': 0}
 
 	root.title('Satellite Camera Viewer')
 
-	UserInterface.register_full_sky(full_sky)
+	UserInterface.register_core_code(core_code)
 
 	UserInterface.title_label(root, 'Satellite Camera Viewer')
 
 	top_frame = ttk.Frame(root, borderwidth=0, relief='solid')		# flat, groove, raised, ridge, solid, or sunken
 	top_frame.pack(padx=5, pady=2, anchor='n')
 
-	# a place for the graph
-	graph_frame = ttk.Frame(top_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
-	graph_frame.grid(row=0, column=0, padx=5, pady=2, sticky='n')
+	# a place for the starfield graph
+	starfield_graph_frame = ttk.Frame(top_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
+	starfield_graph_frame.grid(row=0, column=0, padx=5, pady=2, sticky='n')
 
 	adjustments_frame = ttk.Frame(top_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
 	adjustments_frame.grid(row=0, column=1, padx=5, pady=5, sticky='n')
 
-	# now start the graphing!
-	canvas_for_graph = FigureCanvasTkAgg(full_sky.fig, master=graph_frame)
-	canvas_for_graph.get_tk_widget().grid(row=0, column=0, padx=5, pady=2, sticky='nsew')
-	canvas_for_graph.draw()
+	# now start the graphing starfield!
+	canvas_for_starfield_graph = FigureCanvasTkAgg(core_code.starfield_fig, master=starfield_graph_frame)
+	canvas_for_starfield_graph.get_tk_widget().grid(row=0, column=0, padx=5, pady=2, sticky='nsew')
+	canvas_for_starfield_graph.draw()
 
-	full_sky.pyplot_canvas_area_register(canvas_for_graph)
+	core_code.pyplot_starfield_canvas_area_register(canvas_for_starfield_graph)
 
 	# various buttons
 	row = 0
@@ -96,6 +102,11 @@ def viewer(args=None):
 	setup_focal_length(choices_frame)
 	setup_star_magnitude(choices_frame)
 
+	# satellite selection
+	satellites = [v.name for v in static_tles]
+	UserInterface.satellite_selection(adjustments_frame, row, col, satellites)
+	row += 2
+
 	# # slider info text - presently not displayed
 	# col = 0
 	# UserInterface.rpy_label(adjustments_frame, row, col)
@@ -116,29 +127,40 @@ def viewer(args=None):
 	col = 0
 	info_frame = ttk.Frame(bottom_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
 	info_frame.grid(padx=5, pady=2, row=row, column=col, sticky='nsew')
+	col += 1
 
-	row = 0
-	col = 1
 	photo_frame = ttk.Frame(bottom_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
 	photo_frame.grid(padx=5, pady=2, row=row, column=col, sticky='nsew')
+	col += 1
 
-	row = 0
-	col = 2
+	earth_graph_frame = ttk.Frame(bottom_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
+	earth_graph_frame.grid(row=row, column=col, padx=5, pady=2, sticky='n')
+	col += 1
+
 	sat_frame = ttk.Frame(bottom_frame, borderwidth=1, relief='solid')	# flat, groove, raised, ridge, solid, or sunken
 	sat_frame.grid(padx=5, pady=2, row=row, column=col, sticky='nsew')
 
-	nx = full_sky.nikon.camera.nx
-	ny = full_sky.nikon.camera.ny
+	nx = core_code.nikon.camera.nx
+	ny = core_code.nikon.camera.ny
 	h = 200
 	w = int(h * nx/ny)
 
-	#  place photo image here ...
+	# place photo image here ...
 	col = 0
 	row = 0
 	photo_label = UserInterface.photo_label(photo_frame, row, col, width=w, height=h)
 	photo_label.grid(row=0, column=0, padx=5, pady=2, sticky='ne')
 
-	full_sky.camera_image_register(label=photo_label, nx=nx, ny=ny, w=w, h=h)
+	core_code.camera_image_register(label=photo_label, nx=nx, ny=ny, w=w, h=h)
+
+	# place for an earth map ...
+	col = 0
+	row = 0
+	canvas_for_earth_graph = FigureCanvasTkAgg(core_code.earth_fig, master=earth_graph_frame)
+	canvas_for_earth_graph.get_tk_widget().grid(row=row, column=row, padx=5, pady=2, sticky='nsew')
+	canvas_for_earth_graph.draw()
+
+	core_code.pyplot_earth_canvas_area_register(canvas_for_earth_graph)
 
 	# key values for cubesat display
 	u = 1
@@ -156,7 +178,7 @@ def viewer(args=None):
 	# build the viewer for the cubesat 3D model
 	# cubesat_viewer = CubesatViewer(image_canvas=sat_label, cubesat=cubesat_model, width=w, height=h)
 
-	full_sky.cubesat_viewer_register(u=u, label=sat_label, w=w, h=h)
+	core_code.cubesat_viewer_register(u=u, label=sat_label, w=w, h=h)
 
 	col = 0
 	row = 0
@@ -172,7 +194,7 @@ def viewer(args=None):
 	UserInterface.misc_text_box(info_frame, row, col)
 
 	# prime everything by runing timer expiry code
-	full_sky.timer_went_off()
+	core_code.timer_went_off()
 
 	# Bring to front after a small delay to allow for app init
 	def center_and_delayed_bring_to_front_and_make_focus(root):

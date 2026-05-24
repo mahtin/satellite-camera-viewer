@@ -1,13 +1,13 @@
-""" camera_display.py """
+""" core """
 
 import math
-import warnings
-
 import tkinter as tk
 from tkinter import ttk
+
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.collections import PathCollection
+import cartopy.crs as ccrs
 from astropy.coordinates import SkyCoord
 
 from .SatelliteCamera import SatelliteCamera, SatelliteCameraError
@@ -16,6 +16,7 @@ from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
 
+from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
 from .ecliptic import ecliptic, body, galactic_plane, moon_illumination
 from .constellation_database import ConstellationDatabase
@@ -26,278 +27,9 @@ from .stars_in_polygon_icrs import stars_in_polygon_icrs
 # .../matplotlib/projections/geo.py:397: RuntimeWarning: invalid value encountered in arcsin
 # theta = np.arcsin(y / np.sqrt(2))
 
-# Turn all RuntimeWarnings into exceptions
-warnings.filterwarnings('error', category=RuntimeWarning)
-
-class UserInterface:
-	""" UserInterface """
-
-	_full_sky = None
-	_title_label = None
-	_camera_info_box = None
-	_star_found_text_box = None
-	_misc_text_box = None
-	_realtime_button = None
-	_focal_length_buttons = {}
-	_star_mag_buttons = {}
-	_rpy_label = None
-	_sat_label = None
-	_photo_label = None
-	_rpy_sliders = {}
-
-	rpy_values_deg = {
-		'roll': 0.0,
-		'pitch': 0.0,
-		'yaw': 0.0
-	}
-	""" rpy_values_deg - values of Roll, Pitch, and Yaw sliders. """
-
-	_cam_slider_rpy_text = {
-		'roll': 'Roll (X) side-to-side',
-		'pitch': 'Pitch (Y) nose-up-down',
-		'yaw': 'Yaw((Z) left-right'
-	}
-
-	@classmethod
-	def register_full_sky(cls, f):
-		""" register_full_sky """
-		cls._full_sky = f
-
-	# TITLE
-
-	@classmethod
-	def title_label(cls, parent, text):
-		""" title_label """
-		l = ttk.Label(parent, text=text, justify='left', font=('', 24, 'bold'))
-		l.pack(padx=5, pady=2)
-		cls._title_label = l
-
-	# INFO TEXT BOXES
-
-	@classmethod
-	def camera_info_box(cls, parent, row, col):
-		""" camera_info_box """
-		t = tk.Text(parent, width=80, height=3, state='disabled', wrap=tk.WORD)
-		t.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._camera_info_box = t
-
-	@classmethod
-	def misc_text_box(cls, parent, row, col):
-		""" misc_text_box """
-		t = tk.Text(parent, width=80, height=3, state='disabled', wrap=tk.WORD)
-		t.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._misc_text_box = t
-
-	@classmethod
-	def star_found_text_box(cls, parent, row, col):
-		""" star_found_text_box """
-		t = tk.Text(parent, width=80, height=3, state='disabled', wrap=tk.WORD)
-		t.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._star_found_text_box = t
-
-	@classmethod
-	def camera_info(cls, text):
-		""" camera_info """
-		cls._camera_info_box.config(state='normal')
-		cls._camera_info_box.delete('1.0', tk.END)
-		cls._camera_info_box.insert(tk.END, '%s' % (text))
-		cls._camera_info_box.config(state='disabled')
-
-	@classmethod
-	def star_found_text(cls, text):
-		""" star_found_text """
-		cls._star_found_text_box.config(state='normal')
-		cls._star_found_text_box.delete('1.0', tk.END)
-		cls._star_found_text_box.insert(tk.END, '%s' % (text))
-		cls._star_found_text_box.config(state='disabled')
-
-	@classmethod
-	def misc_text(cls, text):
-		""" misc_text """
-		cls._misc_text_box.config(state='normal')
-		cls._misc_text_box.delete('1.0', tk.END)
-		cls._misc_text_box.insert(tk.END, '%s' % (text))
-		cls._misc_text_box.config(state='disabled')
-
-	# BUTTONS
-
-	@classmethod
-	def do_realtime(cls, value):
-		""" do_realtime """
-		cls._full_sky.do_realtime(value)
-
-	@classmethod
-	def realtime_button(cls, parent, row, col):
-		""" realtime_button """
-		cls._realtime_state = tk.BooleanVar()
-		b = ttk.Checkbutton(parent, text='Accelerate?', variable=cls._realtime_state, command=lambda value=cls._realtime_state: cls.do_realtime(value))
-		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-		cls._realtime_button = b
-
-	@classmethod
-	def realtime_button_set(cls, value):
-		""" realtime_button_set """
-		cls._realtime_state.set(value)
-
-	@classmethod
-	def do_stars(cls, value):
-		""" do_stars """
-		cls._full_sky.do_stars(value)
-
-	@classmethod
-	def stars_button(cls, parent, row, col):
-		""" stars_button """
-		cls._stars_state = tk.BooleanVar()
-		b = ttk.Checkbutton(parent, text='Stars?', variable=cls._stars_state, command=lambda value=cls._stars_state: cls.do_stars(value))
-		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-		cls._stars_button = b
-
-	@classmethod
-	def stars_button_set(cls, value):
-		""" set_stars_button """
-		cls._stars_state.set(value)
-
-	@classmethod
-	def do_match_stars(cls, value):
-		""" do_match_stars """
-		cls._full_sky.do_match_stars(value)
-
-	@classmethod
-	def match_stars_button(cls, parent, row, col):
-		""" match_stars_button """
-		cls._match_stars_state = tk.BooleanVar()
-		b = ttk.Checkbutton(parent, text='Match stars?', variable=cls._match_stars_state, command=lambda value=cls._match_stars_state: cls.do_match_stars(value))
-		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-		cls._match_stars_button = b
-
-	@classmethod
-	def match_stars_button_set(cls, value):
-		cls._match_stars_state.set(value)
-
-	# STAR MAGNITUDE
-
-	@classmethod
-	def do_mag(cls, value):
-		""" do_mag """
-		cls._full_sky.do_mag(value)
-
-	@classmethod
-	def star_mag_buttons(cls, parent, row, col, mags):
-		""" star_mag_buttons """
-		l = ttk.Label(parent, text='Star Magnitude', justify='left')
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		row += 1
-		m_default = mags[2]
-		cls._star_mag_buttons_variable = tk.DoubleVar(value=m_default)
-		for m in mags:
-			# radiobutton
-			b = tk.Radiobutton(parent, text='%.1f' % m, variable=cls._star_mag_buttons_variable, justify='left', value=m, command=lambda value=m: cls.do_mag(value))
-			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-			cls._star_mag_buttons[m] = b
-			row += 1
-
-	@classmethod
-	def star_mag_buttons_set(cls, mag=5.0):
-		""" star_mag_buttons_set """
-		cls._star_mag_buttons_variable.set(mag)
-
-	# FOCAL LENGTH
-
-	@classmethod
-	def do_focal_length(cls, f):
-		""" do_focal_length """
-		cls._full_sky.do_focal_length(f)
-
-	@classmethod
-	def focal_length_buttons(cls, parent, row, col, focal_lengths):
-		""" focal_length_buttons """
-		l = ttk.Label(parent, text='Focal Length', justify='left')
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		row += 1
-		f_default = focal_lengths[1]
-		cls._focal_length_buttons_variable = tk.IntVar(value=f_default)
-		for f in focal_lengths:
-			# radiobutton
-			b = tk.Radiobutton(parent, text='%d mm' % f, variable=cls._focal_length_buttons_variable, justify='left', value=f, command=lambda f=f: cls.do_focal_length(f))
-			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-			cls._focal_length_buttons[f] = b
-			row += 1
-
-	@classmethod
-	def focal_length_buttons_set(cls, focal_length=50):
-		""" focal_length_set """
-		cls._focal_length_buttons_variable.set(focal_length)
-
-	# ROLL PITCH YAW
-
-	@classmethod
-	def rpy_label(cls, parent, text, row, col):
-		""" rpy_label """
-		l = ttk.Label(parent, text=text, justify='left', wraplength=160)
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		cls._rpy_label = l
-
-	@classmethod
-	def do_rpy(cls, val, k):
-		""" do_rpy """
-		cls._full_sky.do_rpy(val, k)
-
-	@classmethod
-	def rpy_sliders(cls, parent, row, col):
-		""" rpy_sliders """
-		cls.v_sliders = {}
-		for k,v in cls.rpy_values_deg.items():
-			cls.v_sliders[k] = tk.IntVar(value=int(v))
-			s = tk.Scale(parent, label=cls._cam_slider_rpy_text[k], variable=cls.v_sliders[k], from_=-90, to=90, resolution=10.0, showvalue=True,
-				orient='horizontal', command=lambda val,k=k: cls.do_rpy(val, k))
-			s.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-			cls._rpy_sliders[k] = s
-			row += 1
-
-	# 3D cubesat image
-
-	@classmethod
-	def sat_label(cls, parent, row, col, width=300, height=300):
-		""" sat_label """
-		l = tk.Label(parent, bg='whitesmoke', borderwidth=0, width=width, height=height)
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		cls._sat_label = l
-		return cls._sat_label
-
-	# photo image
-
-	@classmethod
-	def photo_label(cls, parent, row, col, width=300, height=300):
-		""" photo_label """
-		l = tk.Label(parent, bg='cyan', borderwidth=0, width=width, height=height)
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		cls._photo_label = l
-		# cls._image150x150(width, height)
-		return cls._photo_label
-
-	# RESET BUTTON
-
-	@classmethod
-	def do_reset(cls):
-		""" do_reset """
-		cls._full_sky.do_reset()
-
-	@classmethod
-	def reset_everything_button(cls, parent, row, col):
-		""" reset_everything_button """
-		font = tk.font.nametofont('TkDefaultFont').actual()
-		style = ttk.Style()
-		style.configure('Reset.TButton',
-			foreground=FullSky._COLORS['reset-color'],
-			font=(font['family'], font['size'], 'bold'),
-		)
-		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=lambda: cls.do_reset())
-		b.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._reset_everything_button = b
-
-class FullSky:
+class CoreCode:
 	"""
-	FullSky - the core drawing code for the stars - also includes logic for the user interface
+	CoreCode - the core drawing code for the stars - also includes logic for the user interface
 
 	:param root: The tk root value.
 	:type root: Tk
@@ -316,8 +48,11 @@ class FullSky:
 		'sky-label': 'black',
 		'sky-ecliptic': 'dimgrey',
 		'sky-galactic': 'saddlebrown',
-		'reset-color': 'lightcoral',
-		'reset-text': 'cornsilk',
+		'earth-facecolor': 'whitesmoke',
+		'earth-coastline': 'lightgrey',
+		'earth-grid': 'lightgrey',
+		'earth-marker': 'red',
+		'earth': 'red',
 		'plot-center': 'darkgreen',
 		'plot-corners': 'darkblue',
 		'plot-polygon': 'orange',
@@ -334,12 +69,9 @@ class FullSky:
 
 	_verbose = False
 
-	_switch_accelerate_time = False
-	_switch_match_stars = False
-
 	def __init__(self, root=None, font_family='san-serif', font_size=10):
 		"""
-		FullSky - the core drawing code for the stars - also includes logic for the user interface
+		CoreCode - the core drawing code for the stars - also includes logic for the user interface
 
 		:param root: The tk root value.
 		:type root: Tk
@@ -349,7 +81,7 @@ class FullSky:
 		:type font_size: str
 		"""
 		if root is None:
-			raise ValueError('FullSky() needs root value')
+			raise ValueError('CoreCode() needs root value')
 		self._root = root
 
 		self._timer_id = None
@@ -357,12 +89,19 @@ class FullSky:
 		self._font_family = font_family
 		self._font_size = font_size
 
-		self._create_subplot()
-		self._paint_axis()
+		self._create_starfield_subplot()
+		self._paint_starfield_axis()
+
+		self._create_earth_subplot()
+		self._paint_earth_axis()
 
 		self._nikon = NikonD5Camera()
 
-		self._canvas = None
+		self._starfield_canvas = None
+		self._earth_canvas = None
+
+		self._sun = None
+		self._moon = None
 
 		self.plot_ecliptic()
 		self.plot_sun_moon()
@@ -371,8 +110,16 @@ class FullSky:
 			self.plot_galactic_plane()
 
 		self._items_plotted = []
-		self._center_line_plot = None
-		self._center_line_data = None
+
+		self._starfield_centerline_plot = None
+		self._starfield_centerline_data = None
+
+		self._earth_track = []
+		self._earth_track_plot = None
+		self._earth_track_mark = None
+
+		self._switch_accelerate_time = False
+		self._switch_match_stars = False
 
 		self._stars_plot = None
 
@@ -391,37 +138,41 @@ class FullSky:
 		"""
 		self._ci = DoCameraImage(label=label, nx=nx, ny=ny, w=w, h=h)
 
-	def pyplot_canvas_area_register(self, canvas):
-		""" pyplot_canvas_area_register """
-		self._canvas = canvas
+	def pyplot_starfield_canvas_area_register(self, canvas):
+		""" pyplot_starfield_canvas_area_register """
+		self._starfield_canvas = canvas
 
-	def _create_subplot(self):
-		""" _create_subplot - core logic to build the pyplot area. """
+	def pyplot_earth_canvas_area_register(self, canvas):
+		""" pyplot_starfield_canvas_area_register """
+		self._earth_canvas = canvas
+
+	def _create_starfield_subplot(self):
+		""" _create_starfield_subplot - core logic to build the pyplot area. """
 		# plt.style.use('classic')
 		# plt.rcParams['toolbar'] = 'None'	# was 'toolbar2' but we don't need the controls
-		self._fig = Figure(figsize=(14.0, 7.04), dpi=65, layout='tight')
-		self._fig.patch.set_linewidth(0)
-		self._fig.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
-		self._fig.set_layout_engine(layout='tight')
-		self._fig.patch.set_facecolor(FullSky._COLORS['fig-facecolor'])
+		self._starfield_fig = Figure(figsize=(14.0, 7.04), dpi=65, layout='tight')
+		self._starfield_fig.patch.set_linewidth(0)
+		self._starfield_fig.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
+		self._starfield_fig.set_layout_engine(layout='tight')
+		self._starfield_fig.patch.set_facecolor(self._COLORS['fig-facecolor'])
 		# projection='mollweide' is an equal-area, pseudocylindrical projection where parallels are straight lines.
-		self._ax = self._fig.add_subplot(1, 1, 1, projection='mollweide')
-		self._ax.set_facecolor(FullSky._COLORS['sky-facecolor'])
+		self._starfield_ax = self._starfield_fig.add_subplot(1, 1, 1, projection='mollweide')
+		self._starfield_ax.set_facecolor(self._COLORS['sky-facecolor'])
 
-	def _paint_axis(self):
-		""" _paint_axis - x and y axis (which is really ra and dec). """
+	def _paint_starfield_axis(self):
+		""" _paint_starfield_axis - x and y axis (which is really ra and dec). """
 		# grid lines
-		self._ax.grid(color=FullSky._COLORS['sky-grid'], alpha=0.5)
+		self._starfield_ax.grid(color=self._COLORS['sky-grid'], alpha=0.5)
 		# x axis (ra)
 		# 24 hours is 360 degrees - one hour is 15 degrees. Mark every other hour (i.e 30 degrees)
 		# note that this projection is -180 to +180 - we need to handle that later on - for now we simply change the lables
 		# When dealing with astronomical coordinates the right ascension increases eastward, located conventionally left on celestial charts.
 		x_values = [math.radians(v) for v in range(-180,180+30,30)]
 		x_labels = ['', '10h','8h','6h','4h','2h','0h','22h','20h','18h','16h','14h', '']
-		self._ax.set_xticks(x_values, x_labels, rotation='vertical', color=FullSky._COLORS['sky-axis'], alpha=0.5,
+		self._starfield_ax.set_xticks(x_values, x_labels, rotation='vertical', color=self._COLORS['sky-axis'], alpha=0.5,
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
 		)
-		self._ax.set_xlabel('Right Ascension (hours)', color=FullSky._COLORS['sky-label'],
+		self._starfield_ax.set_xlabel('Right Ascension (hours)', color=self._COLORS['sky-label'],
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'top'}
 		)
 
@@ -431,15 +182,35 @@ class FullSky:
 		# remove 90 and 80 and -80 and -90 (as they don't draw correctly - and aren't needed)
 		for ii in [0, 1, -1, -2]:
 			y_labels[ii] = ''
-		self._ax.set_yticks(y_values, y_labels, color=FullSky._COLORS['sky-axis'],
+		self._starfield_ax.set_yticks(y_values, y_labels, color=self._COLORS['sky-axis'],
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
 		)
-		self._ax.set_ylabel('Declination (degrees)', color=FullSky._COLORS['sky-label'],
+		self._starfield_ax.set_ylabel('Declination (degrees)', color=self._COLORS['sky-label'],
 			fontdict={'fontsize':self._font_size, 'horizontalalignment':'right', 'verticalalignment':'center'}
 		)
 
-	def update_full_sky(self):
-		""" update_full_sky - primary logic to redraw the sky plot. """
+	def _create_earth_subplot(self):
+		""" _create_earth_subplot - core logic to build the pyplot area. """
+		self._earth_fig = Figure(figsize=(3.0, 3.00), dpi=65, layout='tight')
+		self._earth_fig.patch.set_linewidth(0)
+		self._earth_fig.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
+		self._earth_fig.set_layout_engine(layout='tight')
+		self._earth_fig.patch.set_facecolor(self._COLORS['fig-facecolor'])
+		self._earth_ax = self._earth_fig.add_subplot(1, 1, 1, projection=ccrs.Robinson())
+		self._earth_ax.set_facecolor(self._COLORS['earth-facecolor'])
+
+	def _paint_earth_axis(self):
+		""" _paint_earth_axis - x and y axis. """
+		#self._earth_ax.set_extent([-180, 180, -90, 90], crs=projection())
+		self._earth_ax.set_global()
+		self._earth_ax.coastlines(resolution='110m', color=self._COLORS['earth-coastline'])
+		self._earth_ax.grid(color=self._COLORS['earth-grid'], alpha=0.5)
+		#self._earth_ax.gridlines(draw_labels=True)
+		# self._earth_ax.get_xaxis().set_visible(False)
+		# self._earth_ax.get_yaxis().set_visible(False)
+
+	def update_starfield_and_more(self):
+		""" update_starfield_and_more - primary logic to redraw the sky plot. """
 		# Key Details for Mollweide Projection in Matplotlib:
 		# Input Data Formats: Data must be in radians, not degrees, for proper positioning
 		# X-Axis (Longitude): Ranges from -PI to +PI
@@ -450,15 +221,38 @@ class FullSky:
 		# clean up from previous run
 		self.items_plotted_clear()
 		# center
-		self.plot_center_data()
-		self.plot_center()
+		self.plot_starfield_centerline_data()
+		self.plot_starfield_centerline()
+
 		# adjust camera/satellite attitude
-		self.nikon.camera.choose_attitude(
-			'vv',
-			cam_yaw_deg=UserInterface.rpy_values_deg['roll'],
-			cam_pitch_deg=UserInterface.rpy_values_deg['pitch'],
-			cam_roll_deg=UserInterface.rpy_values_deg['yaw']
-		)
+		point_satellite_only = False
+		if point_satellite_only:
+			self.nikon.camera.choose_attitude(
+				'arbitrary',
+				# XYZ for satellite == roll, pitch, yaw
+				sat_yaw_deg=UserInterface.rpy_values_deg['roll'],
+				sat_pitch_deg=UserInterface.rpy_values_deg['pitch'],
+				sat_roll_deg=UserInterface.rpy_values_deg['yaw'],
+				# XYZ for camera == roll, pitch, yaw
+				cam_yaw_deg=0.0,
+				cam_pitch_deg=90.0,	# Cubesat implements the camera on the +Y side
+				cam_roll_deg=0.0,
+			)
+		else:
+			pointing = 'nadir'
+			pointing = 'vv'
+			# follow satellite path (it's velocity vector)
+			self.nikon.camera.choose_attitude(
+				pointing,
+				# XYZ for satellite == set by vv (velocity vector)
+				# XYZ for camera == roll, pitch, yaw
+				# but cubesat implements the camera on the +Y side - TODO
+				cam_yaw_deg=UserInterface.rpy_values_deg['roll'],
+				cam_pitch_deg=UserInterface.rpy_values_deg['pitch'],
+				cam_roll_deg=UserInterface.rpy_values_deg['yaw'],
+			)
+
+		# other forms of pointing - yet to be coded
 		#self.nikon.camera.choose_attitude('star', star_ra_deg=100, star_dec_deg=70)
 		#self.nikon.camera.choose_attitude('nadir')
 		#self.nikon.camera.choose_attitude('ground', earth_lat_deg=36.974117, earth_lon_deg=-122.030792)
@@ -487,24 +281,48 @@ class FullSky:
 		p = self.plot_pixels(nsteps=1)
 		self.items_plotted_add(p)
 
+		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec()
+		earth_radius_deg = self.nikon.earth_angular_radius()
+
 		if self._switch_match_stars:
+			# Star chart
 			p = self.plot_matched_closest_star()
 			if p:
 				self.items_plotted_add(p)
+			# Camera
 			p = self.camera_image_matched_stars()
 			if p:
 				self.items_plotted_add(p)
+			# Earth intercept (maybe)
+
+			earth_ra_rad = math.radians(float(earth_ra_deg))
+			earth_dec_rad = math.radians(float(earth_dec_deg))
+			earth_ra_rad = ra_fix([earth_ra_rad])[0]
+			# s = ... TODO
+			s = 1.0 * self._starfield_fig.dpi
+			_ = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
+			try:
+				earth_points_deg = self.nikon.camera_fov_intercept_earth()
+				print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
+				self.plot_earth_outline(earth_points_deg)
+				# pixels = self.nikon.camera_fov_intercept_earth()
+				# print('camera_fov_intercept_earth():', 'pixels =', pixels)
+			except SatelliteCameraError as e:
+				print('camera_fov_intercept_earth():', e)
+
+		# Lat, long & altitude of satellite
+		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.lon_lat_alt()
+		self.plot_earth_dot(sat_lon_deg, sat_lat_deg)
 
 		# build return string - showing camera info
 		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()
 
-		s = '%s\n%s' % (self.nikon.obs_time.strftime('%Y-%m-%d %H:%M:%S %Z'), str(self.nikon.camera))
-		s += '\n%.1f deg width by %.1f deg height |' % (angular_width, angular_height)
+		s = ''
+		s += '[%5.1f,%5.1f] %5.1f Km | %s\n' % (sat_lon_deg, sat_lat_deg, sat_alt_km, self.nikon.obs_time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+		s += '%s\n' % (str(self.nikon.camera))
+		s += '[%5.1f,%5.1f] @ %5.1f Km radius | %.1f deg width by %.1f deg height |' % (earth_ra_deg, earth_dec_deg, earth_radius_deg, angular_width, angular_height)
 		s += ' %.1f%% of whole sky' % (100.0*solid_angle_steradians/(4*math.pi))
 		UserInterface.camera_info(s)
-
-	_sun = None
-	_moon = None
 
 	def plot_sun_moon(self):
 		""" plot_sun_moon - add sun and moon to the sky plot. """
@@ -514,7 +332,7 @@ class FullSky:
 		if self._moon:
 			self._moon.set_offsets([[moon_ra_rad, moon_dec_rad]])
 		else:
-			self._moon = self._ax.scatter([moon_ra_rad], [moon_dec_rad], color=FullSky._COLORS['moon'], alpha=1.0, s=50.0)
+			self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
 
 		sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time)
 		sun_ra_rad = ra_fix([sun_ra_rad])[0]
@@ -522,7 +340,14 @@ class FullSky:
 		if self._sun:
 			self._sun.set_offsets([[sun_ra_rad, sun_dec_rad]])
 		else:
-			self._sun = self._ax.scatter([sun_ra_rad], [sun_dec_rad], color=FullSky._COLORS['sun'], alpha=1.0, s=300.0)
+			self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=1.0, s=300.0)
+
+	def plot_earth_outline(self, earth_points_deg):
+		""" plot_earth_outline - add outline of earth to the sky plot. """
+		ra_rad = [math.radians(float(v[0])) for v in earth_points_deg]
+		dec_rad = [math.radians(float(v[1])) for v in earth_points_deg]
+		ra_rad = ra_fix(ra_rad)
+		return self._starfield_ax.plot(ra_rad, dec_rad, label='Earth Outline', alpha=0.25, color=self._COLORS['earth'], linewidth=4.0)
 
 	def plot_galactic_plane(self):
 		""" plot_galactic_plane - add galactic plan line to the sky plot. """
@@ -530,7 +355,7 @@ class FullSky:
 		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
 		for ra_rad, dec_rad in segments:
 			ra_rad = ra_fix(ra_rad)
-			self._ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.2, color=FullSky._COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
+			self._starfield_ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.25, color=self._COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
 
 	def plot_ecliptic(self):
 		""" plot_ecliptic - add ecliptic line to the sky plot """
@@ -538,7 +363,7 @@ class FullSky:
 		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
 		for ra_rad, dec_rad in segments:
 			ra_rad = ra_fix(ra_rad)
-			self._ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=FullSky._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
+			self._starfield_ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=self._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
 
 	def plot_stars(self):
 		""" plot_star - add all the stars to the sky plot """
@@ -551,13 +376,37 @@ class FullSky:
 		const_ra_rad = ra_fix(const_ra_rad)
 		const_size_pixels = mag_map(const_mag)
 
-		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky._COLORS['stars'], zorder=5)
-		p2 = self._ax.scatter(const_ra_rad, const_dec_rad, s=const_size_pixels, alpha=1, color=FullSky._COLORS['constellations'], zorder=5)
+		p1 = self._starfield_ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=self._COLORS['stars'], zorder=5)
+		p2 = self._starfield_ax.scatter(const_ra_rad, const_dec_rad, s=const_size_pixels, alpha=1, color=self._COLORS['constellations'], zorder=5)
 		return p1, p2
+
+	def plot_earth_dot(self, lon_deg:float, lat_deg:float):
+		""" plot_earth_dot """
+		# We significantly round down because the earth map is tiny on the screen
+		lon_deg = float(lon_deg.round(1))
+		lat_deg = float(lat_deg.round(1))
+		self._earth_track = self._earth_track[-63:]
+		if len(self._earth_track) == 0 or self._earth_track[-1] != (lon_deg, lat_deg):
+			self._earth_track.append((lon_deg, lat_deg))
+
+		if self._earth_track_plot is None:
+			self._earth_track_plot = self._earth_ax.plot(self._earth_track, color=self._COLORS['earth-marker'], alpha=0.5, linewidth=2.0, transform=ccrs.Geodetic())
+			self._earth_track_mark = self._earth_ax.plot(lon_deg, lat_deg, color=self._COLORS['earth-marker'], alpha=1.0, marker='o', markersize=6, transform=ccrs.Geodetic())
+		else:
+			self._earth_track_plot[0].set_data([v[0] for v in self._earth_track], [v[1] for v in self._earth_track])
+			self._earth_track_mark[0].set_data([lon_deg], [lat_deg])
+
+	def plot_earth_dot_clear(self):
+		""" plot_earth_dot_clear """
+		self._earth_track = []
+		if self._earth_track_plot is not None:
+			self._earth_track_plot[0].set_data([], [])
+			self._earth_track_mark[0].set_data([], [])
 
 	def draw(self):
 		""" draw - flush everything to the screen. """
-		self._canvas.draw()
+		self._starfield_canvas.draw()
+		self._earth_canvas.draw()
 
 	@property
 	def nikon(self):
@@ -565,25 +414,39 @@ class FullSky:
 		return self._nikon
 
 	@property
-	def fig(self):
-		""" fig """
-		return self._fig
+	def starfield_fig(self):
+		""" starfield_fig """
+		return self._starfield_fig
+
+	#@property
+	#def starfield_ax(self):
+	#	""" starfield_ax """
+	#	return self._starfield_ax
 
 	@property
-	def ax(self):
-		""" ax """
-		return self._ax
+	def earth_fig(self):
+		""" earth_fig """
+		return self._earth_fig
+
+	#@property
+	#def earth_ax(self):
+	#	""" earth_ax """
+	#	return self._earth_ax
 
 	@property
 	def root(self):
 		""" root """
 		return self._root
 
-	@property
-	def canvas(self):
-		""" canvas """
-		return self._canvas
+	#@property
+	#def starfield_canvas(self):
+	#	""" starfield_canvas """
+	#	return self._starfield_canvas
 
+	#@property
+	#def earth_canvas(self):
+	#	""" earth_canvas """
+	#	return self._earth_canvas
 
 	def items_plotted_clear(self):
 		""" items_plotted_clear """
@@ -603,56 +466,53 @@ class FullSky:
 		else:
 			self._items_plotted.append(p)
 
-	def plot_center_data(self):
-		""" plot_center_data """
+	def plot_starfield_centerline_data(self):
+		""" plot_starfield_centerline_data """
 		ra_deg, dec_deg = self.nikon.pixel_to_radec(self.nikon.camera.nx/2, self.nikon.camera.ny/2)
 		ra_rad = math.radians(ra_deg)
 		dec_rad = np.array([math.radians(dec_deg)])
 		ra_rad = ra_fix(np.array([ra_rad]))
 		new_data = np.array([np.array([ra_rad[0], dec_rad[0]])])
-		if self._center_line_data is None:
-			self._center_line_data = new_data
+		if self._starfield_centerline_data is None:
+			self._starfield_centerline_data = new_data
 		else:
-			self._center_line_data = np.append(self._center_line_data, new_data, axis=0)
+			self._starfield_centerline_data = np.append(self._starfield_centerline_data, new_data, axis=0)
 
 	# we keep this one on the screen - so processed differently
-	def plot_center(self):
-		""" plot_center """
-		if self._center_line_plot is None:
+	def plot_starfield_centerline(self):
+		""" plot_starfield_centerline """
+		if self._starfield_centerline_plot is None:
 			# this is an empty plot
-			p = self._ax.plot([], [], color=FullSky._COLORS['plot-center'], alpha=1.0, linewidth=1.5, zorder=10)
-			self._center_line_plot = p
-		if self._center_line_data is None:
+			p = self._starfield_ax.plot([], [], color=self._COLORS['plot-center'], alpha=1.0, linewidth=1.5, zorder=10)
+			self._starfield_centerline_plot = p
+		if self._starfield_centerline_data is None:
 			return
-		# trim data (43 is a random number)
-		self._center_line_data = self._center_line_data[-43:]
+		# trim data (63 is a random number)
+		self._starfield_centerline_data = self._starfield_centerline_data[-63:]
 
-		if isinstance(self._center_line_plot, PathCollection):
-			self._center_line_plot.set_offsets(self._center_line_data)
-		else:
-			# print('center_line_data =', np.degrees(self._center_line_data))
-			# self._center_line_plot[0].set_data(self._center_line_data[:, 0], self._center_line_data[:, 1])
-			segments = split_plot_mollweide_line(np.degrees(self._center_line_data[:, 0]), np.degrees(self._center_line_data[:, 1]))
-			# TODO - off by one error still!
-			all_ra_rad = []
-			all_dec_rad = []
-			for ra_rad, dec_rad in segments:
-				# ra_rad = ra_fix(ra_rad)
-				all_ra_rad.extend(ra_rad[1:])
-				all_dec_rad.extend(dec_rad[1:])
-				if len(all_ra_rad) == 1:
-					all_ra_rad.extend(ra_rad)
-					all_dec_rad.extend(dec_rad)
-				all_ra_rad.append(np.nan)
-				all_dec_rad.append(np.nan)
-			# print('all_ra_rad =', np.degrees(all_ra_rad))
-			# print('all_dec_rad =', np.degrees(all_dec_rad))
-			self._center_line_plot[0].set_data(all_ra_rad, all_dec_rad)
+		# print('center_line_data =', np.degrees(self._starfield_centerline_data))
+		# self._starfield_centerline_plot[0].set_data(self._starfield_centerline_data[:, 0], self._starfield_centerline_data[:, 1])
+		segments = split_plot_mollweide_line(np.degrees(self._starfield_centerline_data[:, 0]), np.degrees(self._starfield_centerline_data[:, 1]))
+		# TODO - off by one error still!
+		all_ra_rad = []
+		all_dec_rad = []
+		for ra_rad, dec_rad in segments:
+			# ra_rad = ra_fix(ra_rad)
+			all_ra_rad.extend(ra_rad[1:])
+			all_dec_rad.extend(dec_rad[1:])
+			if len(all_ra_rad) == 1:
+				all_ra_rad.extend(ra_rad)
+				all_dec_rad.extend(dec_rad)
+			all_ra_rad.append(np.nan)
+			all_dec_rad.append(np.nan)
+		# print('all_ra_rad =', np.degrees(all_ra_rad))
+		# print('all_dec_rad =', np.degrees(all_dec_rad))
+		self._starfield_centerline_plot[0].set_data(all_ra_rad, all_dec_rad)
 
-	def plot_center_clear(self):
-		""" plot_center_clear """
-		self._center_line_data = None
-
+	def plot_starfield_centerline_clear(self):
+		""" plot_starfield_centerline_clear """
+		self._starfield_centerline_data = None
+		self._starfield_centerline_plot[0].set_data([], [])
 
 	def plot_corners(self):
 		""" plot_corners """
@@ -668,7 +528,7 @@ class FullSky:
 		dec_rad = [math.radians(v['dec_deg']) for v in corners]
 		ra_rad = ra_fix(ra_rad)
 		# not fixed for wrap yet
-		p = self._ax.plot(ra_rad, dec_rad, color=FullSky._COLORS['plot-corners'], alpha=0.25, linewidth=3.0, linestyle='dashed')
+		p = self._starfield_ax.plot(ra_rad, dec_rad, color=self._COLORS['plot-corners'], alpha=0.25, linewidth=3.0, linestyle='dashed')
 		return p
 
 	def plot_polygons(self):
@@ -677,7 +537,7 @@ class FullSky:
 		ra_rad = [math.radians(float(v)) for v in polygon[0]]
 		dec_rad = [math.radians(float(v)) for v in polygon[1]]
 		ra_rad = ra_fix(ra_rad)
-		p = self._ax.scatter(ra_rad, dec_rad, color=FullSky._COLORS['plot-polygon'], alpha=0.5, s=40.0)
+		p = self._starfield_ax.scatter(ra_rad, dec_rad, color=self._COLORS['plot-polygon'], alpha=0.5, s=40.0)
 		return p
 
 	def plot_hull(self):
@@ -687,7 +547,7 @@ class FullSky:
 		dec_rad = [math.radians(float(v)) for v in hull_coords[1]]
 		ra_rad = ra_fix(ra_rad)
 		# not fixed for wrap yet
-		p = self._ax.plot(ra_rad, dec_rad, color=FullSky._COLORS['plot-hull'], alpha=0.15, linewidth=2.0, linestyle='solid')
+		p = self._starfield_ax.plot(ra_rad, dec_rad, color=self._COLORS['plot-hull'], alpha=0.15, linewidth=2.0, linestyle='solid')
 		return p
 
 	def plot_pixels(self, nsteps=3):
@@ -697,11 +557,11 @@ class FullSky:
 		dec_rad = [math.radians(v[1]) for v in pixels.values()]
 		ra_rad = ra_fix(ra_rad)
 		# all points
-		p3 = self._ax.scatter(ra_rad, dec_rad, color=FullSky._COLORS['plot-pixels'], alpha=0.75, s=20.0)
+		p3 = self._starfield_ax.scatter(ra_rad, dec_rad, color=self._COLORS['plot-pixels'], alpha=0.75, s=20.0)
 		# learing left point/corner
-		p1 = self._ax.scatter(ra_rad[nsteps:nsteps+1], dec_rad[nsteps:nsteps+1], color=FullSky._COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
+		p1 = self._starfield_ax.scatter(ra_rad[nsteps:nsteps+1], dec_rad[nsteps:nsteps+1], color=self._COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
 		# learing right point/corner
-		p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1], color=FullSky._COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
+		p2 = self._starfield_ax.scatter(ra_rad[-1:], dec_rad[-1], color=self._COLORS['plot-pixels-corner'], alpha=1.0, s=100.0)
 		return [p1,p2,p3]
 
 	def plot_border_vectors(self):
@@ -711,7 +571,7 @@ class FullSky:
 		plots = []
 		for ra_rad, dec_rad in split_plot_mollweide_line_ra_dec_deg(border_vectors):
 			ra_rad = ra_fix(ra_rad)
-			p = self._ax.plot(ra_rad, dec_rad, color='red', alpha=1.0, linewidth=1.5, linestyle='solid')
+			p = self._starfield_ax.plot(ra_rad, dec_rad, color='red', alpha=1.0, linewidth=1.5, linestyle='solid')
 			plots.append(p)
 		return plots
 
@@ -729,6 +589,8 @@ class FullSky:
 		# now find all stars inside camara view ...
 		found_stars, inside_mask = self._match_stars_in_polygon()
 		if len(found_stars) == 0:
+			#  paint an empty image
+			self._ci.stars()
 			return None
 
 		# all the stars (will be masked before use)
@@ -776,7 +638,7 @@ class FullSky:
 		stars_ra_rad = ra_fix(stars_ra_rad)
 		stars_size_pixels = mag_map(stars_mag)
 		# plot
-		p1 = self._ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=FullSky._COLORS['stars-found'], zorder=5)
+		p1 = self._starfield_ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=self._COLORS['stars-found'], zorder=5)
 		return p1
 
 	def plot_matched_closest_star(self):
@@ -820,10 +682,10 @@ class FullSky:
 			star = matches[0]['bsc5']
 			diameter = mag_map(star.mag, multiplier=4.0)
 			ra_rad = ra_fix(ra_rad)
-			p1 = self._ax.plot(ra_rad, dec_rad, label='Star match', alpha=1.0, color=FullSky._COLORS['match'], linewidth=3.0)
-			p2 = self._ax.scatter(ra_rad[-1:], dec_rad[-1:], facecolors='none', edgecolors=FullSky._COLORS['match'], s=diameter)
-			p3 = self._ax.scatter(ra_rad[0:1], dec_rad[0:1], facecolors=FullSky._COLORS['plot-center'], edgecolors=FullSky._COLORS['plot-center'], s=60)
-		return [p1, p2, p3]
+			p1 = self._starfield_ax.plot(ra_rad, dec_rad, label='Star match', alpha=1.0, color=self._COLORS['match'], linewidth=3.0)
+			p2 = self._starfield_ax.scatter(ra_rad[-1:], dec_rad[-1:], facecolors='none', edgecolors=self._COLORS['match'], s=diameter)
+			p3 = self._starfield_ax.scatter(ra_rad[0:1], dec_rad[0:1], facecolors=self._COLORS['plot-center'], edgecolors=self._COLORS['plot-center'], s=60)
+			return [p1, p2, p3]
 		return None
 
 	def do_match_stars(self, value):
@@ -853,14 +715,14 @@ class FullSky:
 		self.nikon.camera.reload(focal_length_mm=float(focal_length))
 
 		# refresh everything
-		self.update_full_sky()
+		self.update_starfield_and_more()
 		self.draw()
 
 	def do_realtime(self, value):
 		""" do_realtime """
 		self._switch_accelerate_time = value.get()
 		# reset line data - otherwise it's messy
-		self.plot_center_clear()
+		self.plot_starfield_centerline_clear()
 		self.draw()
 		# reset timer interval
 		self.timer_reset()
@@ -884,15 +746,27 @@ class FullSky:
 				p.remove()
 			self._stars_plot = None
 
+	def do_satellite_selection(self, val):
+		""" do_satellite_selection """
+		print('do_satellite_selection:', val)
+		self.nikon.find_tle(val)
+		# remove satellite track
+		self.plot_starfield_centerline_clear()
+		self.plot_earth_dot_clear()
+		# refresh everything
+		self.update_starfield_and_more()
+		self.draw()
+
 	def do_rpy(self, val, k):
 		""" do_rpy """
 		UserInterface.rpy_values_deg[k] = float(val)
 		# refresh everything
-		self.update_full_sky()
+		self.update_starfield_and_more()
 		self.draw()
 		self._cv.update_orientation(
-			UserInterface.rpy_values_deg['pitch'],
+			# XYZ should be r,p,y - but camera is on +Y side - so swap pitch & roll for some reason
 			UserInterface.rpy_values_deg['roll'],
+			UserInterface.rpy_values_deg['pitch'],
 			UserInterface.rpy_values_deg['yaw']
 		)
 
@@ -934,8 +808,8 @@ class FullSky:
 		self._ci.reset()
 
 		# Now redraw everything - by reseting the timer.
-		self.plot_center_clear()
-		# self.update_full_sky()
+		self.plot_starfield_centerline_clear()
+		# self.update_starfield_and_more()
 		# self.draw()
 		self._cv.update_orientation(
 			UserInterface.rpy_values_deg['pitch'],
@@ -1006,7 +880,7 @@ class FullSky:
 
 		if repaint:
 			# now repaint/update sky
-			self.update_full_sky()
+			self.update_starfield_and_more()
 			self.plot_sun_moon()	# add sun and moon move when time changes (slightly)
 			self.draw()
 
@@ -1048,8 +922,9 @@ class StarsConstellationsBSC5:
 		stars_ra_rad, stars_dec_rad, stars_mag = self._bsc5.get_stars()
 		return stars_ra_rad, stars_dec_rad, stars_mag
 
-	def get_constellations(self, constellations=['Orion', 'Leo']):
+	def get_constellations(self, constellations=None):
 		""" constellations """
+		if constellations is None:
+			constellations = ['Orion', 'Leo']
 		const_ra_rad, const_dec_rad, const_mag = self._bsc5.get_constellations(constellations=constellations)
 		return const_ra_rad, const_dec_rad, const_mag
-

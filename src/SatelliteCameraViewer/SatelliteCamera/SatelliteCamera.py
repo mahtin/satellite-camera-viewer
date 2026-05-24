@@ -9,6 +9,7 @@ from .CameraAttitude import Attitude as cA
 from .CameraAttitude import Quaternion as cQ
 from .CameraFOV import CameraFOV as cCF
 from .SatelliteOrbit import SatelliteOrbit as cSO
+from .Earth import Earth, EarthError
 
 class SatelliteCameraError(Exception):
     """ SatelliteCameraError """
@@ -57,6 +58,7 @@ class SatelliteCamera():
         self._sat_attitude = None
         self._cam_attitude = None
         self._reset_attitude()
+        self._earth = None
 
     def reload(self,
             focal_length_mm: float = None,         # focal length (mm)
@@ -99,12 +101,13 @@ class SatelliteCamera():
 
     def _rebuild_attitude(self):
         """ _rebuild_attitude """
+
         if self._attitude is not None:
             return
         if self._sat_quat_body_to_eci is not None:
-            self._attitude = self.CameraAttitude(sat_quat_body_to_eci=self._sat_quat_body_to_eci, cam_attitude=self._cam_attitude)
-        elif self._sat_attitude is not None and self._cam_attitude is not None:
-            self._attitude = self.CameraAttitude(sat_attitude=self._sat_attitude, cam_attitude=self._cam_attitude)
+            self._attitude = self.CameraAttitude(sat_quat_body_to_eci=self._sat_quat_body_to_eci, cam_attitude=self.cam_attitude)
+        elif self.sat_attitude is not None and self.cam_attitude is not None:
+            self._attitude = self.CameraAttitude(sat_attitude=self.sat_attitude, cam_attitude=self.cam_attitude)
         else:
             # hopefully this will be recaculated again
             pass
@@ -336,62 +339,47 @@ class SatelliteCamera():
         #  same rate it orbits (once per orbit). I.e. Reaction Wheels / Momentum Wheels, Control Moment Gyros (CMGs),
         #  Thrusters (Propulsion), or Magnetorquers (Magnetic Torquers)
 
+        print('choose_attitude()',
+            'pointing=', pointing,
+            'sat=', sat_yaw_deg, sat_pitch_deg, sat_roll_deg,
+            'cam=', cam_yaw_deg, cam_pitch_deg, cam_roll_deg,
+            'q[wxyz]=', qw, qx, qy, qz,
+            'earth=', earth_lat_deg, earth_lon_deg,
+            'star=', star_ra_deg, star_dec_deg
+        )
+
+        # we always reset and recaculate later
+        self._reset_attitude()
+
         # Satellite pointing - if defined
         if None not in [sat_yaw_deg, sat_pitch_deg, sat_roll_deg]:
-            if self._sat_attitude is not None:
-                self._reset_attitude()
-            self.sat_attitude = self.Attitude(yaw_deg=sat_yaw_deg, pitch_deg=sat_pitch_deg, roll_deg=sat_roll_deg)
+            print('choose_attitude(): set sat')
+            self._sat_attitude = self.Attitude(sat_yaw_deg, sat_pitch_deg, sat_roll_deg)
+            self._sat_quat_body_to_eci = None
+            print('choose_attitude(): set sat', self.sat_attitude)
         else:
-            if self._sat_attitude is not None:
-                self._sat_attitude = None
-                self._reset_attitude()
+            self._sat_attitude = None
+            self._sat_quat_body_to_eci = None
+            print('choose_attitude(): set sat', 'None')
+
         # Camera pointing - if defined
         if None not in [cam_yaw_deg, cam_pitch_deg, cam_roll_deg]:
-            self.cam_attitude = self.Attitude(yaw_deg=cam_yaw_deg, pitch_deg=cam_pitch_deg, roll_deg=cam_roll_deg)
-            self._reset_attitude()
+            self._cam_attitude = self.Attitude(cam_yaw_deg, cam_pitch_deg, cam_roll_deg)
+            print('choose_attitude(): set cam', self.cam_attitude)
         else:
-            self.cam_attitude = None
-            self._reset_attitude()
-
-        # Quaternion pointing - if defined, just do it (even with camera y/p/r defined above)
-        if pointing == 'quaternion' or None not in [qw, qx, qy, qz]:
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_wxyz(qw, qx, qy, qz)
-            self._reset_attitude()
-            return
-
-        # Point camera at ground location (lat,lon) - if defined, just do it (even with camera y/p/r defined above)
-        if pointing == 'ground' or None not in [earth_lat_deg, earth_lon_deg]:
-            # Point camera at ground location (lat,lon)
-            r_teme_km = self.eci_position_vector()
-            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_ground(lat_deg=earth_lat_deg, lon_deg=earth_lon_deg, obs_time=self.obs_time, r_sat_gcrs_km=r_gcrs_km)
-            self._reset_attitude()
-            return
-
-        # Point camera at star (ra,dec) - if defined, just do it (even with camera y/p/r defined above)
-        if pointing == 'star' or None not in [star_ra_deg, star_dec_deg]:
-            # Point camera at ra/dec
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_radec(ra_deg=star_ra_deg, dec_deg=star_dec_deg, obs_time=self.obs_time)
-            self._reset_attitude()
-            return
-
-        # Default null quaternion (even with camera y/p/r defined above)
-        if pointing == 'undefined':
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_wxyz()
-            self._reset_attitude()
-            return
+            self._cam_attitude = None
+            print('choose_attitude(): set cam', 'None')
 
         # Example: Satellite pointing arbitrary direction (y/p/r) + camera offset (y/p/r) defined above (hopefully)
         if pointing == 'arbitrary':
-            self._reset_attitude()
             return
 
-        # Nadir-pointing camera (even with camera y/p/r defined above)
-        if pointing == 'nadir':
-            r_teme_km = self.eci_position_vector()
-            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_nadir_pointing(r_gcrs_km)
-            self._reset_attitude()
+        # Quaternion pointing - if defined, just do it (even with camera y/p/r defined above)
+        if pointing == 'quaternion':
+            if None in [qw, qx, qy, qz]:
+                raise ValueError('%s: invalid pointing value' % (pointing))
+            self._sat_attitude = None
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_wxyz(qw, qx, qy, qz)
             return
 
         # Velocity-vector pointing camera (even with camera y/p/r defined above)
@@ -400,8 +388,42 @@ class SatelliteCamera():
             v_teme_km_s = self.eci_velocity_vector()
             r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
             v_gcrs_km_s = self.CameraAttitude.teme_to_gcrs_vector(v_teme_km_s, self.obs_time)  # same converter works
+            self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_velocity_pointing(r_gcrs_km, v_gcrs_km_s)
-            self._reset_attitude()
+            return
+
+        # Nadir-pointing camera (even with camera y/p/r defined above)
+        if pointing == 'nadir':
+            r_teme_km = self.eci_position_vector()
+            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
+            self._sat_attitude = None
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_nadir_pointing(r_gcrs_km)
+            return
+
+        # Point camera at ground location (lat,lon) - if defined, just do it (even with camera y/p/r defined above)
+        if pointing == 'ground':
+            if None in [earth_lat_deg, earth_lon_deg]:
+                raise ValueError('%s: invalid pointing value' % (pointing))
+            # Point camera at ground location (lat,lon)
+            r_teme_km = self.eci_position_vector()
+            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
+            self._sat_attitude = None
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_ground(lat_deg=earth_lat_deg, lon_deg=earth_lon_deg, obs_time=self.obs_time, r_sat_gcrs_km=r_gcrs_km)
+            return
+
+        # Point camera at star (ra,dec) - if defined, just do it (even with camera y/p/r defined above)
+        if pointing == 'star':
+            if None in [star_ra_deg, star_dec_deg]:
+                raise ValueError('%s: invalid pointing value' % (pointing))
+            # Point camera at ra/dec
+            self._sat_attitude = None
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_radec(ra_deg=star_ra_deg, dec_deg=star_dec_deg, obs_time=self.obs_time)
+            return
+
+        # Default null quaternion (even with camera y/p/r defined above)
+        if pointing == 'undefined':
+            self._sat_attitude = None
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_wxyz()
             return
 
         raise ValueError('%s: invalid pointing value' % (pointing))
@@ -417,6 +439,11 @@ class SatelliteCamera():
             return None
         v_teme_km_s = self.sat_orbit.eci_velocity_vector(self.obs_time)
         return v_teme_km_s
+
+    def lon_lat_alt(self):
+        """ lon_lat_alt """
+        sat_lon_deg, sat_lat_deg, sat_alt_km = self.sat_orbit.lon_lat_alt(self.obs_time)
+        return sat_lon_deg, sat_lat_deg, sat_alt_km
 
     def pixel_to_radec(self, px, py):
         """ pixel_to_radec """
@@ -464,3 +491,27 @@ class SatelliteCamera():
     def camera_fov_healpix_mask(self, nside: int = 64):
         """ camera_fov_healpix_mask """
         return self.CameraFOV.camera_fov_healpix_mask(self.camera, self.attitude, self.obs_time, nside=nside)
+
+    def camera_fov_intercept_earth(self, border_step=None):
+        """ earth """
+        if self._earth is None:
+            self._earth = Earth()
+        try:
+            pixel = self._earth.fov_intercept_earth(self.camera, self.sat_orbit, self.attitude, self.obs_time, border_step=border_step)
+        except EarthError as e:
+            raise SatelliteCameraError(str(e)) from None
+        return pixel
+
+    def earth_center_radec(self):
+        """ earth_center_radec """
+        if self._earth is None:
+            self._earth = Earth()
+        ra_deg, dec_deg = self._earth.earth_center_radec(self.sat_orbit, self.attitude, self.obs_time)
+        return ra_deg, dec_deg
+
+    def earth_angular_radius(self):
+        """ earth_angular_radius """
+        if self._earth is None:
+            self._earth = Earth()
+        radius_deg = self._earth.earth_angular_radius(self.sat_orbit, self.obs_time)
+        return radius_deg
