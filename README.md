@@ -1,10 +1,16 @@
 # satellite-camera-viewer
 A full sky star chart showing the view from a camera mounted on a earth orbiting satellite.
 
+
 ## Description
 This is a Python program using `Tkinter`, `matplotlib.pyplot`, `PyVista`, and various astronomy, scientific, and satellite packages (i.e. `Astropy`, `SciPy`, and `SGP4`).
 It's goal is to run a simulation of a satellite in earth orbit with an attached camera and caculate which stars would be seen in the cameras sensor.
 Visualization is provided by default with camera paramaters (like focus length) being capable of being adjusted on the fly.
+
+
+## Documentation and API reference
+
+See [Satellite Camera Viewer Documentation and API reference](https://satellite-camera-viewer.readthedocs.io/) along with this README file.
 
 ## Super quick start instruction
 
@@ -76,13 +82,40 @@ $
 
 The code will run without this package (and hence it's not in `requirements.txt` anymore). You will just be missing one of the FOV functions.
 
+
 ## Runing the software
 
 ![Satellite Camera Viewer](/img/satellite-camera-viewer.png)
 
+
 ## SatelliteCamera module
 
 All the camera pointing math is done within `SatelliteCamera` and that contains it's own [[README]](src/SatelliteCameraViewer/SatelliteCamera/README.md)
+
+
+## Background Concepts
+
+### Right Ascension (RA)
+Angularcoordinate on the celestial sphere analogous to longitude.  See: [Wikipedia – Right Ascension](https://en.wikipedia.org/wiki/Right_ascension)
+
+### Declination (DEC)
+Angularcoordinate analogous to latitude.  See: [Wikipedia – Declination](https://en.wikipedia.org/wiki/Declination)
+
+### ECI / GCRS Frame
+Earth‑centeredinertial coordinate system used for celestial pointing.  See: [Wikipedia – Celestial Reference System](https://en.wikipedia.org/wiki/Celestial_reference_system)
+
+### TEME Frame
+TrueEquator Mean Equinox frame used by SGP4 orbit propagator.  See: Vallado, *Fundamentals of Astrodynamics and Applications*
+
+### Quaternion Attitude Representation
+4‑componentrotation representation used for spacecraft attitude. SeeReference: [Wikipedia – Quaternion](https://en.wikipedia.org/wiki/Quaternion)
+
+### Camera Pinhole Model
+Standardoptical projection model used in computer vision and spacecraft optics.  See: [Wikipedia – Pinhole Camera Model](https://en.wikipedia.org/wiki/Pinhole_camera_model)
+
+### HEALPix
+Hierarchicalequal‑area pixelization of the sphere. See: [HEALPix](https://healpix.sourceforge.io/)
+
 
 ## Changelog
 

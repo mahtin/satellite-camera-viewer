@@ -1,7 +1,7 @@
-#📘 Satellite Camera RA/Dec & FOV Toolkit
+# Satellite Camera RA/DEC & FOV Toolkit
 
-##Overview
-Thisrepository provides a complete, modular Python toolkit for computing **Right Ascension (RA)** and **Declination (Dec)** for every pixel in a satellite‑mounted camera.
+## Overview
+This repository provides a complete, modular Python toolkit for computing **Right Ascension (RA)** and **Declination (DEC)** for every pixel in a satellite‑mounted camera.
 Itsupports:
 
 -Arbitrary satellite attitude
@@ -14,7 +14,7 @@ Itsupports:
 -HEALPix sky masks
 -Star catalog integration
 
-Thistoolkit is designed for:
+This toolkit is designed for:
 -Earth‑observation satellites
 -Star trackers
 -Astrometry pipelines
@@ -24,39 +24,7 @@ Thistoolkit is designed for:
 
 ---
 
-##Background Concepts
-
-###Right Ascension (RA)
-Angularcoordinate on the celestial sphere analogous to longitude.
-Reference:[Wikipedia – Right Ascension](https://en.wikipedia.org/wiki/Right_ascension)
-
-###Declination (Dec)
-Angularcoordinate analogous to latitude.
-Reference:[Wikipedia – Declination](https://en.wikipedia.org/wiki/Declination)
-
-###ECI / GCRS Frame
-Earth‑centeredinertial coordinate system used for celestial pointing.
-Reference:[Wikipedia – Celestial Reference System](https://en.wikipedia.org/wiki/Celestial_reference_system)
-
-###TEME Frame
-TrueEquator Mean Equinox frame used by SGP4 orbit propagator.
-Reference:Vallado, *Fundamentals of Astrodynamics and Applications*
-
-###Quaternion Attitude Representation
-4‑componentrotation representation used for spacecraft attitude.
-Reference:[Wikipedia – Quaternion](https://en.wikipedia.org/wiki/Quaternion)
-
-###Camera Pinhole Model
-Standardoptical projection model used in computer vision and spacecraft optics.
-Reference:[Wikipedia – Pinhole Camera Model](https://en.wikipedia.org/wiki/Pinhole_camera_model)
-
-###HEALPix
-Hierarchicalequal‑area pixelization of the sphere.
-Reference:[HEALPix](https://healpix.sourceforge.io/)
-
----
-
-##Camera Geometry
+## Camera Geometry
 Thecamera is modeled using:
 -Sensor size (mm)
 -Focal length (mm)
@@ -67,42 +35,36 @@ Thecamera is modeled using:
 
 ---
 
-##Satellite Attitude Model
+## Satellite Attitude Model
 Supports:
 -Quaternion attitude
 -Yaw/Pitch/Roll (aerospace Z‑Y‑X sequence)
 -Camera mounting offsets
 -Automatic nadir pointing
 -Automatic velocity‑vector pointing
--Pointing at RA/Dec
+-Pointing at RA/DEC
 -Pointing at ground lat/lon
 
 ---
-
-##Installation
-```bash
-pipinstall numpy scipy astropy sgp4 healpy spherical-geometry
-```
-
-##Core Components
-###CameraIntrinsics
+## Core Components
+### CameraIntrinsics
 Definessensor geometry and distortion.
-###Attitude
+### Attitude
 Combinessatellite attitude + camera mounting offsets → final quaternion.
-###SatelliteOrbit
+### SatelliteOrbit
 LoadsTLE and propagates orbit using SGP4.
-###`pixel_to_radec()`
-Convertsa pixel coordinate to RA/Dec using:
+### `pixel_to_radec()`
+Convertsa pixel coordinate to RA/DEC using:
 -Camera geometry
 -Attitude quaternion
 -TEME → GCRS conversion
 -SkyCoord spherical conversion
-###FOVTools
+### FOVTools
 -`camera_fov_metrics()`
 -`camera_fov_convex_hull()`
 -`camera_fov_healpix_mask()`
 
-##Example Usage
+## Example Usage
 1.Initialize Camera + Orbit + Attitude
 ```python
 cam= CameraIntrinsics(
@@ -127,7 +89,7 @@ attitude= Attitude(
   cam_roll_deg=0
 )
 ```
-2.Convert a Pixel to RA/Dec
+2.Convert a Pixel to RA/DEC
 ```python
 ra,dec, sat_pos = pixel_to_radec(
   px=2000,
@@ -138,9 +100,9 @@ ra,dec, sat_pos = pixel_to_radec(
   sat_orbit=sat_orbit
 )
 
-print("RA:",ra, "Dec:", dec)
+print("RA:",ra, "DEC:", dec)
 ```
-##Pointing Modes
+## Pointing Modes
 A.Nadir Pointing
 ```python
 r_teme_km,v_teme_km_s = sat_orbit.eci_position_velocity(obs_time)
@@ -158,7 +120,7 @@ quat= quaternion_velocity_pointing(r_gcrs_km, v_gcrs_km_s)
 attitude= Attitude(sat_quat_body_to_eci=quat)
 
 ```
-C.Pointing at RA/Dec
+C.Pointing at RA/DEC
 ```python
 quat= quaternion_pointing_radec(120.0, 22.0, obs_time)
 attitude= Attitude(sat_quat_body_to_eci=quat)
@@ -174,8 +136,8 @@ quat= quaternion_pointing_ground(
 
 attitude= Attitude(sat_quat_body_to_eci=quat)
 ```
-##Field‑of‑View Tools
-###FOV Metrics
+## Field‑of‑View Tools
+### FOV Metrics
 ```python
 metrics= camera_fov_metrics(cam, attitude, obs_time, sat_orbit)
 print(metrics)
@@ -189,7 +151,7 @@ HEALPixMask
 mask,pix = camera_fov_healpix_mask(cam, attitude, obs_time, nside=64)
 ```
 
-##References
+## References
 -Astropy Project — https://www.astropy.org
 -SGP4 Orbit Propagator — https://pypi.org/project/sgp4
 -HEALPix — https://healpix.sourceforge.io
