@@ -11,11 +11,17 @@ from scipy.spatial import ConvexHull
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from spherical_geometry import polygon as sgeom
-import healpy as hp
+try:
+    import healpy as hp
+except ModuleNotFoundError
+    hp = None
 
 from .CameraIntrinsics import CameraIntrinsics
 from .CameraAttitude import CameraAttitude
 from .SatelliteOrbit import SatelliteOrbit
+
+class CameraFOVError(Exception):
+    """ CameraFOVError """
 
 class CameraFOV:
     """ CameraFOV """
@@ -280,6 +286,9 @@ class CameraFOV:
         Return HEALPix pixel indices inside the camera FOV.
         Uses 3D spherical polygon for robustness.
         """
+
+        if hp is None:
+            raise CameraFOVError('healpy not installed - maybe you are on Windows11?')
 
         # Corner pixels of the sensor
         corners = [
