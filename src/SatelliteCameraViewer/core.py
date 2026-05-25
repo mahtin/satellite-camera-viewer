@@ -696,6 +696,7 @@ class CoreCode:
 			UserInterface.stars_button_set(True)
 			self._do_stars_real(True)
 		else:
+			self._ci.reset()
 			s = ''
 			UserInterface.star_found_text(s)
 			UserInterface.misc_text(s)
@@ -931,6 +932,7 @@ class StarsConstellationsBSC5:
 	def get_constellations(self, constellations=None):
 		""" constellations """
 		if constellations is None:
-			constellations = ['Orion', 'Leo']
+			# Orion and Sagittarius becuase they are not next to each other
+			constellations = ['Ori', 'Sgr']
 		const_ra_rad, const_dec_rad, const_mag = self._bsc5.get_constellations(constellations=constellations)
 		return const_ra_rad, const_dec_rad, const_mag
