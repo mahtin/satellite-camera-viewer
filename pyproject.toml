@@ -21,7 +21,6 @@ license-files = ['LICENSE' ]
 authors = [ { name = 'Martin J Levy', email = 'mahtin@mahtin.com' } ]
 dependencies = [
   'astropy>=7.2.0',
-  'healpy>=1.19.0',
   'numpy>=2.4.0',
   'matplotlib>=3.10.0',
   'cartopy>=0.25.0',

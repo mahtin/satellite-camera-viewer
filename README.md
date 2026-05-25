@@ -62,6 +62,20 @@ $ source .venv/bin/activate
 $
 ```
 
+### healpy
+
+The `healpy` package can be hard to install within a Windows environment. 
+
+```bash
+$ pip install 'healpy>=1.19.0'
+...
+  ERROR: Failed building wheel for healpy
+...
+$
+```
+
+The code will run without this package (and hence it's not in `requirements.txt` anymore). You will just be missing one of the FOV functions.
+
 ## Runing the software
 
 ![Satellite Camera Viewer](/img/satellite-camera-viewer.png)
