@@ -97,7 +97,10 @@ class SatelliteCamera():
 
     def _rebuild_sat_orbit(self):
         """ _rebuild_sat_orbit """
-        self._sat_orbit = self.SatelliteOrbit(tle=self._tle)
+        if self._sat_orbit is None:
+            self._sat_orbit = self.SatelliteOrbit(tle=self._tle)
+        else:
+            self._sat_orbit.tle = self._tle
 
     def _rebuild_attitude(self):
         """ _rebuild_attitude """
