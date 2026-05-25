@@ -83,7 +83,7 @@ class SatelliteOrbit:
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return np.array(v_teme_km_s)
 
-    def icrs(self, obs_time: datatime):
+    def icrs(self, obs_time: datetime):
         """ icrs - convert satellite and time into a ICRS value """
         # ICRS is International Celestial Reference System (ICRS)
         # Convert datetime -> Julian date and fractional Julian date
