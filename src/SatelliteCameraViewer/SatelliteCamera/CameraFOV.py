@@ -13,7 +13,7 @@ import astropy.units as u
 from spherical_geometry import polygon as sgeom
 try:
     import healpy as hp
-except ModuleNotFoundError
+except ModuleNotFoundError:
     hp = None
 
 from .CameraIntrinsics import CameraIntrinsics
