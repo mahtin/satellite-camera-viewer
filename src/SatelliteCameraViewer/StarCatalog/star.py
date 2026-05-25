@@ -76,6 +76,10 @@ class Star:
 
 		return r
 
+	def __call__(self):
+		""" __call__ """
+		return [self.number, self.name, self.constellation, self.ra, self.dec, self.mag]
+
 def _main(args=None):
 	""" _main """
 	s = Star()
@@ -84,6 +88,7 @@ def _main(args=None):
 	print(s)
 	s = Star([1,2,3], 'Little Star', 'Poem', 0.0, 0.0, 1.0)
 	print(s)
+	print(s())
 
 
 if __name__ == '__main__':
