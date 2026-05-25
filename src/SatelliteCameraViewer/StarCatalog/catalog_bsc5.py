@@ -29,7 +29,7 @@ class CatalogBSC5(Catalog):
         # by using a sorted (by mag) file, we can shorten the search
         # filename = 'BSC5/bsc5.dat'
 
-        filename = directory + '/' + self.source_files[0]
+        filename = directory / self.source_files[0]
 
         n_lines = 0
         with gzip.open(filename, 'rt', encoding='utf-8') as fd:

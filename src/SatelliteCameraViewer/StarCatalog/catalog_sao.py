@@ -25,7 +25,7 @@ class CatalogSAO(Catalog):
     def _readstarfile(self, directory, max_mag, star_append):
         """ _readstarfile() """
 
-        filename = directory + '/' + self.source_files[0]
+        filename = directory / self.source_files[0]
 
         # <HEADER>
         # ...

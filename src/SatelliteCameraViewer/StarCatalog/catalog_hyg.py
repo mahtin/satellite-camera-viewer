@@ -26,7 +26,7 @@ class CatalogHYG(Catalog):
     def _readstarfile(self, directory, max_mag, star_append):
         """ _readstarfile() """
 
-        filename = directory + '/' + self.source_files[0]
+        filename = directory / self.source_files[0]
 
         # "id","hip","hd","hr","gl","bf","proper","ra","dec","dist","pmra","pmdec","rv","mag", ...
         # 0,,,,"","",Sol,0.0,0.0,0.0,0.0,0.0,0.0,-26.7, ...

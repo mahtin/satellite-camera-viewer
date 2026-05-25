@@ -2,6 +2,7 @@
 
 import os
 import time
+from pathlib import Path
 import hmac
 import hashlib
 import pickle
@@ -18,12 +19,12 @@ class Catalog():
 
     # Yeah, yeah, yeah, this "known key" isn't optimal - but it's fit for purpose here.
     # We are only protecting from corupt file systems - which isn't really a thing anymore.
-    NOT_REALLY_A_SECRET_KEY = b'c351e1e1-4e9b-45f8-bf74-b08f5f13e9a9'
+    _NOT_REALLY_A_SECRET_KEY = b'c351e1e1-4e9b-45f8-bf74-b08f5f13e9a9'
 
     log = None
 
     # all star catalogs live here:
-    DIR_STAR_CATALOG = '~/.cache/star-catalog'
+    _DIR_STAR_CATALOG = '~/.cache/star-catalog'
 
     base_url = None
     source_files = None
@@ -43,14 +44,14 @@ class Catalog():
         else:
             self._directory = os.getenv('STAR_CATALOG')
             if not self._directory:
-                self._directory = os.path.expanduser(self.DIR_STAR_CATALOG)
+                self._directory = Path(self._DIR_STAR_CATALOG).expanduser()
 
         if not os.path.exists(self._directory):
             raise FileNotFoundError(self._directory)
         if not os.path.exists(self.directory()):
             os.mkdir(self.directory())
 
-        self._key = self.NOT_REALLY_A_SECRET_KEY
+        self._key = self._NOT_REALLY_A_SECRET_KEY
         self._db = None
         self._stars = None
 
@@ -100,7 +101,7 @@ class Catalog():
         if not self._directory:
             raise FileNotFoundError(self._directory)
 
-        return self._directory + '/' + self._name
+        return self._directory / self._name
 
     def _star_set(self, v=None):
         """ _star_set() """
@@ -162,7 +163,7 @@ class Catalog():
                 continue
             try:
                 n_bytes = 0
-                file_path = self.directory() + '/' + filename
+                file_path = self.directory() / filename
                 with open(file_path, 'wb') as fd:
                     # this method will stop requests() from un-gzipping the contents!
                     for chunk in response.iter_content(chunk_size=16*1024):
@@ -177,14 +178,14 @@ class Catalog():
         """ _files_exist() """
 
         for filename in self.source_files:
-            if not os.path.exists(self.directory() + '/' + filename):
+            if not os.path.exists(self.directory() / filename):
                 return False
         return True
 
     def _files_age(self, suffix):
         """ _files_age() """
 
-        filename = self.directory() + '/' + self.name().lower() + suffix
+        filename = self.directory() / self.name().lower() + suffix
         try:
             age = int(time.time() - os.stat(filename).st_mtime)
         except:
@@ -242,7 +243,7 @@ class Catalog():
     def _readpickle(self):
         """ _readpickle() """
 
-        filename = self.directory() + '/' + self.name().lower() + '.pickle'
+        filename = self.directory() / self.name().lower() + '.pickle'
         # read in the pickle file
         try:
             with open(filename, 'rb') as fd:
@@ -252,7 +253,7 @@ class Catalog():
 
         # check digest and only return stars if correct
         signature1 = hmac.new(self._key, stars_b, hashlib.sha256).hexdigest()
-        filename = self.directory() + '/' + self.name().lower() + '.sha256'
+        filename = self.directory() / self.name().lower() + '.sha256'
         try:
             with open(filename, 'r', encoding='utf-8') as fd:
                 signature2 = fd.read().rstrip()
@@ -278,7 +279,7 @@ class Catalog():
         stars_b = pickle.dumps(self._stars)
 
         # write the pickle file
-        filename = self.directory() + '/' + self.name().lower() + '.pickle'
+        filename = self.directory() / self.name().lower() + '.pickle'
         try:
             with open(filename, 'wb') as fd:
                 fd.write(stars_b)
@@ -286,7 +287,7 @@ class Catalog():
             return
 
         # write digest based on stars
-        filename = self.directory() + '/' + self.name().lower() + '.sha256'
+        filename = self.directory() / self.name().lower() + '.sha256'
         signature = hmac.new(self._key, stars_b, hashlib.sha256).hexdigest()
         with open(filename, 'w', encoding='utf-8') as fd:
             fd.write(signature)
@@ -306,7 +307,7 @@ class Catalog():
             else:
                 filename = ':memory:'
         else:
-            filename = self.directory() + '/' + self.name().lower() + '.db'
+            filename = self.directory() / self.name().lower() + '.db'
             if not os.path.exists(filename):
                 fresh = True
 

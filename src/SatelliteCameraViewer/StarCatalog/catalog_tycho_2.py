@@ -48,7 +48,7 @@ class CatalogTycho_2(Catalog):
         """ _readstarfile() """
 
         n_lines = 0
-        for filename in [directory + '/' + v for v in self.source_files]:
+        for filename in [directory / v for v in self.source_files]:
             if 'suppl_' in filename:
                 # XXX TODO need to code up suppl files!
                 continue
