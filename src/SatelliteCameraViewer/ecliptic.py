@@ -105,10 +105,10 @@ def moon_illumination(obs_time:datetime):
 	:rtype: float
 	"""
 	t = Time(obs_time)
-	sun = get_body('sun', t)
-	moon = get_body('moon', t)
-	elongation = sun.separation(moon)
-	i = np.arctan2(sun.distance*np.sin(elongation), moon.distance - sun.distance*np.cos(elongation))
+	the_sun = get_body('sun', t)
+	the_moon = get_body('moon', t)
+	elongation = the_sun.separation(the_moon)
+	i = np.arctan2(the_sun.distance*np.sin(elongation), the_moon.distance - the_sun.distance*np.cos(elongation))
 	k = (1 + np.cos(i))/2.0
 	return k.value
 

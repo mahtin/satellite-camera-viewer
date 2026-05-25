@@ -7,14 +7,19 @@ from dataclasses import dataclass
 class TLE:
     """ TLE """
     name: str = ''
+    """ name - optional comment line naming the satellite """
     line1: str = ''
+    """ line1 - first line of TLE """
     line2: str = ''
+    """ line2 - second line of TLE """
 
     def __str__(self):
+        """ __str__ """
         return '[%s,%s,%s]' % (self.name, self.line1, self.line2)
 
     @property
     def as_array(self):
+        """ as_array """
         return [self.name, self.line1, self.line2]
 
     @property
@@ -89,6 +94,9 @@ def _main(args=None):
     for s in static_tles:
         epoch, age = s.age
         print('%-30s %23s %30s' % (s.name, epoch.strftime('%Y-%m-%d %H:%M:%S %Z'), age))
+
+    print('')
+    print(static_tles[0].as_array)
 
 if __name__ == '__main__':
     _main()

@@ -10,7 +10,7 @@ class DoCameraImage:
 	def __init__(self, label=None, nx:int=400, ny:int=300, w:int=400, h:int=300):
 		""" DoCameraImage """
 		if label is None:
-			raise ValueError('DoCameraImage() needs label value')
+			raise ValueError('DoCameraImage() needs label value') from None
 		self._label = label
 		self.nx = nx
 		self.ny = ny
@@ -29,7 +29,7 @@ class DoCameraImage:
 	def stars(self, xy_list=None, mag_list=None):
 		""" stars """
 		if self._label is None or self._ci is None:
-			raise ValueError('DoCameraImage() needs register first')
+			raise ValueError('DoCameraImage() needs register first') from None
 		self._ci.clear(color=(0,0,0))
 		# self.outline()
 		if xy_list is not None:

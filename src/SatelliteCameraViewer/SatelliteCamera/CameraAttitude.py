@@ -47,22 +47,27 @@ class Quaternion:
 
     @property
     def wxyz(self):
+        """ wxyz """
         return [self.qx, self.qy, self.qz, self.qw]
 
     @property
     def w(self):
+        """ w """
         return self.qw
 
     @property
     def x(self):
+        """ x """
         return self.qx
 
     @property
     def y(self):
+        """ y """
         return self.qy
 
     @property
     def z(self):
+        """ z """
         return self.qz
 
 @dataclass
@@ -94,7 +99,7 @@ class CameraAttitude:
             # Aerospace sequence: yaw (Z), pitch (Y), roll (X)
             R_sat = R.from_euler('ZYX', [self.sat_attitude.yaw_deg, self.sat_attitude.pitch_deg, self.sat_attitude.roll_deg], degrees=True)
         else:
-            raise ValueError("Must provide either satellite quaternion or yaw/pitch/roll")
+            raise ValueError("Must provide either satellite quaternion or yaw/pitch/roll") from None
 
         # allow default camera attitude (of 0,0,0) with respect to the satellite
         if self.cam_attitude is None:

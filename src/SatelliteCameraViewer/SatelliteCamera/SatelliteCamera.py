@@ -167,7 +167,7 @@ class SatelliteCamera():
     def focal_length_mm(self, value=None):
         """ focal_length_mm """
         if value is None:
-            raise ValueError('focal_length_mm cannot be empty')
+            raise ValueError('focal_length_mm cannot be empty') from None
         self._focal_length_mm = value
         # rebuild camera
         self._rebuild_camera()
@@ -181,7 +181,7 @@ class SatelliteCamera():
     def sensor_size_x_mm(self, value=None):
         """ sensor_size_x_mm """
         if value is None:
-            raise ValueError('sensor_size_x_mm cannot be empty')
+            raise ValueError('sensor_size_x_mm cannot be empty') from None
         self._sensor_size[0] = value
         # rebuild camera
         self._rebuild_camera()
@@ -195,7 +195,7 @@ class SatelliteCamera():
     def sensor_size_y_mm(self, value=None):
         """ sensor_size_y_mm """
         if value is None:
-            raise ValueError('sensor_size_y_mm cannot be empty')
+            raise ValueError('sensor_size_y_mm cannot be empty') from None
         self._sensor_size[1] = value
         # rebuild camera
         self._rebuild_camera()
@@ -209,7 +209,7 @@ class SatelliteCamera():
     def nx(self, value=None):
         """ nx """
         if value is None:
-            raise ValueError('nx cannot be empty')
+            raise ValueError('nx cannot be empty') from None
         self._n[0] = value
         # rebuild camera
         self._rebuild_camera()
@@ -223,7 +223,7 @@ class SatelliteCamera():
     def ny(self, value=None):
         """ ny """
         if value is None:
-            raise ValueError('ny cannot be empty')
+            raise ValueError('ny cannot be empty') from None
         self._n[1] = value
         # rebuild camera
         self._rebuild_camera()
@@ -237,7 +237,7 @@ class SatelliteCamera():
     def cx(self, value=None):
         """ cx """
         if value is None:
-            raise ValueError('cx cannot be empty')
+            raise ValueError('cx cannot be empty') from None
         self._c[0] = value
         # rebuild camera
         self._rebuild_camera()
@@ -251,7 +251,7 @@ class SatelliteCamera():
     def cy(self, value=None):
         """ cy """
         if value is None:
-            raise ValueError('cy cannot be empty')
+            raise ValueError('cy cannot be empty') from None
         self._c[1] = value
         # rebuild camera
         self._rebuild_camera()
@@ -265,7 +265,7 @@ class SatelliteCamera():
     def bcc(self, value=None):
         """ bcc """
         if value is None:
-            raise ValueError('bcc cannot be empty')
+            raise ValueError('bcc cannot be empty') from None
         self._bcc = value
         # rebuild camera
         self._rebuild_camera()
@@ -377,7 +377,7 @@ class SatelliteCamera():
         # Quaternion pointing - if defined, just do it (even with camera y/p/r defined above)
         if pointing == 'quaternion':
             if None in [qw, qx, qy, qz]:
-                raise ValueError('%s: invalid pointing value' % (pointing))
+                raise ValueError('%s: invalid pointing value' % (pointing)) from None
             self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_wxyz(qw, qx, qy, qz)
             return
@@ -403,7 +403,7 @@ class SatelliteCamera():
         # Point camera at ground location (lat,lon) - if defined, just do it (even with camera y/p/r defined above)
         if pointing == 'ground':
             if None in [earth_lat_deg, earth_lon_deg]:
-                raise ValueError('%s: invalid pointing value' % (pointing))
+                raise ValueError('%s: invalid pointing value' % (pointing)) from None
             # Point camera at ground location (lat,lon)
             r_teme_km = self.eci_position_vector()
             r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
@@ -414,7 +414,7 @@ class SatelliteCamera():
         # Point camera at star (ra,dec) - if defined, just do it (even with camera y/p/r defined above)
         if pointing == 'star':
             if None in [star_ra_deg, star_dec_deg]:
-                raise ValueError('%s: invalid pointing value' % (pointing))
+                raise ValueError('%s: invalid pointing value' % (pointing)) from None
             # Point camera at ra/dec
             self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_radec(ra_deg=star_ra_deg, dec_deg=star_dec_deg, obs_time=self.obs_time)
@@ -426,7 +426,7 @@ class SatelliteCamera():
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_wxyz()
             return
 
-        raise ValueError('%s: invalid pointing value' % (pointing))
+        raise ValueError('%s: invalid pointing value' % (pointing)) from None
 
     def eci_position_vector(self):
         """ eci_position_vector """
@@ -465,7 +465,7 @@ class SatelliteCamera():
         try:
             px, py = self.camera.radec_to_pixel(ra_deg, dec_deg, self.attitude, self.obs_time)
         except CameraIntrinsicsError as e:
-            raise SatelliteCameraError(str(e))
+            raise SatelliteCameraError(str(e)) from None
         return px, py
 
     def camera_fov_radec_box(self):

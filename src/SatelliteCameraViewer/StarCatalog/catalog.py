@@ -47,7 +47,7 @@ class Catalog():
                 self._directory = Path(self._DIR_STAR_CATALOG).expanduser()
 
         if not os.path.exists(self._directory):
-            raise FileNotFoundError(self._directory)
+            raise FileNotFoundError(self._directory) from None
         if not os.path.exists(self.directory()):
             os.mkdir(self.directory())
 
@@ -99,7 +99,7 @@ class Catalog():
         """ directory() """
 
         if not self._directory:
-            raise FileNotFoundError(self._directory)
+            raise FileNotFoundError(self._directory) from None
 
         return self._directory / self._name
 
@@ -146,7 +146,7 @@ class Catalog():
         """ _prime_from_web() """
 
         if not self.base_url or not self.source_files:
-            raise NotImplementedError
+            raise NotImplementedError from None
 
         for filename in self.source_files:
             url = self.base_url + filename
@@ -238,7 +238,7 @@ class Catalog():
         """ _readstarfile() """
 
         # this is expected to be implemented by the catalog-specific code
-        raise NotImplementedError
+        raise NotImplementedError from None
 
     def _readpickle(self):
         """ _readpickle() """

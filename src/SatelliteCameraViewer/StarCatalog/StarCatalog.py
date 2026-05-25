@@ -52,7 +52,7 @@ class StarCatalog():
             cls.import_all()
 
         if len(cls._known_catalogs) == 0:
-            raise ValueError('No Star Catalog imported')
+            raise ValueError('No Star Catalog imported') from None
         return list(sorted(cls._known_catalogs.keys()))
 
     @classmethod
@@ -70,7 +70,7 @@ class StarCatalog():
 
         if len(self.__class__._known_catalogs) == 0:
             self.__class__.import_all()
-        if which == None:
+        if which is None:
             which = self.__class__.catalogs()[0]
 
         try:

@@ -125,7 +125,7 @@ class BSC5Stars:
 		self._precompute_stars()
 		return np.array(self._stars_ra_rad), np.array(self._stars_dec_rad), np.array(self._stars_mag)
 
-	def get_constellations(self, constellations=['Ori','Lib']):
+	def get_constellations(self, constellations=None):
 		"""
 		get_constellations - return an array of constellations.
 
@@ -134,6 +134,8 @@ class BSC5Stars:
 		:return: array of constellations.
 		:rtype: np.array
 		"""
+		if constellations is None:
+			constellations = ['Ori','Sgr']
 		self._precompute_constellation(constellations)
 		return np.array(self._const_ra_rad), np.array(self._const_dec_rad), np.array(self._const_mag)
 

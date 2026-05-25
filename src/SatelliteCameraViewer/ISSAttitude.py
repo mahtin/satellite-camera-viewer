@@ -64,7 +64,7 @@ class ISSAttitude:
 		jd, fr = jday(now_utc.year, now_utc.month, now_utc.day, now_utc.hour, now_utc.minute, now_utc.second + now_utc.microsecond/1e6)
 		error, r_eci, v_eci = sat.sgp4(jd, fr)
 		if error != 0:
-			raise RuntimeError('SGP4 propagation error code: %s' % (error))
+			raise RuntimeError('SGP4 propagation error code: %s' % (error)) from None
 		return r_eci, v_eci
 
 	# ------------------------------------------------------------

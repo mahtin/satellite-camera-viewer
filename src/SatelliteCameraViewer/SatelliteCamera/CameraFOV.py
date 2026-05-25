@@ -18,7 +18,6 @@ except ModuleNotFoundError:
 
 from .CameraIntrinsics import CameraIntrinsics
 from .CameraAttitude import CameraAttitude
-from .SatelliteOrbit import SatelliteOrbit
 
 class CameraFOVError(Exception):
     """ CameraFOVError """
@@ -288,7 +287,7 @@ class CameraFOV:
         """
 
         if hp is None:
-            raise CameraFOVError('healpy not installed - maybe you are on Windows11?')
+            raise CameraFOVError('healpy not installed - maybe you are on Windows11?') from None
 
         # Corner pixels of the sensor
         corners = [

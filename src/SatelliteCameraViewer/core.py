@@ -1,8 +1,6 @@
 """ core """
 
 import math
-import tkinter as tk
-from tkinter import ttk
 
 import numpy as np
 from matplotlib.figure import Figure
@@ -10,7 +8,7 @@ from matplotlib.collections import PathCollection
 import cartopy.crs as ccrs
 from astropy.coordinates import SkyCoord
 
-from .SatelliteCamera import SatelliteCamera, SatelliteCameraError
+from .SatelliteCamera import SatelliteCameraError
 from .BSC5Stars import BSC5Stars
 from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
@@ -81,7 +79,7 @@ class CoreCode:
 		:type font_size: str
 		"""
 		if root is None:
-			raise ValueError('CoreCode() needs root value')
+			raise ValueError('CoreCode() needs root value') from None
 		self._root = root
 
 		self._timer_id = None

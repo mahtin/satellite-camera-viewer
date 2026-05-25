@@ -14,7 +14,7 @@ from astropy.coordinates import SkyCoord, GCRS
 import astropy.units as u
 
 from .BrownConradyCoeffs import BrownConradyCoeffs
-from .CameraAttitude import CameraAttitude, Quaternion
+from .CameraAttitude import CameraAttitude
 from .SatelliteOrbit import SatelliteOrbit
 
 class CameraIntrinsicsError(Exception):
@@ -247,7 +247,7 @@ class CameraIntrinsics:
         # 6. Reject stars behind the camera
         if v_cam[2] <= 0:
             ## print('radec_to_pixel() [%.1f,%.1f] %-30s %s' % (ra_deg, dec_deg, attitude.quat_cam_to_eci, v_cam))
-            raise CameraIntrinsicsError("Direction is behind the camera")
+            raise CameraIntrinsicsError("Direction is behind the camera") from None
 
         # 7. Pinhole projection onto sensor plane (use self._effective_focal_length_mm)
         scale = self._effective_focal_length_mm / v_cam[2]
@@ -261,5 +261,5 @@ class CameraIntrinsics:
 
         # 9. Check bounds
         if px < 0 or px >= self.nx or py < 0 or py >= self.ny:
-            raise CameraIntrinsicsError("Direction is outside the camera field of view")
+            raise CameraIntrinsicsError("Direction is outside the camera field of view") from None
         return int(px), int(py)

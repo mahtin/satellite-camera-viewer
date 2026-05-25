@@ -1,6 +1,6 @@
 """ NikonD5Camera """
 
-from .SatelliteCamera import SatelliteCamera, SatelliteCameraError
+from .SatelliteCamera import SatelliteCamera
 from .static_tles import static_tles
 
 class NikonD5Camera:
@@ -105,5 +105,5 @@ class NikonD5Camera:
 		""" camera_fov_intercept_earth """
 		polygon = self._sc.camera_fov_intercept_earth(border_step=border_step)
 		return polygon
-		# TODO 
+		# TODO
 		# return [(float(v.ra.value), float(v.dec.value)) for v in polygon]

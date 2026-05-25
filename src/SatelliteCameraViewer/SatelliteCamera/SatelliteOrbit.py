@@ -21,7 +21,7 @@ class SatelliteOrbit:
     def __post_init__(self):
         """ SatelliteOrbit """
         if self.tle is None or len(self.tle) not in [2,3] or None in self.tle:
-            raise ValueError('Must provide satellite TLEs as two or three lines of text')
+            raise ValueError('Must provide satellite TLEs as two or three lines of text') from None
         if len(self.tle) == 2:
             self._sat = Satrec.twoline2rv(self.tle[0], self.tle[1], WGS72)
         else:
@@ -62,7 +62,7 @@ class SatelliteOrbit:
         # v: velocity vectors in kilometers per second.
         e, r_teme_km, _ = self._sat.sgp4(t.jd1, t.jd2)
         if e != 0:
-            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e]))
+            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e])) from None
         # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return np.array(r_teme_km)
@@ -78,7 +78,7 @@ class SatelliteOrbit:
         # v: velocity vectors in kilometers per second.
         e, _, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
         if e != 0:
-            raise RuntimeError('SGP4 error value/code: %s' % (e))
+            raise RuntimeError('SGP4 error value/code: %s' % (e)) from None
         # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return np.array(v_teme_km_s)
@@ -93,7 +93,7 @@ class SatelliteOrbit:
         # v: velocity vectors in kilometers per second.
         e, r_teme_km, _ = self._sat.sgp4(t.jd1, t.jd2)
         if e != 0:
-            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e]))
+            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e])) from None
         sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
         return sat_icrs
 

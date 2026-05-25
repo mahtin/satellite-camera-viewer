@@ -23,9 +23,9 @@ class SpelUChileStars:
 class PrecomputedCatalog:
 	""" PrecomputedCatalog """
 
-	CATALOG_DIR = './../RPI/Catalog'
+	_CATALOG_DIR = './../RPI/Catalog'
 
-	precompute_cats = [
+	_precompute_cats = [
 		'cat_RA_0_DEC_-90',
 		'cat_RA_0_DEC_-60', 'cat_RA_0_DEC_-30', 'cat_RA_0_DEC_0', 'cat_RA_0_DEC_30', 'cat_RA_0_DEC_60',
 		'cat_RA_0_DEC_90',
@@ -53,7 +53,7 @@ class PrecomputedCatalog:
 
 	def _find_stars_by_seatch(self, pattern):
 		""" find_stars_by_seatch """
-		directory_path = PrecomputedCatalog.CATALOG_DIR + '/' + self._collection
+		directory_path = self._CATALOG_DIR + '/' + self._collection
 
 		all_found = {}
 		for file_name in os.listdir(directory_path):
@@ -78,7 +78,7 @@ class PrecomputedCatalog:
 
 	def _find_stars_by_list(self):
 		""" _find_stars_by_list """
-		pc = self._find_stars_by_seatch(precompute_cats)
+		pc = self._find_stars_by_seatch(self._precompute_cats)
 		# uniq the stars ...
 		all_found = {}
 		for v in pc.stars.values():
