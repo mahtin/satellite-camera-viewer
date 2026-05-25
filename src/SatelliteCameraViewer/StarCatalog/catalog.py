@@ -185,7 +185,7 @@ class Catalog():
     def _files_age(self, suffix):
         """ _files_age() """
 
-        filename = self.directory() / self.name().lower() + suffix
+        filename = (self.directory() / self.name().lower()).with_suffix(suffix)
         try:
             age = int(time.time() - os.stat(filename).st_mtime)
         except:
@@ -243,7 +243,7 @@ class Catalog():
     def _readpickle(self):
         """ _readpickle() """
 
-        filename = self.directory() / self.name().lower() + '.pickle'
+        filename = (self.directory() / self.name().lower()).with_suffix('.pickle')
         # read in the pickle file
         try:
             with open(filename, 'rb') as fd:
@@ -253,7 +253,7 @@ class Catalog():
 
         # check digest and only return stars if correct
         signature1 = hmac.new(self._key, stars_b, hashlib.sha256).hexdigest()
-        filename = self.directory() / self.name().lower() + '.sha256'
+        filename = (self.directory() / self.name().lower()).with_suffix('.sha256')
         try:
             with open(filename, 'r', encoding='utf-8') as fd:
                 signature2 = fd.read().rstrip()
@@ -279,7 +279,7 @@ class Catalog():
         stars_b = pickle.dumps(self._stars)
 
         # write the pickle file
-        filename = self.directory() / self.name().lower() + '.pickle'
+        filename = (self.directory() / self.name().lower()).with_suffix('.pickle')
         try:
             with open(filename, 'wb') as fd:
                 fd.write(stars_b)
@@ -287,7 +287,7 @@ class Catalog():
             return
 
         # write digest based on stars
-        filename = self.directory() / self.name().lower() + '.sha256'
+        filename = (self.directory() / self.name().lower()).with_suffix('.sha256')
         signature = hmac.new(self._key, stars_b, hashlib.sha256).hexdigest()
         with open(filename, 'w', encoding='utf-8') as fd:
             fd.write(signature)
@@ -307,7 +307,7 @@ class Catalog():
             else:
                 filename = ':memory:'
         else:
-            filename = self.directory() / self.name().lower() + '.db'
+            filename = (self.directory() / self.name().lower()).with_suffix('.db')
             if not os.path.exists(filename):
                 fresh = True
 
@@ -372,5 +372,5 @@ class Catalog():
 
         cur = self._db.cursor()
         for row in cur.execute('SELECT * FROM stars ORDER BY mag LIMIT 20'):
-            print("%s" % (Star(*row)))
+            print('%s' % (Star(*row)))
         self._db.commit()
