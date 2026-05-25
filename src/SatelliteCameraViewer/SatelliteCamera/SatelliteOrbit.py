@@ -4,7 +4,6 @@ SatelliteOrbit
 Satellite orbit from TLE
 """
 
-from dataclasses import dataclass
 from datetime import datetime, timezone
 import numpy as np
 from astropy.time import Time
@@ -13,26 +12,86 @@ import astropy.units as u
 
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
 
-@dataclass
 class SatelliteOrbit:
     """ SatelliteOrbit """
-    tle: list = None
 
-    def __post_init__(self):
+    def __init__(self, tle:list=None):
         """ SatelliteOrbit """
-        if self.tle is None or len(self.tle) not in [2,3] or None in self.tle:
-            raise ValueError('Must provide satellite TLEs as two or three lines of text') from None
-        if len(self.tle) == 2:
-            self._sat = Satrec.twoline2rv(self.tle[0], self.tle[1], WGS72)
-        else:
-            self._sat = Satrec.twoline2rv(self.tle[1], self.tle[2], WGS72)
+        self.tle = tle
 
     def __str__(self):
-        if len(self.tle) == 2:
-            v = '["%s", "%s"]' % (self.tle[0], self.tle[1])
+        if len(self._tle) == 2:
+            v = '["%s", "%s"]' % (self._tle[0], self._tle[1])
         else:
-            v = '["%s", "%s", "%s"]' % (self.tle[0], self.tle[1], self.tle[2])
+            v = '["%s", "%s", "%s"]' % (self._tle[0], self._tle[1], self._tle[2])
         return v
+
+    @property
+    def tle(self):
+        """
+        tle - return array of TLE strings (2 or 3 lines long)
+
+        :return: TLEs
+        :rtype: list[str]
+        """
+        return self._tle
+
+    @tle.setter
+    def tle(self, value=None):
+        """
+        value - return array of TLE strings (2 or 3 lines long).
+
+        :param tle: TLEs as an array of two or three lines.
+        :type tle: list[str]
+        """
+        self._tle = value
+        self._rebuild_from_tle()
+
+    def _rebuild_from_tle(self):
+        """ _rebuild_from_tle """
+        if self._tle is None or len(self._tle) not in [2,3] or None in self._tle:
+            self._sat = None
+            raise ValueError('TLEs must provide satellite info as two or three lines of text') from None
+        try:
+            if len(self._tle) == 2:
+                self._sat = Satrec.twoline2rv(self._tle[0], self._tle[1], WGS72)
+            else:
+                self._sat = Satrec.twoline2rv(self._tle[1], self._tle[2], WGS72)
+        except ValueError:
+            self._sat = None
+            raise ValueError('TLEs have invalid format') from None
+
+    def t(self, obs_time: datetime):
+        """
+        t - convert to Julian date and fractional Julian date
+
+        :param obs_time: date and time in datetime form with UTC timezone
+        :type obs_time: datetime
+        :return: time in Jualian date form
+        :rtype: Time
+
+        """
+        # Convert datetime -> Julian date and fractional Julian date
+        return Time(obs_time.replace(tzinfo=timezone.utc))
+
+    def _teme(self, t):
+        """
+        _teme
+
+        :param t: Time in Juian date format
+        :type t: Time
+        :return: r_teme_km, v_teme_km_s
+        :rtype: tuple
+        """
+        # e: nonzero for any dates that produced errors, 0 otherwise.
+        # r: position vectors in kilometers.
+        # v: velocity vectors in kilometers per second.
+        e, r_teme_km, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
+        if e != 0:
+            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e])) from None
+        # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
+        # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
+        return r_teme_km, v_teme_km_s
 
     # Earth-Centered Inertial (ECI) position and velocity define a satellite's state vector ([r,v]) using Cartesian
     # coordinates (x,y,z) relative to the center of the Earth, which does not rotate with the planet, remaining fixed
@@ -55,45 +114,23 @@ class SatelliteOrbit:
         """
         Returns ECI (Earth-Centered Inertial) position (km) at UTC time obs_time.
         """
-        # Convert datetime -> Julian date and fractional Julian date
-        t = Time(obs_time.replace(tzinfo=timezone.utc))
-        # e: nonzero for any dates that produced errors, 0 otherwise.
-        # r: position vectors in kilometers.
-        # v: velocity vectors in kilometers per second.
-        e, r_teme_km, _ = self._sat.sgp4(t.jd1, t.jd2)
-        if e != 0:
-            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e])) from None
-        # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
-        # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
+        t = self.t(obs_time)
+        r_teme_km, v_teme_km_s = self._teme(t)
         return np.array(r_teme_km)
 
     def eci_velocity_vector(self, obs_time: datetime):
         """
         Returns ECI (Earth-Centered Inertial) velocity (km/s) at UTC time obs_time.
         """
-        # Convert datetime -> Julian date and fractional Julian date
-        t = Time(obs_time.replace(tzinfo=timezone.utc))
-        # e: nonzero for any dates that produced errors, 0 otherwise.
-        # r: position vectors in kilometers.
-        # v: velocity vectors in kilometers per second.
-        e, _, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
-        if e != 0:
-            raise RuntimeError('SGP4 error value/code: %s' % (e)) from None
-        # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
-        # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
+        t = self.t(obs_time)
+        r_teme_km, v_teme_km_s = self._teme(t)
         return np.array(v_teme_km_s)
 
     def icrs(self, obs_time: datetime):
         """ icrs - convert satellite and time into a ICRS value """
         # ICRS is International Celestial Reference System (ICRS)
-        # Convert datetime -> Julian date and fractional Julian date
-        t = Time(obs_time.replace(tzinfo=timezone.utc))
-        # e: nonzero for any dates that produced errors, 0 otherwise.
-        # r: position vectors in kilometers.
-        # v: velocity vectors in kilometers per second.
-        e, r_teme_km, _ = self._sat.sgp4(t.jd1, t.jd2)
-        if e != 0:
-            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e])) from None
+        t = self.t(obs_time)
+        r_teme_km, v_teme_km_s = self._teme(t)
         sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
         return sat_icrs
 
