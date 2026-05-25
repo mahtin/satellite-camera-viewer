@@ -23,7 +23,7 @@ class BSC5Stars:
 		:param max_mag: Maximum star magnitude to process.
 		:type max_mag: float
 		"""
-		self._sc = StarCatalog('BSC5', use_database=True, force_reload=False)
+		self._sc = StarCatalog('BSC5', use_database=True, force_reload=False, debug=False)
 		self._stars = None
 		self._skycoords = None
 		self._max_mag = max_mag
