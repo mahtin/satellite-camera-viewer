@@ -745,7 +745,6 @@ class CoreCode:
 
 	def do_satellite_selection(self, val):
 		""" do_satellite_selection """
-		print('do_satellite_selection:', val)
 		self.nikon.find_tle(val)
 		# remove satellite track
 		self.plot_starfield_centerline_clear()
@@ -756,7 +755,6 @@ class CoreCode:
 
 	def do_satellite_attitude(self, val):
 		""" do_satellite_attitude """
-		print('CORE: do_satellite_attitude:', val)
 		self._pointing = val
 		self.plot_starfield_centerline_clear()
 		self.update_starfield_and_more()
