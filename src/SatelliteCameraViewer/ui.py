@@ -6,306 +6,307 @@ from tkinter import ttk
 class UserInterface:
 	""" UserInterface """
 
-	_core_code = None
-	_title_label = None
-	_camera_info_box = None
-	_star_found_text_box = None
-	_misc_text_box = None
-	_realtime_button = None
-	_focal_length_buttons = {}
-	_star_mag_buttons = {}
-	_satellite_attitude_buttons ={}
-	_rpy_label = None
-	_sat_label = None
-	_photo_label = None
-	_rpy_sliders = {}
-
-	rpy_values_deg = {
-		'roll': 0.0,		# X
-		'pitch': 0.0,		# Y
-		'yaw': 0.0		# Z
-	}
-	""" rpy_values_deg - values of Roll, Pitch, and Yaw sliders. """
-
 	_cam_slider_rpy_text = {
 		'roll': 'Roll (X) side-to-side',
 		'pitch': 'Pitch (Y) nose-up-down',
 		'yaw': 'Yaw((Z) left-right'
 	}
 
-	@classmethod
-	def register_core_code(cls, f):
-		""" register_core_code """
-		cls._core_code = f
+	def __init__(self, title=None):
+		""" UserInterface """
+		self._root = tk.Tk()
+
+		self._core = None
+		self._title_label = None
+		self._camera_info_box = None
+		self._star_found_text_box = None
+		self._misc_text_box = None
+		self._realtime_button = None
+		self._focal_length_buttons = {}
+		self._star_mag_buttons = {}
+		self._satellite_attitude_buttons ={}
+		self._rpy_label = None
+		self._sat_label = None
+		self._photo_label = None
+		self._rpy_sliders = {}
+
+		# rpy_values_deg - values of Roll, Pitch, and Yaw sliders.
+		self.rpy_values_deg = {
+			'roll': 0.0,		# X
+			'pitch': 0.0,		# Y
+			'yaw': 0.0		# Z
+		}
+
+		if title:
+			self.root.title('Satellite Camera Viewer')
+
+	@property
+	def root(self):
+		""" root """
+		return self._root
+
+	@property
+	def font(self):
+		""" font """
+		return tk.font.nametofont("TkDefaultFont").actual()
+
+	@property
+	def core(self):
+		""" core """
+		return self._core
+
+	@core.setter
+	def core(self, value=None):
+		""" core """
+		self._core = value
+
+	def frame(self, parent, borderwidth=1, relief='solid', row=0, col=0, padx=5, pady=2, sticky='nsew', anchor=None):
+		""" frame """
+		f = ttk.Frame(parent, borderwidth=borderwidth, relief=relief)
+		if anchor is not None:
+			f.pack(padx=padx, pady=pady, anchor=anchor)
+		else:
+			f.grid(row=row, column=col, padx=padx, pady=pady, sticky=sticky)
+		return f
 
 	# TITLE
 
-	@classmethod
-	def title_label(cls, parent, text):
-		""" title_label """
-		l = ttk.Label(parent, text=text, justify='left', font=('', 24, 'bold'))
-		l.pack(padx=5, pady=2)
-		cls._title_label = l
+	#def title_label(self, parent, text):
+	#	""" title_label """
+	#	l = ttk.Label(parent, text=text, justify='left', font=('', 24, 'bold'))
+	#	l.pack(padx=5, pady=2)
+	#	self._title_label = l
 
 	# INFO TEXT BOXES
 
-	@classmethod
-	def camera_info_box(cls, parent, row, col):
+	def camera_info_box(self, parent, row, col):
 		""" camera_info_box """
 		t = tk.Text(parent, width=80, height=3, state='disabled', wrap=tk.WORD)
 		t.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._camera_info_box = t
+		self._camera_info_box = t
 
-	@classmethod
-	def misc_text_box(cls, parent, row, col):
+	def misc_text_box(self, parent, row, col):
 		""" misc_text_box """
 		t = tk.Text(parent, width=80, height=3, state='disabled', wrap=tk.WORD)
 		t.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._misc_text_box = t
+		self._misc_text_box = t
 
-	@classmethod
-	def star_found_text_box(cls, parent, row, col):
+	def star_found_text_box(self, parent, row, col):
 		""" star_found_text_box """
 		t = tk.Text(parent, width=80, height=3, state='disabled', wrap=tk.WORD)
 		t.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._star_found_text_box = t
+		self._star_found_text_box = t
 
-	@classmethod
-	def camera_info(cls, text):
+	def camera_info(self, text):
 		""" camera_info """
-		cls._camera_info_box.config(state='normal')
-		cls._camera_info_box.delete('1.0', tk.END)
-		cls._camera_info_box.insert(tk.END, '%s' % (text))
-		cls._camera_info_box.config(state='disabled')
+		self._camera_info_box.config(state='normal')
+		self._camera_info_box.delete('1.0', tk.END)
+		self._camera_info_box.insert(tk.END, '%s' % (text))
+		self._camera_info_box.config(state='disabled')
 
-	@classmethod
-	def star_found_text(cls, text):
+	def star_found_text(self, text):
 		""" star_found_text """
-		cls._star_found_text_box.config(state='normal')
-		cls._star_found_text_box.delete('1.0', tk.END)
-		cls._star_found_text_box.insert(tk.END, '%s' % (text))
-		cls._star_found_text_box.config(state='disabled')
+		self._star_found_text_box.config(state='normal')
+		self._star_found_text_box.delete('1.0', tk.END)
+		self._star_found_text_box.insert(tk.END, '%s' % (text))
+		self._star_found_text_box.config(state='disabled')
 
-	@classmethod
-	def misc_text(cls, text):
+	def misc_text(self, text):
 		""" misc_text """
-		cls._misc_text_box.config(state='normal')
-		cls._misc_text_box.delete('1.0', tk.END)
-		cls._misc_text_box.insert(tk.END, '%s' % (text))
-		cls._misc_text_box.config(state='disabled')
+		self._misc_text_box.config(state='normal')
+		self._misc_text_box.delete('1.0', tk.END)
+		self._misc_text_box.insert(tk.END, '%s' % (text))
+		self._misc_text_box.config(state='disabled')
 
 	# BUTTONS
 
-	@classmethod
-	def do_realtime(cls, value):
+	def do_realtime(self, value):
 		""" do_realtime """
-		cls._core_code.do_realtime(value)
+		self.core.do_realtime(value)
 
-	@classmethod
-	def realtime_button(cls, parent, row, col):
+	def realtime_button(self, parent, row, col):
 		""" realtime_button """
-		cls._realtime_state = tk.BooleanVar(value=False)
-		b = ttk.Checkbutton(parent, text='Accelerate?', variable=cls._realtime_state, command=lambda value=cls._realtime_state: cls.do_realtime(value))
+		self._realtime_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Accelerate?', variable=self._realtime_state, command=lambda value=self._realtime_state: self.do_realtime(value))
 		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-		cls._realtime_button = b
+		self._realtime_button = b
 
-	@classmethod
-	def realtime_button_set(cls, value):
+	def realtime_button_set(self, value):
 		""" realtime_button_set """
-		cls._realtime_state.set(value)
+		self._realtime_state.set(value)
 
-	@classmethod
-	def do_stars(cls, value):
+	def do_stars(self, value):
 		""" do_stars """
-		cls._core_code.do_stars(value)
+		self.core.do_stars(value)
 
-	@classmethod
-	def stars_button(cls, parent, row, col):
+	def stars_button(self, parent, row, col):
 		""" stars_button """
-		cls._stars_state = tk.BooleanVar(value=False)
-		b = ttk.Checkbutton(parent, text='Stars?', variable=cls._stars_state, command=lambda value=cls._stars_state: cls.do_stars(value))
+		self._stars_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Stars?', variable=self._stars_state, command=lambda value=self._stars_state: self.do_stars(value))
 		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-		cls._stars_button = b
+		self._stars_button = b
 
-	@classmethod
-	def stars_button_set(cls, value):
+	def stars_button_set(self, value):
 		""" set_stars_button """
-		cls._stars_state.set(value)
+		self._stars_state.set(value)
 
-	@classmethod
-	def do_match_stars(cls, value):
+	def do_match_stars(self, value):
 		""" do_match_stars """
-		cls._core_code.do_match_stars(value)
+		self.core.do_match_stars(value)
 
-	@classmethod
-	def match_stars_button(cls, parent, row, col):
+	def match_stars_button(self, parent, row, col):
 		""" match_stars_button """
-		cls._match_stars_state = tk.BooleanVar(value=False)
-		b = ttk.Checkbutton(parent, text='Match stars?', variable=cls._match_stars_state, command=lambda value=cls._match_stars_state: cls.do_match_stars(value))
+		self._match_stars_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Match stars?', variable=self._match_stars_state, command=lambda value=self._match_stars_state: self.do_match_stars(value))
 		b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-		cls._match_stars_button = b
+		self._match_stars_button = b
 
-	@classmethod
-	def match_stars_button_set(cls, value):
+	def match_stars_button_set(self, value):
 		""" match_stars_button_set """
-		cls._match_stars_state.set(value)
+		self._match_stars_state.set(value)
 
 	# STAR MAGNITUDE
 
-	@classmethod
-	def do_mag(cls, value):
+	def do_mag(self, value):
 		""" do_mag """
-		cls._core_code.do_mag(value)
+		self.core.do_mag(value)
 
-	@classmethod
-	def star_mag_buttons(cls, parent, row, col, mags):
+	def star_mag_buttons(self, parent, row, col, mags):
 		""" star_mag_buttons """
 		l = ttk.Label(parent, text='Star Magnitude', justify='left')
 		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
 		row += 1
 		m_default = mags[2]
-		cls._star_mag_buttons_variable = tk.DoubleVar(value=m_default)
+		self._star_mag_buttons_variable = tk.DoubleVar(value=m_default)
 		for m in mags:
 			# radiobutton
-			b = tk.Radiobutton(parent, text='%.1f' % m, variable=cls._star_mag_buttons_variable, justify='left', value=m, command=lambda value=m: cls.do_mag(value))
+			b = tk.Radiobutton(parent, text='%.1f' % m, variable=self._star_mag_buttons_variable, justify='left', value=m, command=lambda value=m: self.do_mag(value))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-			cls._star_mag_buttons[m] = b
+			self._star_mag_buttons[m] = b
 			row += 1
 
-	@classmethod
-	def star_mag_buttons_set(cls, mag=5.0):
+	def star_mag_buttons_set(self, mag=5.0):
 		""" star_mag_buttons_set """
-		cls._star_mag_buttons_variable.set(mag)
+		self._star_mag_buttons_variable.set(mag)
 
 	# FOCAL LENGTH
 
-	@classmethod
-	def do_focal_length(cls, f):
+	def do_focal_length(self, f):
 		""" do_focal_length """
-		cls._core_code.do_focal_length(f)
+		self.core.do_focal_length(f)
 
-	@classmethod
-	def focal_length_buttons(cls, parent, row, col, focal_lengths):
+	def focal_length_buttons(self, parent, row, col, focal_lengths):
 		""" focal_length_buttons """
 		l = ttk.Label(parent, text='Focal Length', justify='left')
 		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
 		row += 1
 		f_default = focal_lengths[1]
-		cls._focal_length_buttons_variable = tk.IntVar(value=f_default)
+		self._focal_length_buttons_variable = tk.IntVar(value=f_default)
 		for f in focal_lengths:
 			# radiobutton
-			b = tk.Radiobutton(parent, text='%d mm' % f, variable=cls._focal_length_buttons_variable, justify='left', value=f, command=lambda f=f: cls.do_focal_length(f))
+			b = tk.Radiobutton(parent, text='%d mm' % f, variable=self._focal_length_buttons_variable, justify='left', value=f, command=lambda f=f: self.do_focal_length(f))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-			cls._focal_length_buttons[f] = b
+			self._focal_length_buttons[f] = b
 			row += 1
 
-	@classmethod
-	def focal_length_buttons_set(cls, focal_length=50):
+	def focal_length_buttons_set(self, focal_length=50):
 		""" focal_length_set """
-		cls._focal_length_buttons_variable.set(focal_length)
+		self._focal_length_buttons_variable.set(focal_length)
 
 	# SATELLITE SELECTION
 
-	@classmethod
-	def do_satellite_selection(cls, val):
+	def do_satellite_selection(self, val):
 		""" do_satellite_selection """
-		cls._core_code.do_satellite_selection(val)
+		self.core.do_satellite_selection(val)
 
-	@classmethod
-	def satellite_selection(cls, parent, row, col, satellite_names):
+	def satellite_selection(self, parent, row, col, satellite_names):
 		""" satellite_selection """
 		l = ttk.Label(parent, text='Satellite Selection', justify='left')
 		l.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='nsew')
 		row += 1
 		s_default = satellite_names[0]
-		cls._satellite_selected = tk.StringVar(value=s_default)
-		drop = tk.OptionMenu(parent, cls._satellite_selected, *satellite_names, command=lambda val: cls.do_satellite_selection(val))
+		self._satellite_selected = tk.StringVar(value=s_default)
+		drop = tk.OptionMenu(parent, self._satellite_selected, *satellite_names, command=lambda val: self.do_satellite_selection(val))
 		drop.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='ew')
-		cls._satellite_selection_drop = drop
+		self._satellite_selection_drop = drop
 
 	# SATELLITE BUTTONS
 
-	@classmethod
-	def do_satellite_attitude(cls, a):
+	def do_satellite_attitude(self, a):
 		""" do_satellite_attitude """
-		cls._core_code.do_satellite_attitude(a)
+		self.core.do_satellite_attitude(a)
 
-	@classmethod
-	def satellite_attitude_buttons(cls, parent, row, col, attitude_names):
+	def satellite_attitude_buttons(self, parent, row, col, attitude_names):
 		""" satellite_attitude_buttons """
 		a_default = attitude_names[0]
-		cls._satellite_attitude_buttons_variable = tk.IntVar(value=a_default)
+		self._satellite_attitude_buttons_variable = tk.IntVar(value=a_default)
 		for a in attitude_names:
 			# radiobutton
-			b = tk.Radiobutton(parent, text=a, variable=cls._satellite_attitude_buttons_variable, justify='left', value=a, command=lambda a=a: cls.do_satellite_attitude(a))
+			b = tk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, justify='left', value=a, command=lambda a=a: self.do_satellite_attitude(a))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
-			cls._satellite_attitude_buttons[a] = b
+			self._satellite_attitude_buttons[a] = b
 			col += 1
 
 	# ROLL PITCH YAW
 
-	@classmethod
-	def rpy_label(cls, parent, text, row, col):
+	def rpy_label(self, parent, text, row, col):
 		""" rpy_label """
 		rpy_label = 'Roll(X) / Pitch(Y) / Yaw(Z) controls for satellite body (and hence camera)'
 		l = ttk.Label(parent, text=rpy_label, justify='left', wraplength=160)
 		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		cls._rpy_label = l
+		self._rpy_label = l
 
-	@classmethod
-	def do_rpy(cls, val, k):
+	def do_rpy(self, val, k):
 		""" do_rpy """
-		cls._core_code.do_rpy(val, k)
+		self.core.do_rpy(val, k)
 
-	@classmethod
-	def rpy_sliders(cls, parent, row, col):
+	def rpy_sliders(self, parent, row, col):
 		""" rpy_sliders """
-		cls.v_sliders = {}
-		for k,v in cls.rpy_values_deg.items():
-			cls.v_sliders[k] = tk.IntVar(value=int(v))
-			s = tk.Scale(parent, label=cls._cam_slider_rpy_text[k], variable=cls.v_sliders[k], from_=-90, to=90, resolution=10.0, showvalue=True,
-				orient='horizontal', command=lambda val,k=k: cls.do_rpy(val, k))
+		self.v_sliders = {}
+		for k,v in self.rpy_values_deg.items():
+			self.v_sliders[k] = tk.IntVar(value=int(v))
+			s = tk.Scale(parent, label=self._cam_slider_rpy_text[k], variable=self.v_sliders[k], from_=-90, to=90, resolution=10.0, showvalue=True,
+				orient='horizontal', command=lambda val,k=k: self.do_rpy(val, k))
 			s.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-			cls._rpy_sliders[k] = s
+			self._rpy_sliders[k] = s
 			row += 1
 
 	# 3D cubesat image
 
-	@classmethod
-	def sat_label(cls, parent, row, col, width=300, height=300):
+	def sat_label(self, parent, row, col, width=300, height=300):
 		""" sat_label """
 		l = tk.Label(parent, bg='whitesmoke', borderwidth=0, width=width, height=height)
 		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		cls._sat_label = l
-		return cls._sat_label
+		self._sat_label = l
+		return self._sat_label
 
 	# photo image
 
-	@classmethod
-	def photo_label(cls, parent, row, col, width=300, height=300):
+	def photo_label(self, parent, row, col, width=300, height=300):
 		""" photo_label """
 		l = tk.Label(parent, bg='cyan', borderwidth=0, width=width, height=height)
 		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		cls._photo_label = l
-		# cls._image150x150(width, height)
-		return cls._photo_label
+		self._photo_label = l
+		# self._image150x150(width, height)
+		return self._photo_label
 
 	# RESET BUTTON
 
-	@classmethod
-	def do_reset(cls):
+	def do_reset(self):
 		""" do_reset """
-		cls._core_code.do_reset()
+		self.core.do_reset()
 
-	@classmethod
-	def reset_everything_button(cls, parent, row, col):
+	def reset_everything_button(self, parent, row, col):
 		""" reset_everything_button """
-		font = tk.font.nametofont('TkDefaultFont').actual()
 		style = ttk.Style()
 		style.configure('Reset.TButton',
 			foreground='lightcoral',
-			font=(font['family'], font['size'], 'bold'),
+			font=(self.font['family'], self.font['size'], 'bold'),
 		)
-		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=lambda: cls.do_reset())
+		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=lambda: self.do_reset())
 		b.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
-		cls._reset_everything_button = b
+		self._reset_everything_button = b
+
+	def mainloop(self):
+		""" mainloop """
+		self.root.mainloop()

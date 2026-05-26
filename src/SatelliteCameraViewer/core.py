@@ -5,6 +5,7 @@ import math
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.collections import PathCollection
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import cartopy.crs as ccrs
 from astropy.coordinates import SkyCoord
 
@@ -29,12 +30,8 @@ class CoreCode:
 	"""
 	CoreCode - the core drawing code for the stars - also includes logic for the user interface
 
-	:param root: The tk root value.
-	:type root: Tk
-	:param font_family: Name of font to use inside pyplot area.
-	:type font_familiy: str
-	:param font_size: Size of font to use inside pyplot area.
-	:type font_size: str
+	:param ui: User interface class
+	:type root: UserInterface
 	"""
 
 	# https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors
@@ -67,36 +64,30 @@ class CoreCode:
 
 	_verbose = False
 
-	def __init__(self, root=None, font_family='san-serif', font_size=10):
+	def __init__(self, ui:UserInterface=None):
 		"""
 		CoreCode - the core drawing code for the stars - also includes logic for the user interface
 
-		:param root: The tk root value.
-		:type root: Tk
-		:param font_family: Name of font to use inside pyplot area.
-		:type font_familiy: str
-		:param font_size: Size of font to use inside pyplot area.
-		:type font_size: str
+		:param ui: User interface class
+		:type root: UserInterface
 		"""
-		if root is None:
-			raise ValueError('CoreCode() needs root value') from None
-		self._root = root
+		if ui is None:
+			raise ValueError('CoreCode() needs ui value') from None
+		self._ui = ui
 
 		self._timer_id = None
 
-		self._font_family = font_family
-		self._font_size = font_size
+		self._font_family = self._ui.font['family']
+		self._font_size = self._ui.font['size']
 
+		# starfield
 		self._create_starfield_subplot()
 		self._paint_starfield_axis()
-
+		# earth
 		self._create_earth_subplot()
 		self._paint_earth_axis()
-
+		# camera
 		self._nikon = NikonD5Camera()
-
-		self._starfield_canvas = None
-		self._earth_canvas = None
 
 		self._sun = None
 		self._moon = None
@@ -125,6 +116,36 @@ class CoreCode:
 		mag = 5.0
 		self._scbsc5 = StarsConstellationsBSC5(mag)
 
+		# register ourselves with the UI
+		self._ui.core = self
+
+	@property
+	def ui(self):
+		""" ui """
+		return self._ui
+
+	@property
+	def nikon(self):
+		""" nikon - return NikonD5 class. """
+		return self._nikon
+
+	def plot_in_tk(self, parent, which, row=0, col=0, padx=5, pady=3, sticky='nsew'):
+		""" plot_in_tk """
+		if which == 'earth':
+			fig = self._earth_fig
+		if which == 'starfield':
+			fig = self._starfield_fig
+
+		canvas = FigureCanvasTkAgg(fig, master=parent)
+		canvas.get_tk_widget().grid(row=row, column=row, padx=padx, pady=pady, sticky=sticky)
+
+		if which == 'earth':
+			self._earth_canvas = canvas
+		if which == 'starfield':
+			self._starfield_canvas = canvas
+
+		canvas.draw()
+
 	def cubesat_viewer_register(self, u=3, label=None, w=400, h=300):
 		"""
 		cubesat_viewer_register - setup Cubesat.
@@ -136,14 +157,6 @@ class CoreCode:
 		camera_image_register - setup Camera Image.
 		"""
 		self._ci = DoCameraImage(label=label, nx=nx, ny=ny, w=w, h=h)
-
-	def pyplot_starfield_canvas_area_register(self, canvas):
-		""" pyplot_starfield_canvas_area_register """
-		self._starfield_canvas = canvas
-
-	def pyplot_earth_canvas_area_register(self, canvas):
-		""" pyplot_starfield_canvas_area_register """
-		self._earth_canvas = canvas
 
 	def _create_starfield_subplot(self):
 		""" _create_starfield_subplot - core logic to build the pyplot area. """
@@ -231,17 +244,17 @@ class CoreCode:
 				# XYZ for satellite == set by vv (velocity vector)
 				# XYZ for camera == roll, pitch, yaw
 				# but cubesat implements the camera on the +Y side - TODO
-				cam_yaw_deg=UserInterface.rpy_values_deg['roll'],
-				cam_pitch_deg=UserInterface.rpy_values_deg['pitch'],
-				cam_roll_deg=UserInterface.rpy_values_deg['yaw'],
+				cam_yaw_deg=self.ui.rpy_values_deg['roll'],
+				cam_pitch_deg=self.ui.rpy_values_deg['pitch'],
+				cam_roll_deg=self.ui.rpy_values_deg['yaw'],
 			)
 		else:
 			self.nikon.camera.choose_attitude(
 				self._pointing,
 				# XYZ for satellite == roll, pitch, yaw
-				sat_yaw_deg=UserInterface.rpy_values_deg['roll'],
-				sat_pitch_deg=UserInterface.rpy_values_deg['pitch'],
-				sat_roll_deg=UserInterface.rpy_values_deg['yaw'],
+				sat_yaw_deg=self.ui.rpy_values_deg['roll'],
+				sat_pitch_deg=self.ui.rpy_values_deg['pitch'],
+				sat_roll_deg=self.ui.rpy_values_deg['yaw'],
 				# XYZ for camera == roll, pitch, yaw
 				cam_yaw_deg=0.0,
 				cam_pitch_deg=90.0,	# Cubesat implements the camera on the +Y side
@@ -318,7 +331,7 @@ class CoreCode:
 		s += '%s\n' % (str(self.nikon.camera))
 		s += '[%5.1f,%5.1f] @ %5.1f Km radius | %.1f deg width by %.1f deg height |' % (earth_ra_deg, earth_dec_deg, earth_radius_deg, angular_width, angular_height)
 		s += ' %.1f%% of whole sky' % (100.0*solid_angle_steradians/(4*math.pi))
-		UserInterface.camera_info(s)
+		self.ui.camera_info(s)
 
 	def plot_sun_moon(self):
 		""" plot_sun_moon - add sun and moon to the sky plot. """
@@ -403,46 +416,6 @@ class CoreCode:
 		""" draw - flush everything to the screen. """
 		self._starfield_canvas.draw()
 		self._earth_canvas.draw()
-
-	@property
-	def nikon(self):
-		""" nikon - return NikonD5 class. """
-		return self._nikon
-
-	@property
-	def starfield_fig(self):
-		""" starfield_fig """
-		return self._starfield_fig
-
-	#@property
-	#def starfield_ax(self):
-	#	""" starfield_ax """
-	#	return self._starfield_ax
-
-	@property
-	def earth_fig(self):
-		""" earth_fig """
-		return self._earth_fig
-
-	#@property
-	#def earth_ax(self):
-	#	""" earth_ax """
-	#	return self._earth_ax
-
-	@property
-	def root(self):
-		""" root """
-		return self._root
-
-	#@property
-	#def starfield_canvas(self):
-	#	""" starfield_canvas """
-	#	return self._starfield_canvas
-
-	#@property
-	#def earth_canvas(self):
-	#	""" earth_canvas """
-	#	return self._earth_canvas
 
 	def items_plotted_clear(self):
 		""" items_plotted_clear """
@@ -629,7 +602,7 @@ class CoreCode:
 
 		s = 'Camera image has %d stars' % len(found_stars)
 		s += '\nMagnitude: ' + build_mag_bucket_list(stars_mag)
-		UserInterface.misc_text(s)
+		self.ui.misc_text(s)
 
 		stars_ra_rad = ra_fix(stars_ra_rad)
 		stars_size_pixels = mag_map(stars_mag)
@@ -664,7 +637,7 @@ class CoreCode:
 				' in ' + c if c else '',
 				star.mag
 			)
-			UserInterface.star_found_text(s)
+			self.ui.star_found_text(s)
 
 			ra_rad.append(center_ra_rad)
 			dec_rad.append(center_dec_rad)
@@ -691,20 +664,20 @@ class CoreCode:
 		if match_stars_show:
 			# also show stars if not showing
 			self._do_stars_real(False)
-			UserInterface.stars_button_set(True)
+			self.ui.stars_button_set(True)
 			self._do_stars_real(True)
 		else:
 			self._ci.reset()
 			s = ''
-			UserInterface.star_found_text(s)
-			UserInterface.misc_text(s)
+			self.ui.star_found_text(s)
+			self.ui.misc_text(s)
 
 	def do_mag(self, value):
 		""" do_mag """
 		self._do_stars_real(False)
 		self._scbsc5.max_mag = value
 		# turn on stars button
-		UserInterface.stars_button_set(True)
+		self.ui.stars_button_set(True)
 		self._do_stars_real(True)
 
 	def do_focal_length(self, focal_length):
@@ -762,50 +735,54 @@ class CoreCode:
 
 	def do_rpy(self, val, k):
 		""" do_rpy """
-		UserInterface.rpy_values_deg[k] = float(val)
+		self.ui.rpy_values_deg[k] = float(val)
 		# refresh everything
 		self.update_starfield_and_more()
 		self.draw()
 		self._cv.update_orientation(
 			# XYZ should be r,p,y - but camera is on +Y side - so swap pitch & roll for some reason
-			UserInterface.rpy_values_deg['roll'],
-			UserInterface.rpy_values_deg['pitch'],
-			UserInterface.rpy_values_deg['yaw']
+			self.ui.rpy_values_deg['roll'],
+			self.ui.rpy_values_deg['pitch'],
+			self.ui.rpy_values_deg['yaw']
 		)
 
 	def do_reset(self):
 		""" do_reset """
 		# RESET focus
 		focal_length = 50
-		UserInterface.focal_length_buttons_set(focal_length=focal_length)
+		self.ui.focal_length_buttons_set(focal_length=focal_length)
 		self.nikon.camera.reload(focal_length_mm=float(focal_length))
 
 		# RESET star magnitude
 		mag = 5.0
-		UserInterface.star_mag_buttons_set(mag=mag)
+		self.ui.star_mag_buttons_set(mag=mag)
 		self._scbsc5.max_mag = mag
 
 		# RESET accelerate
-		UserInterface.realtime_button_set(False)
+		self.ui.realtime_button_set(False)
 		self._switch_accelerate_time = False
 
 		# RESET show stars
 		self.do_stars_clear()
-		UserInterface.stars_button_set(False)
+		self.ui.stars_button_set(False)
 
 		# RESET rpy
-		for k in UserInterface.rpy_values_deg:
-			UserInterface.rpy_values_deg[k] = 0.0
-			UserInterface.v_sliders[k].set(0.0)
+		for k in self.ui.rpy_values_deg:
+			self.ui.rpy_values_deg[k] = 0.0
+			self.ui.v_sliders[k].set(0.0)
 
 		# RESET match
 		self._switch_match_stars = False
-		UserInterface.match_stars_button_set(False)
+		self.ui.match_stars_button_set(False)
+
+		# RESET earth
+		self.plot_earthtrack_dot_clear()
+
 
 		# RESET text boxes
 		s = ''
-		UserInterface.star_found_text(s)
-		UserInterface.misc_text(s)
+		self.ui.star_found_text(s)
+		self.ui.misc_text(s)
 
 		# RESET camera image
 		self._ci.reset()
@@ -815,9 +792,9 @@ class CoreCode:
 		# self.update_starfield_and_more()
 		# self.draw()
 		self._cv.update_orientation(
-			UserInterface.rpy_values_deg['pitch'],
-			UserInterface.rpy_values_deg['roll'],
-			UserInterface.rpy_values_deg['yaw']
+			self.ui.rpy_values_deg['pitch'],
+			self.ui.rpy_values_deg['roll'],
+			self.ui.rpy_values_deg['yaw']
 		)
 
 		# RESET timer interval
@@ -859,7 +836,7 @@ class CoreCode:
 	def timer_reset(self):
 		""" timer_reset """
 		if self._timer_id is not None:
-			self.root.after_cancel(self._timer_id)
+			self._ui.root.after_cancel(self._timer_id)
 			self._timer_id = None
 		# reprime
 		self.timer_went_off()
@@ -888,7 +865,7 @@ class CoreCode:
 			self.draw()
 
 		# and finally, setup trigger the next timer
-		self._timer_id = self.root.after(timer_step, lambda: self.timer_went_off())
+		self._timer_id = self._ui.root.after(timer_step, lambda: self.timer_went_off())
 
 class StarsConstellationsBSC5:
 	""" StarsConstellationsBSC5 """
