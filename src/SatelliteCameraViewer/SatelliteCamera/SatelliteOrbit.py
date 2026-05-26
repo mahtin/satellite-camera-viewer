@@ -1,7 +1,7 @@
 """
 SatelliteOrbit
 
-Satellite orbit from TLE
+Satellite orbit from 2LE or TLE/3LE
 """
 
 from datetime import datetime, timezone
@@ -17,9 +17,9 @@ class SatelliteOrbit:
 
     def __init__(self, tle:list=None):
         """
-        SatelliteOrbit - accept a TLE or 3LE
-        TLE or two-line element sets (no satellite name on Line 0).
-        3LE or three-line element sets including 24-character satellite name on Line 0.
+        SatelliteOrbit - accept a TLE/3LE or 2LE
+        2LE or two-line element sets (no satellite name on Line 0).
+        TLE/3LE or three-line element sets including 24-character satellite name on Line 0.
 
         :param tle: TLEs as an array (2 or 3 lines long).
         :type tle: list[str]
