@@ -16,7 +16,14 @@ class SatelliteOrbit:
     """ SatelliteOrbit """
 
     def __init__(self, tle:list=None):
-        """ SatelliteOrbit """
+        """
+        SatelliteOrbit - accept a TLE or 3LE
+        TLE or two-line element sets (no satellite name on Line 0).
+        3LE or three-line element sets including 24-character satellite name on Line 0.
+
+        :param tle: TLEs as an array (2 or 3 lines long).
+        :type tle: list[str]
+        """
         self.tle = tle
 
     def __str__(self):
@@ -37,14 +44,14 @@ class SatelliteOrbit:
         return self._tle
 
     @tle.setter
-    def tle(self, value=None):
+    def tle(self, tle=None):
         """
-        value - return array of TLE strings (2 or 3 lines long).
+        tle - return array of TLE strings (2 or 3 lines long).
 
-        :param tle: TLEs as an array of two or three lines.
+        :param tle: TLEs as an array (2 or 3 lines long).
         :type tle: list[str]
         """
-        self._tle = value
+        self._tle = tle
         self._rebuild_from_tle()
 
     def _rebuild_from_tle(self):
