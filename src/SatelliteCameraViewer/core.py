@@ -112,9 +112,9 @@ class CoreCode:
 		self._starfield_centerline_plot = None
 		self._starfield_centerline_data = None
 
-		self._earth_track = []
-		self._earth_track_plot = None
-		self._earth_track_mark = None
+		self._earthtrack = []
+		self._earthtrack_plot = None
+		self._earthtrack_mark = None
 
 		self._switch_accelerate_time = False
 		self._switch_match_stars = False
@@ -308,7 +308,7 @@ class CoreCode:
 
 		# Lat, long & altitude of satellite
 		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.lon_lat_alt()
-		self.plot_earth_dot(sat_lon_deg, sat_lat_deg)
+		self.plot_earthtrack_dot(sat_lon_deg, sat_lat_deg)
 
 		# build return string - showing camera info
 		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()
@@ -376,28 +376,28 @@ class CoreCode:
 		p2 = self._starfield_ax.scatter(const_ra_rad, const_dec_rad, s=const_size_pixels, alpha=1, color=self._COLORS['constellations'], zorder=5)
 		return p1, p2
 
-	def plot_earth_dot(self, lon_deg:float, lat_deg:float):
-		""" plot_earth_dot """
-		# We significantly round down because the earth map is tiny on the screen
+	def plot_earthtrack_dot(self, lon_deg:float, lat_deg:float):
+		""" plot_earthtrack_dot """
+		# We significantly round down because the earth map is tiny on the screen and we don't need many decimal places
 		lon_deg = float(lon_deg.round(1))
 		lat_deg = float(lat_deg.round(1))
-		self._earth_track = self._earth_track[-63:]
-		if len(self._earth_track) == 0 or self._earth_track[-1] != (lon_deg, lat_deg):
-			self._earth_track.append((lon_deg, lat_deg))
+		self._earthtrack = self._earthtrack[-63:]
+		if len(self._earthtrack) == 0 or self._earthtrack[-1] != (lon_deg, lat_deg):
+			self._earthtrack.append((lon_deg, lat_deg))
 
-		if self._earth_track_plot is None:
-			self._earth_track_plot = self._earth_ax.plot(self._earth_track, color=self._COLORS['earth-marker'], alpha=0.5, linewidth=2.0, transform=ccrs.Geodetic())
-			self._earth_track_mark = self._earth_ax.plot(lon_deg, lat_deg, color=self._COLORS['earth-marker'], alpha=1.0, marker='o', markersize=6, transform=ccrs.Geodetic())
+		if self._earthtrack_plot is None:
+			self._earthtrack_plot = self._earth_ax.plot(self._earthtrack, color=self._COLORS['earth-marker'], alpha=0.5, linewidth=2.0, transform=ccrs.Geodetic())
+			self._earthtrack_mark = self._earth_ax.plot(lon_deg, lat_deg, color=self._COLORS['earth-marker'], alpha=1.0, marker='o', markersize=6, transform=ccrs.Geodetic())
 		else:
-			self._earth_track_plot[0].set_data([v[0] for v in self._earth_track], [v[1] for v in self._earth_track])
-			self._earth_track_mark[0].set_data([lon_deg], [lat_deg])
+			self._earthtrack_plot[0].set_data([v[0] for v in self._earthtrack], [v[1] for v in self._earthtrack])
+			self._earthtrack_mark[0].set_data([lon_deg], [lat_deg])
 
-	def plot_earth_dot_clear(self):
-		""" plot_earth_dot_clear """
-		self._earth_track = []
-		if self._earth_track_plot is not None:
-			self._earth_track_plot[0].set_data([], [])
-			self._earth_track_mark[0].set_data([], [])
+	def plot_earthtrack_dot_clear(self):
+		""" plot_earthtrack_dot_clear """
+		self._earthtrack = []
+		if self._earthtrack_plot is not None:
+			self._earthtrack_plot[0].set_data([], [])
+			self._earthtrack_mark[0].set_data([], [])
 
 	def draw(self):
 		""" draw - flush everything to the screen. """
@@ -748,7 +748,7 @@ class CoreCode:
 		self.nikon.find_tle(val)
 		# remove satellite track
 		self.plot_starfield_centerline_clear()
-		self.plot_earth_dot_clear()
+		self.plot_earthtrack_dot_clear()
 		# refresh everything
 		self.update_starfield_and_more()
 		self.draw()
