@@ -15,7 +15,10 @@ def main(args=None):
 
 	"""
 
-	sys.exit(viewer(args))
+	try:
+		sys.exit(viewer(args))
+	except KeyboardInterrupt as e:
+		sys.exit(e)
 
 if __name__ == '__main__':
 	main()
