@@ -23,7 +23,7 @@ class UserInterface:
 		self._style.configure('Horizontal.TScale', sliderthickness=0, borderwidth=0, sliderlength=0)	# does not work - hence zeros
 		self._style.configure('TCheckbutton', font=(self.font['family'], self.font['size']-2, ''))
 		self._style.configure('TMenubutton', font=(self.font['family'], self.font['size']-2, ''))
-		self._style.configure('TRadiobutton', font=(self.font['family'], self.font['size']-2, ''))
+		self._style.configure('TRadiobutton', justify='left',  font=(self.font['family'], self.font['size']-2, ''))
 
 		self._core = None
 		self._title_label = None
@@ -197,7 +197,7 @@ class UserInterface:
 		self._star_mag_buttons_variable = tk.DoubleVar(value=m_default)
 		for m in mags:
 			# radiobutton
-			b = ttk.Radiobutton(lf, text='%.1f' % m, variable=self._star_mag_buttons_variable, justify='left', value=m, command=lambda value=m: self.do_mag(value))
+			b = ttk.Radiobutton(lf, text='%.1f' % m, variable=self._star_mag_buttons_variable, value=m, command=lambda value=m: self.do_mag(value))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 			self._star_mag_buttons[m] = b
 			row += 1
@@ -223,7 +223,7 @@ class UserInterface:
 		self._focal_length_buttons_variable = tk.IntVar(value=f_default)
 		for f in focal_lengths:
 			# radiobutton
-			b = ttk.Radiobutton(lf, text='%d mm' % f, variable=self._focal_length_buttons_variable, justify='left', value=f, command=lambda f=f: self.do_focal_length(f))
+			b = ttk.Radiobutton(lf, text='%d mm' % f, variable=self._focal_length_buttons_variable, value=f, command=lambda f=f: self.do_focal_length(f))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 			self._focal_length_buttons[f] = b
 			row += 1
@@ -263,7 +263,7 @@ class UserInterface:
 		self._satellite_attitude_buttons_variable = tk.IntVar(value=a_default)
 		for a in attitude_names:
 			# radiobutton
-			b = ttk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, justify='left', value=a, command=lambda a=a: self.do_satellite_attitude(a))
+			b = ttk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, value=a, command=lambda a=a: self.do_satellite_attitude(a))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 			self._satellite_attitude_buttons[a] = b
 			col += 1
