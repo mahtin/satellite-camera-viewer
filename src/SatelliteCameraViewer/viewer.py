@@ -23,8 +23,8 @@ def viewer(args=None):
 	core = CoreCode(ui=ui)
 
 	# all the frames ...
-	top_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, borderwidth=0, anchor='n')
-	bottom_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, borderwidth=0, anchor='n')
+	top_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, relief='', anchor='n')
+	bottom_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, relief='', anchor='n')
 	# top
 	starfield_graph_frame = ui.frame(top_frame, col=0, padx=1, pady=1, borderwidth=0, sticky='nw')
 	adjustments_frame = ui.frame(top_frame, col=1, padx=1, pady=1, borderwidth=0, sticky='ne')
@@ -65,7 +65,7 @@ def viewer(args=None):
 
 	def setup_focal_length(parent):
 		""" setup_focal_length """
-		focal_length_frame = ui.frame(parent, col=1, padx=0, borderwidth=0, sticky='nw')
+		focal_length_frame = ui.frame(parent, col=1, padx=0, borderwidth=0, sticky='ne')
 		focal_lengths = [35, 50, 100, 200, 400]
 		f_row = 0
 		f_col = 0
@@ -75,18 +75,19 @@ def viewer(args=None):
 	# satellite selection
 	def setup_satellite_selection(parent):
 		""" setup_satellite_selection """
-		satellite_frame = ui.frame(parent, row=row, col=col, padx=0, borderwidth=0, sticky='nw')
+		satellite_frame = ui.labelframe(parent, 'Satellite Selection', row=row, col=0, colspan=2, sticky='nw')
 		satellite_names = [v.name for v in static_tles]
 		s_row = 0
 		s_col = 0
 		ui.satellite_selection(satellite_frame, s_row, s_col, satellite_names)
-		s_row += 2
+		s_row += 1
 		attitude_names = ['vv', 'nadir', 'ground', 'star']
 		ui.satellite_attitude_buttons(satellite_frame, s_row, s_col, attitude_names)
 
 	setup_focal_length(choices_frame)
 	setup_star_magnitude(choices_frame)
-	setup_satellite_selection(adjustments_frame)
+	row += 1
+	setup_satellite_selection(choices_frame)
 	row += 1
 
 	# # slider info text - presently not displayed
@@ -110,7 +111,7 @@ def viewer(args=None):
 	col = 0
 	row = 0
 	photo_label = ui.photo_label(photo_frame, row, col, width=w, height=h)
-	photo_label.grid(row=0, column=0, padx=5, pady=2, sticky='ne')
+	photo_label.grid(row=0, column=0, padx=2, pady=2, sticky='ne')
 	core.camera_image_register(label=photo_label, nx=nx, ny=ny, w=w, h=h)
 
 	# place for an earth map ...
@@ -125,7 +126,7 @@ def viewer(args=None):
 	col = 0
 	row = 0
 	sat_label = ui.sat_label(sat_frame, row, col, width=w, height=h)
-	sat_label.grid(row=0, column=0, padx=5, pady=2, sticky='ne')
+	sat_label.grid(row=0, column=0, padx=2, pady=2, sticky='ne')
 
 	# build a 3D cubesat model
 	# cubesat_model = Cubesat(u=u, width=w, height=h)
