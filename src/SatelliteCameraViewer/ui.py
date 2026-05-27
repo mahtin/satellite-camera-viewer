@@ -71,8 +71,12 @@ class UserInterface:
 		""" core """
 		self._core = value
 
-	def frame(self, parent, borderwidth=1, relief='solid', row=0, col=0, colspan=1, padx=2, pady=2, sticky='nsew', anchor=None):
+	def frame(self, parent, borderwidth=1, row=0, col=0, colspan=1, padx=2, pady=2, sticky='nsew', anchor=None):
 		""" frame """
+		if borderwidth == 0:
+			relief = ''
+		else:
+			relief='solid'
 		f = ttk.Frame(parent, borderwidth=borderwidth, relief=relief)
 		if anchor is not None:
 			f.pack(padx=padx, pady=pady, anchor=anchor)
@@ -80,8 +84,12 @@ class UserInterface:
 			f.grid(row=row, column=col, columnspan=colspan, padx=padx, pady=pady, sticky=sticky)
 		return f
 
-	def labelframe(self, parent, text='', borderwidth=1, relief='solid', row=0, col=0, colspan=1, padx=2, pady=2, sticky='nsew'):
+	def labelframe(self, parent, text='', borderwidth=1, row=0, col=0, colspan=1, padx=2, pady=2, sticky='nsew'):
 		""" labelframe """
+		if borderwidth == 0:
+			relief = ''
+		else:
+			relief='solid'
 		f = ttk.LabelFrame(parent, text=text, borderwidth=borderwidth, relief=relief)
 		f.grid(row=row, column=col, columnspan=colspan, padx=padx, pady=pady, sticky=sticky)
 		return f
