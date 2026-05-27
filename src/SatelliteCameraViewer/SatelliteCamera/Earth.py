@@ -9,7 +9,6 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, GCRS, ITRS, get_body, EarthLocation, CartesianRepresentation
-from astropy.constants import R_earth
 import astropy.units as u
 
 from spherical_geometry.polygon import SingleSphericalPolygon
@@ -89,7 +88,7 @@ class Earth:
         """ earth_angular_radius """
         sat_eci_km = sat_orbit.eci_position_vector(obs_time)
         sat_dist = np.linalg.norm(np.asarray(sat_eci_km, dtype=float))  # km as float
-        return np.degrees(np.arcsin((R_earth.value/1000) / sat_dist))
+        return np.degrees(np.arcsin(u.R_earth.to(u.km) / sat_dist))
 
     def fov_intercept_earth(self, camera:CameraIntrinsics, sat_orbit:SatelliteOrbit, attitude:CameraAttitude, obs_time:datetime, border_step=None):
         """  fov_intercept_earth """
@@ -131,7 +130,7 @@ class Earth:
         half_fov = np.deg2rad(camera.fov_diag_deg / 2)
         try:
             angle = np.arccos(np.dot(earth_cam, np.array([0,0,1])))
-        except RuntimeWarning as e:
+        except RuntimeWarning:
             # invalid value encountered in arccos
             print('Earth: np.arccos(np.dot(earth_cam, np.array([0,0,1]))) invalid value error with source value earth_cam=%s' % (earth_cam))
             # assume a massive angle - hence this
@@ -232,7 +231,7 @@ class Earth:
         sat_dist = np.linalg.norm(sat_pos)
 
         # Angular radius of Earth as seen from satellite
-        theta_E = np.arcsin((R_earth.value/1000) / sat_dist)
+        theta_E = np.arcsin(u.R_earth.to(u.km) / sat_dist)
 
         # Direction to Earth's center in ICRS
         earth_icrs = SkyCoord(0*u.deg, 0*u.deg, distance=1*u.AU,

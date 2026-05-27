@@ -570,7 +570,7 @@ class CubesatViewer:
 	"""
         if u is not None and cubesat is not None:
             raise ValueError('both u or cubesat value provided') from None
-        elif u is not None:
+        if u is not None:
             # we create the Cubesat() here vs externally
             self._cubesat = Cubesat(u=u, width=width, height=height, isometric_view=isometric_view, show_axes=show_axes)
         elif cubesat is not None:

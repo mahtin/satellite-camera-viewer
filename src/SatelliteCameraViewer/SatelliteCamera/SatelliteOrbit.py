@@ -4,6 +4,23 @@ SatelliteOrbit
 Satellite orbit from 2LE or TLE/3LE
 """
 
+# Earth-Centered Inertial (ECI) position and velocity define a satellite's state vector ([r,v]) using Cartesian
+# coordinates (x,y,z) relative to the center of the Earth, which does not rotate with the planet, remaining fixed
+# relative to stars. It provides an inertial, non-accelerating frame where Z points to the North Pole and the
+# XY-plane is the equatorial plane.
+#
+# In an Earth-centered inertial (ECI) frame, the X-axis (often denoted as I) points towards the vernal equinox
+# (or First Point of Aries). This direction is the intersection of the equatorial plane and the ecliptic plane,
+# acting as a fixed reference point in space, not rotating with the Earth.
+# Key characteristics of the ECI frame (X,Y,Z):
+# Origin: The center of mass of the Earth.
+# X-axis (I): Points to the vernal equinox (intersection of the equatorial plane and the ecliptic plane).
+# Y-axis (J): Completes the right-hand system by being perpendicular to X and Z.
+# Z-axis (K): Passes through the North Pole.
+# Purpose: It is non-rotating, ideal for determining satellite orbits and celestial navigation.
+# Note: The specific inertial reference frame used is often the J2000 frame, meaning the X-axis points to the
+# vernal equinox at the epoch of Jan 1, 2000, at noon.
+
 from datetime import datetime, timezone
 import numpy as np
 from astropy.time import Time
@@ -100,29 +117,12 @@ class SatelliteOrbit:
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return r_teme_km, v_teme_km_s
 
-    # Earth-Centered Inertial (ECI) position and velocity define a satellite's state vector ([r,v]) using Cartesian
-    # coordinates (x,y,z) relative to the center of the Earth, which does not rotate with the planet, remaining fixed
-    # relative to stars. It provides an inertial, non-accelerating frame where Z points to the North Pole and the
-    # XY-plane is the equatorial plane.
-    #
-    # In an Earth-centered inertial (ECI) frame, the X-axis (often denoted as I) points towards the vernal equinox
-    # (or First Point of Aries). This direction is the intersection of the equatorial plane and the ecliptic plane,
-    # acting as a fixed reference point in space, not rotating with the Earth.
-    # Key characteristics of the ECI frame (X,Y,Z):
-    # Origin: The center of mass of the Earth.
-    # X-axis (I): Points to the vernal equinox (intersection of the equatorial plane and the ecliptic plane).
-    # Y-axis (J): Completes the right-hand system by being perpendicular to X and Z.
-    # Z-axis (K): Passes through the North Pole.
-    # Purpose: It is non-rotating, ideal for determining satellite orbits and celestial navigation.
-    # Note: The specific inertial reference frame used is often the J2000 frame, meaning the X-axis points to the
-    # vernal equinox at the epoch of Jan 1, 2000, at noon.
-
     def eci_position_vector(self, obs_time: datetime):
         """
         Returns ECI (Earth-Centered Inertial) position (km) at UTC time obs_time.
         """
         t = self.t(obs_time)
-        r_teme_km, v_teme_km_s = self._teme(t)
+        r_teme_km, _ = self._teme(t)
         return np.array(r_teme_km)
 
     def eci_velocity_vector(self, obs_time: datetime):
@@ -130,14 +130,14 @@ class SatelliteOrbit:
         Returns ECI (Earth-Centered Inertial) velocity (km/s) at UTC time obs_time.
         """
         t = self.t(obs_time)
-        r_teme_km, v_teme_km_s = self._teme(t)
+        _, v_teme_km_s = self._teme(t)
         return np.array(v_teme_km_s)
 
     def icrs(self, obs_time: datetime):
         """ icrs - convert satellite and time into a ICRS value """
         # ICRS is International Celestial Reference System (ICRS)
         t = self.t(obs_time)
-        r_teme_km, v_teme_km_s = self._teme(t)
+        r_teme_km, _ = self._teme(t)
         sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
         return sat_icrs
 

@@ -47,7 +47,7 @@ class SatelliteCamera():
         self._c = [cx, cy]
         self._bcc = bcc
         if sensor_to_lens_mm is None:
-            self._sensor_to_lens_mm = focal_length_mm
+            self._sensor_to_lens_mm = self._focal_length_mm
         else:
             self._sensor_to_lens_mm = sensor_to_lens_mm
         self._rebuild_camera()
@@ -72,15 +72,25 @@ class SatelliteCamera():
             sensor_to_lens_mm: float = None        # distance from sensor to lens principal plane
         ):
         """ reload """
-        if focal_length_mm is not None: self._focal_length_mm = focal_length_mm
-        if sensor_size_x_mm is not None: self._sensor_size[0] = sensor_size_x_mm
-        if sensor_size_y_mm is not None: self._sensor_size[1] = sensor_size_y_mm
-        if nx is not None: self._n[0] = nx
-        if ny is not None: self._n[1] = ny
-        if cx is not None: self._c[0] = cx
-        if cy is not None: self._c[1] = cy
-        if bcc is not None: self._bcc = bcc
-        if sensor_to_lens_mm is not None:
+        if focal_length_mm is not None:
+            self._focal_length_mm = focal_length_mm
+        if sensor_size_x_mm is not None:
+            self._sensor_size[0] = sensor_size_x_mm
+        if sensor_size_y_mm is not None:
+            self._sensor_size[1] = sensor_size_y_mm
+        if nx is not None:
+            self._n[0] = nx
+        if ny is not None:
+            self._n[1] = ny
+        if cx is not None:
+            self._c[0] = cx
+        if cy is not None:
+            self._c[1] = cy
+        if bcc is not None:
+            self._bcc = bcc
+        if sensor_to_lens_mm is None:
+            self._sensor_to_lens_mm = self._focal_length_mm
+        else:
             self._sensor_to_lens_mm = sensor_to_lens_mm
         self._rebuild_camera()
 

@@ -239,7 +239,6 @@ class CameraIntrinsics:
         ])
 
         # 3. Extract ICRS→camera quaternion
-        eci = attitude.quat_cam_to_eci
         rot = R.from_quat(attitude.quat_cam_to_eci, scalar_first=True).inv()        # (note the .inv() it's important)
         # 5. Rotate into camera frame
         v_cam = rot.apply(t_vec)
