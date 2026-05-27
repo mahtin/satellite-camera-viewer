@@ -15,6 +15,7 @@ disable=
     too-many-lines,
     unused-argument,
     C0103, C0209,
+    R0902, R0904,R0911, R0913, R0917,
     RP0001, RP0002, RP0003,
     RP0101,
     RP0401, RP0402,
