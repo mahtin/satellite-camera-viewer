@@ -139,7 +139,7 @@ class UserInterface:
 
 	def do_realtime(self, value):
 		""" do_realtime """
-		self.core.do_realtime(bool(value))
+		self.core.do_realtime(bool(value.get()))
 
 	def realtime_button(self, parent, row, col):
 		""" realtime_button """
@@ -154,7 +154,7 @@ class UserInterface:
 
 	def do_stars(self, value):
 		""" do_stars """
-		self.core.do_stars(bool(value))
+		self.core.do_stars(bool(value.get()))
 
 	def stars_button(self, parent, row, col):
 		""" stars_button """
@@ -169,7 +169,7 @@ class UserInterface:
 
 	def do_match_stars(self, value):
 		""" do_match_stars """
-		self.core.do_match_stars(bool(value))
+		self.core.do_match_stars(bool(value.get()))
 
 	def match_stars_button(self, parent, row, col):
 		""" match_stars_button """
@@ -186,7 +186,7 @@ class UserInterface:
 
 	def do_mag(self, value):
 		""" do_mag """
-		self.core.do_mag(value)
+		self.core.do_mag(float(value))
 
 	def star_mag_buttons(self, parent, row, col, mags):
 		""" star_mag_buttons """
@@ -203,7 +203,7 @@ class UserInterface:
 
 	def star_mag_buttons_set(self, mag=5.0):
 		""" star_mag_buttons_set """
-		self._star_mag_buttons_variable.set(mag)
+		self._star_mag_buttons_variable.set(float(mag))
 
 	# FOCAL LENGTH
 

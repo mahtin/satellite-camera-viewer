@@ -662,7 +662,7 @@ class CoreCode:
 
 	def do_match_stars(self, value):
 		""" do_match_stars """
-		match_stars_show = value.get()
+		match_stars_show = value
 		self._switch_match_stars = match_stars_show
 		if match_stars_show:
 			# also show stars if not showing
@@ -693,7 +693,7 @@ class CoreCode:
 
 	def do_realtime(self, value):
 		""" do_realtime """
-		self._switch_accelerate_time = value.get()
+		self._switch_accelerate_time = value
 		# reset line data - otherwise it's messy
 		self.plot_starfield_centerline_clear()
 		self.draw()
@@ -702,7 +702,7 @@ class CoreCode:
 
 	def do_stars(self, value):
 		""" do_stars """
-		self._do_stars_real(value.get())
+		self._do_stars_real(value)
 
 	def _do_stars_real(self, value):
 		""" do_stars_real """
