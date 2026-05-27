@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from astropy.coordinates import get_sun, GCRS
-from astropy.constants import R_earth
 from astropy.time import Time
 import astropy.units as u
 from sgp4.api import Satrec, jday
@@ -223,7 +222,7 @@ class ISSAttitude:
 		# Perpendicular distance from ISS to Sun line
 		r_perp = np.linalg.norm(r - d * s_hat)
 
-		earth_radius_km = float(R_earth.to(u.km).value)
+		earth_radius_km = u.R_earth.to(u.km)
 
 		# Inside Earth's shadow cylinder?
 		return r_perp < earth_radius_km
