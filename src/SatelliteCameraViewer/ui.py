@@ -21,6 +21,8 @@ class UserInterface:
 
 		self._style = ttk.Style()
 		self._style.configure('Horizontal.TScale', sliderthickness=0, borderwidth=0, sliderlength=0)	# does not work - hence zeros
+		self._style.configure('TLabel', font=(self.font['family'], self.font['size']-2, ''))
+		self._style.configure('TOptionMenu', font=(self.font['family'], self.font['size']-2, ''))
 		self._style.configure('TCheckbutton', font=(self.font['family'], self.font['size']-2, ''))
 		self._style.configure('TMenubutton', font=(self.font['family'], self.font['size']-2, ''))
 		self._style.configure('TRadiobutton', justify='left',  font=(self.font['family'], self.font['size']-2, ''))

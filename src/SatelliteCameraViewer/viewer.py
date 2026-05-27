@@ -26,13 +26,13 @@ def viewer(args=None):
 	top_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, anchor='n')
 	bottom_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, anchor='n')
 	# top
-	starfield_graph_frame = ui.frame(top_frame, col=0, sticky='n')
-	adjustments_frame = ui.frame(top_frame, col=1, sticky='n')
+	starfield_graph_frame = ui.frame(top_frame, col=0, padx=1, pady=1, sticky='nw')
+	adjustments_frame = ui.frame(top_frame, col=1, padx=1, pady=1, sticky='ne')
 	# bottom
-	info_frame = ui.frame(bottom_frame, col=0)
-	photo_frame = ui.frame(bottom_frame, col=1)
-	earth_frame = ui.frame(bottom_frame, col=2)
-	sat_frame = ui.frame(bottom_frame, col=3)
+	info_frame = ui.labelframe(bottom_frame, 'Info', col=0, padx=1, pady=1, borderwidth=0)
+	photo_frame = ui.labelframe(bottom_frame, 'Camera',  col=1, padx=1, pady=1, borderwidth=1)
+	earth_frame = ui.labelframe(bottom_frame, 'Earth', col=2, padx=1, pady=1, borderwidth=1)
+	sat_frame = ui.labelframe(bottom_frame, 'Satellite', col=3, padx=1, pady=1, borderwidth=1)
 
 	# start the graphing for the starfield!
 	core.plot_in_tk(starfield_graph_frame, 'starfield')
@@ -56,7 +56,7 @@ def viewer(args=None):
 
 	def setup_star_magnitude(parent):
 		""" setup_star_magnitude """
-		mag_frame = ui.frame(parent, padx=2, sticky='nw')
+		mag_frame = ui.frame(parent, padx=0, borderwidth=0, sticky='nw')
 		star_magnitudes = [1.0, 3.0, 5.0, 7.0, 9.0]
 		m_row = 0
 		m_col = 0
@@ -65,7 +65,7 @@ def viewer(args=None):
 
 	def setup_focal_length(parent):
 		""" setup_focal_length """
-		focal_length_frame = ui.frame(parent, col=1, padx=2)
+		focal_length_frame = ui.frame(parent, col=1, padx=0, borderwidth=0, sticky='nw')
 		focal_lengths = [35, 50, 100, 200, 400]
 		f_row = 0
 		f_col = 0
@@ -75,7 +75,7 @@ def viewer(args=None):
 	# satellite selection
 	def setup_satellite_selection(parent):
 		""" setup_satellite_selection """
-		satellite_frame = ui.frame(parent, row=row, col=col, padx=2)
+		satellite_frame = ui.frame(parent, row=row, col=col, padx=0, borderwidth=0, sticky='nw')
 		satellite_names = [v.name for v in static_tles]
 		s_row = 0
 		s_col = 0
