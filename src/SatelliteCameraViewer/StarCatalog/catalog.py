@@ -12,7 +12,7 @@ import requests
 from .star import Star
 from .user_agent import user_agent
 
-# Used by each catalog class - the class only needs to provide a _readstarfile() method 
+# Used by each catalog class - the class only needs to provide a _readstarfile() method
 
 class Catalog():
     """ Catalog() """
