@@ -23,11 +23,11 @@ def viewer(args=None):
 	core = CoreCode(ui=ui)
 
 	# all the frames ...
-	top_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, anchor='n')
-	bottom_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, anchor='n')
+	top_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, borderwidth=0, anchor='n')
+	bottom_frame = ui.frame(ui.root, borderwidth=0, padx=0, pady=0, borderwidth=0, anchor='n')
 	# top
-	starfield_graph_frame = ui.frame(top_frame, col=0, padx=1, pady=1, sticky='nw')
-	adjustments_frame = ui.frame(top_frame, col=1, padx=1, pady=1, sticky='ne')
+	starfield_graph_frame = ui.frame(top_frame, col=0, padx=1, pady=1, borderwidth=0, sticky='nw')
+	adjustments_frame = ui.frame(top_frame, col=1, padx=1, pady=1, borderwidth=0, sticky='ne')
 	# bottom
 	info_frame = ui.labelframe(bottom_frame, 'Info', col=0, padx=1, pady=1, borderwidth=0)
 	photo_frame = ui.labelframe(bottom_frame, 'Camera',  col=1, padx=1, pady=1, borderwidth=1)
