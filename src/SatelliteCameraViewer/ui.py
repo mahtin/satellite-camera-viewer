@@ -16,6 +16,15 @@ class UserInterface:
 		""" UserInterface """
 		self._root = tk.Tk()
 
+		# configure UI gloablly first
+		self._root.option_add('*Font', (self.font['family'], self.font['size'] - 2))
+
+		self._style = ttk.Style()
+		self._style.configure('Horizontal.TScale', sliderthickness=0, borderwidth=0, sliderlength=0)	# does not work - hence zeros
+		self._style.configure('TCheckbutton', font=(self.font['family'], self.font['size']-2, ''))
+		self._style.configure('TMenubutton', font=(self.font['family'], self.font['size']-2, ''))
+		self._style.configure('TRadiobutton', font=(self.font['family'], self.font['size']-2, ''))
+
 		self._core = None
 		self._title_label = None
 		self._camera_info_box = None
@@ -67,6 +76,12 @@ class UserInterface:
 			f.pack(padx=padx, pady=pady, anchor=anchor)
 		else:
 			f.grid(row=row, column=col, padx=padx, pady=pady, sticky=sticky)
+		return f
+
+	def labelframe(self, parent, text='', borderwidth=1, relief='solid', row=0, col=0, padx=5, pady=2, sticky='nsew'):
+		""" labelframe """
+		f = ttk.LabelFrame(parent, text=text, borderwidth=borderwidth, relief=relief)
+		f.grid(row=row, column=col, padx=padx, pady=pady, sticky=sticky)
 		return f
 
 	# TITLE
@@ -173,14 +188,16 @@ class UserInterface:
 
 	def star_mag_buttons(self, parent, row, col, mags):
 		""" star_mag_buttons """
-		l = ttk.Label(parent, text='Star Magnitude', justify='left')
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		row += 1
+		#l = ttk.Label(parent, text='Star Magnitude', justify='left')
+		#l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
+		#row += 1
+		lf = self.labelframe(parent, 'Star Magnitude')
+		lf.grid(row=row, column=col)
 		m_default = mags[2]
 		self._star_mag_buttons_variable = tk.DoubleVar(value=m_default)
 		for m in mags:
 			# radiobutton
-			b = tk.Radiobutton(parent, text='%.1f' % m, variable=self._star_mag_buttons_variable, justify='left', value=m, command=lambda value=m: self.do_mag(value))
+			b = ttk.Radiobutton(lf, text='%.1f' % m, variable=self._star_mag_buttons_variable, justify='left', value=m, command=lambda value=m: self.do_mag(value))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 			self._star_mag_buttons[m] = b
 			row += 1
@@ -197,14 +214,16 @@ class UserInterface:
 
 	def focal_length_buttons(self, parent, row, col, focal_lengths):
 		""" focal_length_buttons """
-		l = ttk.Label(parent, text='Focal Length', justify='left')
-		l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
-		row += 1
+		# l = ttk.Label(parent, text='Focal Length', justify='left')
+		# l.grid(row=row, column=col, padx=5, pady=2, sticky='w')
+		# row += 1
+		lf = self.labelframe(parent, 'Focal Length')
+		lf.grid(row=row, column=col)
 		f_default = focal_lengths[1]
 		self._focal_length_buttons_variable = tk.IntVar(value=f_default)
 		for f in focal_lengths:
 			# radiobutton
-			b = tk.Radiobutton(parent, text='%d mm' % f, variable=self._focal_length_buttons_variable, justify='left', value=f, command=lambda f=f: self.do_focal_length(f))
+			b = ttk.Radiobutton(lf, text='%d mm' % f, variable=self._focal_length_buttons_variable, justify='left', value=f, command=lambda f=f: self.do_focal_length(f))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 			self._focal_length_buttons[f] = b
 			row += 1
@@ -221,12 +240,14 @@ class UserInterface:
 
 	def satellite_selection(self, parent, row, col, satellite_names):
 		""" satellite_selection """
-		l = ttk.Label(parent, text='Satellite Selection', justify='left')
-		l.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='nsew')
-		row += 1
+		# l = ttk.Label(parent, text='Satellite Selection', justify='left')
+		# l.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='nsew')
+		# row += 1
+		lf = self.labelframe(parent, 'Satellite Selection')
+		lf.grid(row=row, column=col, columnspan=7, sticky='ew')
 		s_default = satellite_names[0]
 		self._satellite_selected = tk.StringVar(value=s_default)
-		drop = tk.OptionMenu(parent, self._satellite_selected, *satellite_names, command=lambda val: self.do_satellite_selection(val))
+		drop = ttk.OptionMenu(lf, self._satellite_selected, *satellite_names, command=lambda val: self.do_satellite_selection(val))
 		drop.grid(row=row, column=col, columnspan=7, padx=5, pady=2, sticky='ew')
 		self._satellite_selection_drop = drop
 
@@ -242,7 +263,7 @@ class UserInterface:
 		self._satellite_attitude_buttons_variable = tk.IntVar(value=a_default)
 		for a in attitude_names:
 			# radiobutton
-			b = tk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, justify='left', value=a, command=lambda a=a: self.do_satellite_attitude(a))
+			b = ttk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, justify='left', value=a, command=lambda a=a: self.do_satellite_attitude(a))
 			b.grid(row=row, column=col, padx=5, pady=2, sticky='nw')
 			self._satellite_attitude_buttons[a] = b
 			col += 1
@@ -262,12 +283,23 @@ class UserInterface:
 
 	def rpy_sliders(self, parent, row, col):
 		""" rpy_sliders """
+		lf = self.labelframe(parent, 'Attitude')
+		lf.grid(row=row, column=col, sticky='ew')
 		self.v_sliders = {}
 		for k,v in self.rpy_values_deg.items():
+			l = ttk.Label(lf, text=self._cam_slider_rpy_text[k], justify='left')
+			l.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
+			row += 1
 			self.v_sliders[k] = tk.IntVar(value=int(v))
-			s = tk.Scale(parent, label=self._cam_slider_rpy_text[k], variable=self.v_sliders[k], from_=-90, to=90, resolution=10.0, showvalue=True,
-				orient='horizontal', command=lambda val,k=k: self.do_rpy(val, k))
-			s.grid(row=row, column=col, padx=5, pady=2, sticky='ew')
+			s = ttk.Scale(lf,
+				# label=self._cam_slider_rpy_text[k],
+				variable=self.v_sliders[k],
+				from_=-90, to=90,
+				# resolution=10.0,
+				# showvalue=True,
+				orient='horizontal',
+				command=lambda val,k=k: self.do_rpy(val, k))
+			s.grid(row=row, column=col, padx=5, pady=2, sticky='w')
 			self._rpy_sliders[k] = s
 			row += 1
 
@@ -298,8 +330,7 @@ class UserInterface:
 
 	def reset_everything_button(self, parent, row, col):
 		""" reset_everything_button """
-		style = ttk.Style()
-		style.configure('Reset.TButton',
+		self._style.configure('Reset.TButton',
 			foreground='lightcoral',
 			font=(self.font['family'], self.font['size'], 'bold'),
 		)

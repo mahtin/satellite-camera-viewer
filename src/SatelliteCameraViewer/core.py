@@ -69,16 +69,13 @@ class CoreCode:
 		CoreCode - the core drawing code for the stars - also includes logic for the user interface
 
 		:param ui: User interface class
-		:type root: UserInterface
+		:type ui: UserInterface
 		"""
 		if ui is None:
 			raise ValueError('CoreCode() needs ui value') from None
 		self._ui = ui
 
 		self._timer_id = None
-
-		self._font_family = self._ui.font['family']
-		self._font_size = self._ui.font['size']
 
 		# starfield
 		self._create_starfield_subplot()
@@ -129,20 +126,24 @@ class CoreCode:
 		""" nikon - return NikonD5 class. """
 		return self._nikon
 
-	def plot_in_tk(self, parent, which, row=0, col=0, padx=5, pady=3, sticky='nsew'):
+	def plot_in_tk(self, parent, which, row=0, col=0, padx=0, pady=0, sticky='nsew'):
 		""" plot_in_tk """
 		if which == 'earth':
 			fig = self._earth_fig
-		if which == 'starfield':
+		elif which == 'starfield':
 			fig = self._starfield_fig
+		else:
+			raise ValueError('%s: invalid which value in plot_in_tk()' % (which)) from None
 
 		canvas = FigureCanvasTkAgg(fig, master=parent)
 		canvas.get_tk_widget().grid(row=row, column=row, padx=padx, pady=pady, sticky=sticky)
 
 		if which == 'earth':
 			self._earth_canvas = canvas
-		if which == 'starfield':
+		elif which == 'starfield':
 			self._starfield_canvas = canvas
+		else:
+			raise ValueError('%s: invalid which value in plot_in_tk()' % (which)) from None
 
 		canvas.draw()
 
@@ -173,6 +174,8 @@ class CoreCode:
 
 	def _paint_starfield_axis(self):
 		""" _paint_starfield_axis - x and y axis (which is really ra and dec). """
+		# match font to rest of user interface (and hence system)
+		font_size = self._ui.font['size']
 		# grid lines
 		self._starfield_ax.grid(color=self._COLORS['sky-grid'], alpha=0.5)
 		# x axis (ra)
@@ -182,10 +185,10 @@ class CoreCode:
 		x_values = [math.radians(v) for v in range(-180,180+30,30)]
 		x_labels = ['', '10h','8h','6h','4h','2h','0h','22h','20h','18h','16h','14h', '']
 		self._starfield_ax.set_xticks(x_values, x_labels, rotation='vertical', color=self._COLORS['sky-axis'], alpha=0.5,
-			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
+			fontdict={'fontsize':font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
 		)
 		self._starfield_ax.set_xlabel('Right Ascension (hours)', color=self._COLORS['sky-label'],
-			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'top'}
+			fontdict={'fontsize':font_size, 'horizontalalignment':'center', 'verticalalignment':'top'}
 		)
 
 		# y axis (dec)
@@ -195,10 +198,10 @@ class CoreCode:
 		for ii in [0, 1, -1, -2]:
 			y_labels[ii] = ''
 		self._starfield_ax.set_yticks(y_values, y_labels, color=self._COLORS['sky-axis'],
-			fontdict={'fontsize':self._font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
+			fontdict={'fontsize':font_size, 'horizontalalignment':'center', 'verticalalignment':'center'}
 		)
 		self._starfield_ax.set_ylabel('Declination (degrees)', color=self._COLORS['sky-label'],
-			fontdict={'fontsize':self._font_size, 'horizontalalignment':'right', 'verticalalignment':'center'}
+			fontdict={'fontsize':font_size, 'horizontalalignment':'right', 'verticalalignment':'center'}
 		)
 
 	def _create_earth_subplot(self):
@@ -364,7 +367,7 @@ class CoreCode:
 		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
 		for ra_rad, dec_rad in segments:
 			ra_rad = ra_fix(ra_rad)
-			self._starfield_ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.25, color=self._COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
+			_ = self._starfield_ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.25, color=self._COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
 
 	def plot_ecliptic(self):
 		""" plot_ecliptic - add ecliptic line to the sky plot """
@@ -372,7 +375,7 @@ class CoreCode:
 		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
 		for ra_rad, dec_rad in segments:
 			ra_rad = ra_fix(ra_rad)
-			self._starfield_ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=self._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
+			_ = self._starfield_ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=self._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
 
 	def plot_stars(self):
 		""" plot_star - add all the stars to the sky plot """
@@ -841,7 +844,7 @@ class CoreCode:
 		# reprime
 		self.timer_went_off()
 
-	def timer_went_off(self, repaint=True):
+	def timer_went_off(self):
 		""" timer_went_off """
 		self._timer_id = None
 		# update the time and recaculate the attitude (based on the new time)
@@ -858,11 +861,10 @@ class CoreCode:
 			# hence step is five seconds
 			timer_step = 5 * 1000
 
-		if repaint:
-			# now repaint/update sky
-			self.update_starfield_and_more()
-			self.plot_sun_moon()	# add sun and moon move when time changes (slightly)
-			self.draw()
+		# now repaint/update sky
+		self.update_starfield_and_more()
+		self.plot_sun_moon()		# add sun and moon move when time changes (oh so slightly)
+		self.draw()
 
 		# and finally, setup trigger the next timer
 		self._timer_id = self._ui.root.after(timer_step, lambda: self.timer_went_off())

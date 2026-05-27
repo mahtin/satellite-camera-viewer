@@ -1,6 +1,5 @@
 """ viewer """
 
-import sys
 import warnings
 
 from .core import CoreCode
@@ -91,13 +90,12 @@ def viewer(args=None):
 	row += 1
 
 	# # slider info text - presently not displayed
-	# col = 0
 	# ui.rpy_label(adjustments_frame, row, col)
 	# row += 1
 
 	# three sliders for camera yaw/pitch/roll
 	ui.rpy_sliders(adjustments_frame, row, col)
-	row += 3
+	row += 1
 
 	# reset button
 	ui.reset_everything_button(adjustments_frame, row, col)
