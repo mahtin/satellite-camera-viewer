@@ -38,9 +38,14 @@ class NikonD5Camera:
 		self.sensor_to_radec = self._sc.sensor_to_radec
 		self.radec_to_pixel = self._sc.radec_to_pixel
 
+		self.lon_lat_alt = self._sc.lon_lat_alt
+
+		self.vector_to_earth_center = self._sc.vector_to_earth_center
+		self.earth_center_direction_icrs = self._sc.earth_center_direction_icrs
+		self.earth_center_radec_simple = self._sc.earth_center_radec_simple
 		self.earth_center_radec = self._sc.earth_center_radec
 		self.earth_angular_radius = self._sc.earth_angular_radius
-		self.lon_lat_alt = self._sc.lon_lat_alt
+		self.camera_fov_intercept_earth = self._sc.camera_fov_intercept_earth
 
 		# set everything up
 		self.tle = tle

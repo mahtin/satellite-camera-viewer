@@ -58,7 +58,6 @@ class SatelliteCamera():
         self._sat_attitude = None
         self._cam_attitude = None
         self._reset_attitude()
-        self._earth = None
 
     def reload(self,
             focal_length_mm: float = None,         # focal length (mm)
@@ -111,6 +110,7 @@ class SatelliteCamera():
             self._sat_orbit = self.SatelliteOrbit(tle=self._tle)
         else:
             self._sat_orbit.tle = self._tle
+        self._earth = Earth(self.sat_orbit)
 
     def _rebuild_attitude(self):
         """ _rebuild_attitude """
@@ -443,43 +443,36 @@ class SatelliteCamera():
 
     def eci_position_vector(self):
         """ eci_position_vector """
-        r_teme_km = self.sat_orbit.eci_position_vector(self.obs_time)
-        return r_teme_km
+        return self.sat_orbit.eci_position_vector(self.obs_time)
 
     def eci_velocity_vector(self):
         """ eci_velocity_vector """
         if self.sat_orbit is None:
             return None
-        v_teme_km_s = self.sat_orbit.eci_velocity_vector(self.obs_time)
-        return v_teme_km_s
+        return self.sat_orbit.eci_velocity_vector(self.obs_time)
 
     def lon_lat_alt(self):
         """ lon_lat_alt """
-        sat_lon_deg, sat_lat_deg, sat_alt_km = self.sat_orbit.lon_lat_alt(self.obs_time)
-        return sat_lon_deg, sat_lat_deg, sat_alt_km
+        return self.sat_orbit.lon_lat_alt(self.obs_time)
 
     def pixel_to_radec(self, px, py):
         """ pixel_to_radec """
-        ra_deg, dec_deg = self.camera.pixel_to_radec(px, py, self.attitude, self.obs_time)
-        return ra_deg, dec_deg
+        return self.camera.pixel_to_radec(px, py, self.attitude, self.obs_time)
 
     def sensor_to_radec(self, nsteps):
         """ sensor_to_radec """
-        pixles = self.camera.sensor_to_radec(self.attitude, self.obs_time, nsteps=nsteps)
-        return pixles
+        return self.camera.sensor_to_radec(self.attitude, self.obs_time, nsteps=nsteps)
 
     def pixel_to_radec_and_vector(self, px, py):
         """ pixel_to_radec_and_vector """
-        ra_deg, dec_deg, r_gcrs_km = self.camera.pixel_to_radec_and_vector(px, py, self.attitude, self.obs_time, sat_orbit=self.sat_orbit)
-        return ra_deg, dec_deg, r_gcrs_km
+        return self.camera.pixel_to_radec_and_vector(px, py, self.attitude, self.obs_time, sat_orbit=self.sat_orbit)
 
     def radec_to_pixel(self, ra_deg, dec_deg):
         """ radec_to_pixel """
         try:
-            px, py = self.camera.radec_to_pixel(ra_deg, dec_deg, self.attitude, self.obs_time)
+            return self.camera.radec_to_pixel(ra_deg, dec_deg, self.attitude, self.obs_time)
         except CameraIntrinsicsError as e:
             raise SatelliteCameraError(str(e)) from None
-        return px, py
 
     def camera_fov_radec_box(self):
         """ camera_fov_radec_box """
@@ -505,26 +498,29 @@ class SatelliteCamera():
         """ camera_fov_healpix_mask """
         return self.CameraFOV.camera_fov_healpix_mask(self.camera, self.attitude, self.obs_time, nside=nside)
 
-    def camera_fov_intercept_earth(self, border_step=None):
-        """ earth """
-        if self._earth is None:
-            self._earth = Earth()
-        try:
-            pixel = self._earth.fov_intercept_earth(self.camera, self.sat_orbit, self.attitude, self.obs_time, border_step=border_step)
-        except EarthError as e:
-            raise SatelliteCameraError(str(e)) from None
-        return pixel
+    def vector_to_earth_center(self):
+        """ vector_to_earth_center """
+        return self._earth.vector_to_earth_center(self.obs_time)
+
+    def earth_center_direction_icrs(self):
+        """ earth_center_direction_icrs """
+        return self._earth.earth_center_direction_icrs(self.obs_time)
+
+    def earth_center_radec_simple(self):
+        """ earth_center_radec_simple """
+        return self._earth.earth_center_radec(self.obs_time)
 
     def earth_center_radec(self):
         """ earth_center_radec """
-        if self._earth is None:
-            self._earth = Earth()
-        ra_deg, dec_deg = self._earth.earth_center_radec(self.sat_orbit, self.attitude, self.obs_time)
-        return ra_deg, dec_deg
+        return self._earth.earth_center_radec(self.attitude, self.obs_time)
 
     def earth_angular_radius(self):
         """ earth_angular_radius """
-        if self._earth is None:
-            self._earth = Earth()
-        radius_deg = self._earth.earth_angular_radius(self.sat_orbit, self.obs_time)
-        return radius_deg
+        return self._earth.earth_angular_radius(self.obs_time)
+
+    def camera_fov_intercept_earth(self, border_step=None):
+        """ camera_fov_intercept_earth """
+        try:
+            return self._earth.fov_intercept_earth(self.camera, self.sat_orbit, self.attitude, self.obs_time, border_step=border_step)
+        except EarthError as e:
+            raise SatelliteCameraError(str(e)) from None

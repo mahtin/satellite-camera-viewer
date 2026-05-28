@@ -23,35 +23,44 @@ class EarthError(Exception):
 
 class Earth:
     """ Earth """
-    def __init__(self):
-        """ Earth """
+    def __init__(self, sat_orbit:SatelliteOrbit):
+        """
+        Earth
 
-    def vector_to_earth_center(self, sat_orbit:SatelliteOrbit, obs_time:datetime):
+        :param sat_orbit: Satellite Orbit
+        :type SatelliteOrbit:
         """
-        sat_eci: array-like of shape (3,), satellite position in ECI (km or m)
-        returns: unit vector pointing from satellite → Earth center
+        self._sat_orbit = sat_orbit
+
+    def _sat_eci_km(self, obs_time:datetime):
+        """ _sat_eci_km """
+        return self._sat_orbit.eci_position_vector(obs_time)
+
+    def vector_to_earth_center(self, obs_time:datetime):
         """
-        sat_eci = sat_orbit.eci_position_vector(obs_time)
-        v = -np.array(sat_eci, dtype=float)
+        vector_to_earth_center - returns: unit vector pointing from satellite → Earth center
+        """
+        sat_eci_km = self._sat_eci_km(obs_time)
+        v = -np.array(sat_eci_km, dtype=float)
         return v / np.linalg.norm(v)
 
-    def earth_center_direction_icrs(self, sat_orbit:SatelliteOrbit, obs_time:datetime):
+    def earth_center_direction_icrs(self, obs_time:datetime):
         """ earth_center_direction_icrs """
-        sat_eci_km = sat_orbit.eci_position_vector(obs_time)
+        sat_eci_km = self._sat_eci_km(obs_time)
         v = -np.array(sat_eci_km)
         v /= np.linalg.norm(v)
         return SkyCoord(x=v[0], y=v[1], z=v[2], representation_type='cartesian', frame='icrs')
 
-    #def earth_center_radec(self, sat_orbit:SatelliteOrbit, obs_time:datetime):
-    #    """ earth_center_radec """
-    #    sat_eci_km = sat_orbit.eci_position_vector(obs_time)
-    #    v = -np.array(sat_eci_km)
-    #    v /= np.linalg.norm(v)
-    #    ra  = np.degrees(np.arctan2(v[1], v[0])) % 360
-    #    dec = np.degrees(np.arcsin(v[2]))
-    #    return ra, dec
+    def earth_center_radec_simple(self, obs_time:datetime):
+        """ earth_center_radec_simple """
+        sat_eci_km = self._sat_eci_km(obs_time)
+        v = -np.array(sat_eci_km)
+        v /= np.linalg.norm(v)
+        ra  = np.degrees(np.arctan2(v[1], v[0])) % 360
+        dec = np.degrees(np.arcsin(v[2]))
+        return ra, dec
 
-    def earth_center_radec(self, sat_orbit:SatelliteOrbit, attitude:CameraAttitude, obs_time:datetime):
+    def earth_center_radec(self, attitude:CameraAttitude, obs_time:datetime):
         """
         sat_eci_km: satellite position in ECI (km)
         quat_cam_to_eci: quaternion rotating camera-frame → ECI-frame
@@ -60,9 +69,9 @@ class Earth:
         Returns:
             (ra_deg, dec_deg) of Earth center in the CAMERA frame
         """
+        sat_eci_km = self._sat_eci_km(obs_time)
 
         quat_cam_to_eci = attitude.quat_cam_to_eci
-        sat_eci_km = sat_orbit.eci_position_vector(obs_time)
 
         # 1. Direction from satellite → Earth center in ECI
         v_eci = -np.array(sat_eci_km, dtype=float)
@@ -84,19 +93,19 @@ class Earth:
 
         return ra_deg, dec_deg
 
-    def earth_angular_radius(self, sat_orbit:SatelliteOrbit, obs_time:datetime):
+    def earth_angular_radius(self, obs_time:datetime):
         """ earth_angular_radius """
-        sat_eci_km = sat_orbit.eci_position_vector(obs_time)
+        sat_eci_km = self._sat_eci_km(obs_time)
         sat_dist = np.linalg.norm(np.asarray(sat_eci_km, dtype=float))  # km as float
         return np.degrees(np.arcsin(u.R_earth.to(u.km) / sat_dist))
 
-    def fov_intercept_earth(self, camera:CameraIntrinsics, sat_orbit:SatelliteOrbit, attitude:CameraAttitude, obs_time:datetime, border_step=None):
+    def fov_intercept_earth(self, camera:CameraIntrinsics, attitude:CameraAttitude, obs_time:datetime, border_step=None):
         """  fov_intercept_earth """
 
         t = Time(obs_time)
 
         # Satellite vector as [x, y, z]
-        r_teme_km = sat_orbit.eci_position_vector(obs_time)
+        sat_eci_km = self._sat_eci_km(obs_time)
 
         def sat_eci_km_to_location(sat_eci_km, obs_time):
             """ sat_eci_km_to_location """
@@ -114,7 +123,7 @@ class Earth:
             # sat_location = EarthLocation.from_geocentric(sat_icrs.x.to(u.m), sat_icrs.y.to(u.m), sat_icrs.z.to(u.m))
             return sat_location
 
-        sat_location = sat_eci_km_to_location(r_teme_km, obs_time)
+        sat_location = sat_eci_km_to_location(sat_eci_km, obs_time)
 
         # find earth from satellite location as [x, y, z]
         earth_icrs = get_body('earth', t, location=sat_location).transform_to('icrs')
@@ -147,7 +156,7 @@ class Earth:
         # fov_cam is a list of SkyCoord objects
         fov_cam_vecs = np.array([[v.cartesian.x.value, v.cartesian.y.value, v.cartesian.z.value] for v in fov_cam])
         fov_icrs = rot_eci.apply(fov_cam_vecs)
-        sat_icrs = sat_orbit.icrs(obs_time)
+        sat_icrs = self._sat_orbit.icrs(obs_time)
         earth_disc_icrs = self._compute_earth_disc_polygon(sat_icrs, obs_time, nsteps=border_step*4)
 
         def vectors_to_radec(vectors):
