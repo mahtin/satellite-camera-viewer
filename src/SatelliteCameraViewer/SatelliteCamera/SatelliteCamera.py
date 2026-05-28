@@ -9,7 +9,7 @@ from .CameraAttitude import Attitude as cA
 from .CameraAttitude import Quaternion as cQ
 from .CameraFOV import CameraFOV as cCF
 from .SatelliteOrbit import SatelliteOrbit as cSO
-from .Earth import Earth, EarthError
+from .Earth import Earth as cE, EarthError
 
 class SatelliteCameraError(Exception):
     """ SatelliteCameraError """
@@ -25,6 +25,7 @@ class SatelliteCamera():
     Quaternion = cQ
     CameraFOV = cCF
     SatelliteOrbit = cSO
+    Earth = cE
 
     # Based on the Raspberry Pi High Quality (HQ) camera
     # 12.3-megapixel Sony IMX477
@@ -110,7 +111,7 @@ class SatelliteCamera():
             self._sat_orbit = self.SatelliteOrbit(tle=self._tle)
         else:
             self._sat_orbit.tle = self._tle
-        self._earth = Earth(self.sat_orbit)
+        self._earth = self.Earth(self.sat_orbit)
 
     def _rebuild_attitude(self):
         """ _rebuild_attitude """
@@ -486,25 +487,25 @@ class SatelliteCamera():
         """ camera_fov_angular_width_height """
         return self.CameraFOV.camera_fov_angular_width_height(self.camera, self.attitude, self.obs_time)
 
-    def camera_fov_convex_hull(self, border_step: int = 100):
+    def camera_fov_convex_hull(self, border_step:int):
         """ camera_fov_convex_hull """
         return self.CameraFOV.camera_fov_convex_hull(self.camera, self.attitude, self.obs_time, border_step=border_step)
 
-    def camera_fov_border_vectors(self, border_step: int = 50):
+    def camera_fov_border_vectors(self, border_step:int):
         """ camera_fov_border_vectors """
         return self.CameraFOV.camera_fov_border_vectors(self.camera, self.attitude, self.obs_time, border_step=border_step)
 
-    def camera_fov_healpix_mask(self, nside: int = 64):
+    def camera_fov_healpix_mask(self, nside:int):
         """ camera_fov_healpix_mask """
         return self.CameraFOV.camera_fov_healpix_mask(self.camera, self.attitude, self.obs_time, nside=nside)
 
-    def vector_to_earth_center(self):
-        """ vector_to_earth_center """
-        return self._earth.vector_to_earth_center(self.obs_time)
+    def earth_center_vector(self):
+        """ earth_center_vector """
+        return self._earth.earth_center_vector(self.obs_time)
 
-    def earth_center_direction_icrs(self):
-        """ earth_center_direction_icrs """
-        return self._earth.earth_center_direction_icrs(self.obs_time)
+    def earth_center_vector_icrs(self):
+        """ earth_center_vector_icrs """
+        return self._earth.earth_center_vector_icrs(self.obs_time)
 
     def earth_center_radec_simple(self):
         """ earth_center_radec_simple """
@@ -518,9 +519,10 @@ class SatelliteCamera():
         """ earth_angular_radius """
         return self._earth.earth_angular_radius(self.obs_time)
 
-    def camera_fov_intercept_earth(self, border_step=None):
+    def camera_fov_intercept_earth(self, border_step:int=None):
         """ camera_fov_intercept_earth """
         try:
-            return self._earth.fov_intercept_earth(self.camera, self.sat_orbit, self.attitude, self.obs_time, border_step=border_step)
+            return self._earth.camera_fov_intercept_earth(self.camera, self.attitude, self.obs_time, border_step=border_step)
+
         except EarthError as e:
             raise SatelliteCameraError(str(e)) from None

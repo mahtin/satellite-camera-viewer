@@ -36,19 +36,23 @@ class Earth:
         """ _sat_eci_km """
         return self._sat_orbit.eci_position_vector(obs_time)
 
-    def vector_to_earth_center(self, obs_time:datetime):
+    def earth_center_vector(self, obs_time:datetime):
         """
-        vector_to_earth_center - returns: unit vector pointing from satellite → Earth center
+        earth_center_vector - returns: unit vector pointing from satellite → Earth center
+
+        :param obs_time: Time (in UTC)
+        :type datetime:
+
+        :return: Vector as [x, y, z].
+        :rtype: list[float]
         """
         sat_eci_km = self._sat_eci_km(obs_time)
         v = -np.array(sat_eci_km, dtype=float)
         return v / np.linalg.norm(v)
 
-    def earth_center_direction_icrs(self, obs_time:datetime):
-        """ earth_center_direction_icrs """
-        sat_eci_km = self._sat_eci_km(obs_time)
-        v = -np.array(sat_eci_km)
-        v /= np.linalg.norm(v)
+    def earth_center_vector_icrs(self, obs_time:datetime):
+        """ earth_center_vector_icrs """
+        v = earth_center_vector(obs_time)
         return SkyCoord(x=v[0], y=v[1], z=v[2], representation_type='cartesian', frame='icrs')
 
     def earth_center_radec_simple(self, obs_time:datetime):
@@ -99,8 +103,22 @@ class Earth:
         sat_dist = np.linalg.norm(np.asarray(sat_eci_km, dtype=float))  # km as float
         return np.degrees(np.arcsin(u.R_earth.to(u.km) / sat_dist))
 
-    def fov_intercept_earth(self, camera:CameraIntrinsics, attitude:CameraAttitude, obs_time:datetime, border_step=None):
-        """  fov_intercept_earth """
+    def camera_fov_intercept_earth(self, camera:CameraIntrinsics, attitude:CameraAttitude, obs_time:datetime, border_step:int=10):
+        """
+        camera_fov_intercept_earth
+
+        :param camera: The camera.
+        :type CameraIntrinsics:
+        :param attitude: The attitude.
+        :type CameraAttitude:
+        :param obs_time: The time (in UTC).
+        :type datetime:
+        :param border_step: Accuracy of edge lines (8 should be ok).
+        :type int:
+        """
+
+        if border_step is None:
+            border_step = 10
 
         t = Time(obs_time)
 
@@ -148,10 +166,8 @@ class Earth:
         if angle > half_fov:
             raise EarthError('Earth NOT in camera FOV') from None
 
-        # TODO - reduced heavily!
-        border_step = 8
-
         print('Earth is in camera FOV')
+
         fov_cam = CameraFOV.camera_fov_border_vectors(camera, attitude, obs_time, border_step=border_step)
         # fov_cam is a list of SkyCoord objects
         fov_cam_vecs = np.array([[v.cartesian.x.value, v.cartesian.y.value, v.cartesian.z.value] for v in fov_cam])
@@ -191,17 +207,17 @@ class Earth:
         pixels = []
         radec_deg = []
 
-        print('Earth.fov_intercept_earth(): fov_icrs=', fov_icrs.shape)
-        print('Earth.fov_intercept_earth(): earth_disc_icrs=', earth_disc_icrs.shape)
+        print('Earth.camera_fov_intercept_earth(): fov_icrs=', fov_icrs.shape)
+        print('Earth.camera_fov_intercept_earth(): earth_disc_icrs=', earth_disc_icrs.shape)
 
         visible_polygon = single_spherical_clip(fov_icrs, earth_disc_icrs)
 
         if len(visible_polygon) == 0:
-            print('Earth.fov_intercept_earth(): pixels=', pixels)
+            print('Earth.camera_fov_intercept_earth(): pixels=', pixels)
             return radec_deg
 
         for points in visible_polygon.points:
-            print('Earth.fov_intercept_earth(): len(points)=', len(points))
+            print('Earth.camera_fov_intercept_earth(): len(points)=', len(points))
             for point in points:
                 ra_deg, dec_deg = vector_to_radec(point)
                 radec_deg.append((ra_deg, dec_deg))
@@ -214,10 +230,10 @@ class Earth:
                 #    continue
                 #pixels.append((px, py))
 
-        print('Earth.fov_intercept_earth(): radec_deg=', radec_deg)
+        print('Earth.camera_fov_intercept_earth(): radec_deg=', radec_deg)
         return radec_deg
 
-        #print('Earth.fov_intercept_earth(): pixels=', pixels)
+        #print('Earth.camera_fov_intercept_earth(): pixels=', pixels)
         #return pixels
 
     def _compute_earth_disc_polygon(self, sat_icrs:SkyCoord, obs_time:datetime, nsteps:int=200):

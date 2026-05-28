@@ -29,22 +29,24 @@ class NikonD5Camera:
 			# Define satellite orbit from TLE from a static set
 			tle = static_tles[0].as_array
 
-		# map SatelliteCamera() into this class
-		self.now = self._sc.now
-		self.datetime = self._sc.datetime
-		self.adjust_by_seconds = self._sc.adjust_by_seconds
-		self.choose_attitude = self._sc.choose_attitude
-		self.pixel_to_radec = self._sc.pixel_to_radec
-		self.sensor_to_radec = self._sc.sensor_to_radec
-		self.radec_to_pixel = self._sc.radec_to_pixel
+		# map SatelliteCamera() into this class (yes - there's a more pythonic way to do this)
 
-		self.lon_lat_alt = self._sc.lon_lat_alt
+		self.now                        = self._sc.now
+		self.datetime                   = self._sc.datetime
 
-		self.vector_to_earth_center = self._sc.vector_to_earth_center
-		self.earth_center_direction_icrs = self._sc.earth_center_direction_icrs
-		self.earth_center_radec_simple = self._sc.earth_center_radec_simple
-		self.earth_center_radec = self._sc.earth_center_radec
-		self.earth_angular_radius = self._sc.earth_angular_radius
+		self.adjust_by_seconds          = self._sc.adjust_by_seconds
+		self.choose_attitude            = self._sc.choose_attitude
+		self.pixel_to_radec             = self._sc.pixel_to_radec
+		self.sensor_to_radec            = self._sc.sensor_to_radec
+		self.radec_to_pixel             = self._sc.radec_to_pixel
+
+		self.lon_lat_alt                = self._sc.lon_lat_alt
+
+		self.earth_center_vector        = self._sc.earth_center_vector
+		self.earth_center_vector_icrs   = self._sc.earth_center_vector_icrs
+		self.earth_center_radec_simple  = self._sc.earth_center_radec_simple
+		self.earth_center_radec         = self._sc.earth_center_radec
+		self.earth_angular_radius       = self._sc.earth_angular_radius
 		self.camera_fov_intercept_earth = self._sc.camera_fov_intercept_earth
 
 		# set everything up
@@ -101,14 +103,7 @@ class NikonD5Camera:
 		hull_coords, _ = self._sc.camera_fov_convex_hull(border_step=100)
 		return [[v.ra.degree for v in hull_coords], [v.dec.degree for v in hull_coords]]
 
-	def camera_fov_border_vectors(self, border_step=40):
+	def camera_fov_border_vectors(self, border_step:int):
 		""" camera_fov_border_vectors """
 		polygon = self._sc.camera_fov_border_vectors(border_step=border_step)
 		return [(float(v.ra.value), float(v.dec.value)) for v in polygon]
-
-	def camera_fov_intercept_earth(self, border_step=40):
-		""" camera_fov_intercept_earth """
-		polygon = self._sc.camera_fov_intercept_earth(border_step=border_step)
-		return polygon
-		# TODO
-		# return [(float(v.ra.value), float(v.dec.value)) for v in polygon]

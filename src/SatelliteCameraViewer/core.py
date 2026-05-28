@@ -314,7 +314,7 @@ class CoreCode:
 			s = 1.0 * self._starfield_fig.dpi
 			_ = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
 			try:
-				earth_points_deg = self.nikon.camera_fov_intercept_earth()
+				earth_points_deg = self.nikon.camera_fov_intercept_earth(border_step=10)
 				print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
 				self.plot_earth_outline(earth_points_deg)
 				# pixels = self.nikon.camera_fov_intercept_earth()
@@ -538,7 +538,7 @@ class CoreCode:
 
 	def plot_border_vectors(self):
 		""" plot_border_vectors """
-		border_vectors = self.nikon.camera_fov_border_vectors()
+		border_vectors = self.nikon.camera_fov_border_vectors(border_step=25)
 
 		plots = []
 		for ra_rad, dec_rad in split_plot_mollweide_line_ra_dec_deg(border_vectors):
