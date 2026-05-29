@@ -324,21 +324,17 @@ class CoreCode:
 				print('camera_fov_intercept_earth():', e)
 
 		# Lat, long & altitude of satellite
-		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.lon_lat_alt()
+		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.sat_lon_lat_alt()
 		self.plot_earthtrack_dot(sat_lon_deg, sat_lat_deg)
 
 		if self._switch_earth_vector:
-			print('')
-			v = self.nikon.earth_center_vector()
-			print('Earth: vector = [%.1f, %.1f, %.1f]' % (v[0], v[1], v[2]))
-			v = self.nikon.earth_center_vector_icrs()
-			print('Earth: vector = %s' % (str(v).replace('\n',' ')))
+			# TODO - this is debug only at present
+			v1 = self.nikon.earth_center_vector()
+			v2 = self.nikon.earth_center_vector_icrs()
 			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
-			print('Earth: ra,dec = [%5.1f,%5.1f]' % (earth_ra_deg, earth_dec_deg))
-			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec()
-			print('Earth: ra,dec = [%5.1f,%5.1f]' % (earth_ra_deg, earth_dec_deg))
-
-			print('')
+			cam_earth_ra_deg, cam_earth_dec_deg = self.nikon.earth_center_radec()
+			print('Earth: vector = [%6.3f, %6.3f, %6.3f] %s' % (v1[0], v1[1], v1[2], str(v2).replace('\n',' ')), end='')
+			print(' ra,dec = [%6.2f,%6.2f] [%6.2f,%6.2f]' % (earth_ra_deg, earth_dec_deg, cam_earth_ra_deg, cam_earth_dec_deg))
 
 		# build return string - showing camera info
 		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()

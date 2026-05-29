@@ -141,9 +141,9 @@ class SatelliteOrbit:
         sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
         return sat_icrs
 
-    def lon_lat_alt(self, obs_time):
+    def sat_lon_lat_alt(self, obs_time):
         """
-        Return satellite geodetic lat, lon, alt.
+        sat_lon_lat_alt - Return satellite geodetic lat, lon, alt.
 
         Parameters
         ----------

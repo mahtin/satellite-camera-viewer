@@ -59,7 +59,7 @@ class Earth:
         """
         earth_center_radec_simple - caculate ra/dec for of earth center from the satellite
         """
-        return  earth_center_radec(None, obs_time)
+        return  self.earth_center_radec(None, obs_time)
 
     def earth_center_radec(self, attitude:CameraAttitude, obs_time:datetime):
         """

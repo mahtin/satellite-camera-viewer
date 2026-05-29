@@ -459,9 +459,9 @@ class SatelliteCamera():
             return None
         return self.sat_orbit.eci_velocity_vector(self.obs_time)
 
-    def lon_lat_alt(self):
-        """ lon_lat_alt """
-        return self.sat_orbit.lon_lat_alt(self.obs_time)
+    def sat_lon_lat_alt(self):
+        """ sat_lon_lat_alt """
+        return self.sat_orbit.sat_lon_lat_alt(self.obs_time)
 
     def pixel_to_radec(self, px, py):
         """ pixel_to_radec """
