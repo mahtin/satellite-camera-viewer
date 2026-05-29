@@ -85,34 +85,23 @@ class SatelliteOrbit:
             self._sat = None
             raise ValueError('TLEs have invalid format') from None
 
-    def t(self, obs_time: datetime):
-        """
-        t - convert to Julian date and fractional Julian date
-
-        :param obs_time: date and time in datetime form with UTC timezone
-        :type obs_time: datetime
-        :return: time in Jualian date form
-        :rtype: Time
-
-        """
-        # Convert datetime -> Julian date and fractional Julian date
-        return Time(obs_time.replace(tzinfo=timezone.utc))
-
-    def _teme(self, t):
+    def _teme(self, obs_time:datetime):
         """
         _teme
 
-        :param t: Time in Juian date format
-        :type t: Time
+        :param obs_time: Time (in UTC).
+        :type t: datetime
         :return: r_teme_km, v_teme_km_s
         :rtype: tuple
         """
-        # e: nonzero for any dates that produced errors, 0 otherwise.
-        # r: position vectors in kilometers.
-        # v: velocity vectors in kilometers per second.
-        e, r_teme_km, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
-        if e != 0:
-            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (e, SGP4_ERRORS[e])) from None
+        # error: nonzero for any dates that produced errors, 0 otherwise.
+        # r_teme_km: position vectors in kilometers.
+        # v_teme_km_s: velocity vectors in kilometers per second.
+        # The positional vectors returned by SGP4 are in TEME (True Equator Mean Equinox)
+        t = Time(obs_time.replace(tzinfo=timezone.utc))
+        error, r_teme_km, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
+        if error != 0:
+            raise RuntimeError('SGP4 error value/code: %d: "%s"' % (error, SGP4_ERRORS[error])) from None
         # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return r_teme_km, v_teme_km_s
@@ -121,23 +110,20 @@ class SatelliteOrbit:
         """
         Returns ECI (Earth-Centered Inertial) position (km) at UTC time obs_time.
         """
-        t = self.t(obs_time)
-        r_teme_km, _ = self._teme(t)
+        r_teme_km, _ = self._teme(obs_time)
         return np.array(r_teme_km)
 
     def eci_velocity_vector(self, obs_time: datetime):
         """
         Returns ECI (Earth-Centered Inertial) velocity (km/s) at UTC time obs_time.
         """
-        t = self.t(obs_time)
-        _, v_teme_km_s = self._teme(t)
+        _, v_teme_km_s = self._teme(obs_time)
         return np.array(v_teme_km_s)
 
     def icrs(self, obs_time: datetime):
         """ icrs - convert satellite and time into a ICRS value """
         # ICRS is International Celestial Reference System (ICRS)
-        t = self.t(obs_time)
-        r_teme_km, _ = self._teme(t)
+        r_teme_km, _ = self._teme(obs_time)
         sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
         return sat_icrs
 
