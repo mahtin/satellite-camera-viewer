@@ -38,7 +38,7 @@ class Earth:
 
     def earth_center_vector(self, obs_time:datetime):
         """
-        earth_center_vector - returns: unit vector pointing from satellite → Earth center
+        earth_center_vector - returns: unit vector pointing from satellite → earth center
 
         :param obs_time: Time (in UTC)
         :type datetime:
@@ -47,54 +47,51 @@ class Earth:
         :rtype: list[float]
         """
         sat_eci_km = self._sat_eci_km(obs_time)
-        v = -np.array(sat_eci_km, dtype=float)
-        return v / np.linalg.norm(v)
+        v_eci = -np.array(sat_eci_km, dtype=float)
+        return v_eci / np.linalg.norm(v_eci)
 
     def earth_center_vector_icrs(self, obs_time:datetime):
         """ earth_center_vector_icrs """
-        v = earth_center_vector(obs_time)
-        return SkyCoord(x=v[0], y=v[1], z=v[2], representation_type='cartesian', frame='icrs')
+        v_eci = self.earth_center_vector(obs_time)
+        return SkyCoord(x=v_eci[0], y=v_eci[1], z=v_eci[2], representation_type='cartesian', frame='icrs')
 
     def earth_center_radec_simple(self, obs_time:datetime):
-        """ earth_center_radec_simple """
-        sat_eci_km = self._sat_eci_km(obs_time)
-        v = -np.array(sat_eci_km)
-        v /= np.linalg.norm(v)
-        ra  = np.degrees(np.arctan2(v[1], v[0])) % 360
-        dec = np.degrees(np.arcsin(v[2]))
-        return ra, dec
+        """
+        earth_center_radec_simple - caculate ra/dec for of earth center from the satellite
+        """
+        return  earth_center_radec(None, obs_time)
 
     def earth_center_radec(self, attitude:CameraAttitude, obs_time:datetime):
         """
-        sat_eci_km: satellite position in ECI (km)
-        quat_cam_to_eci: quaternion rotating camera-frame → ECI-frame
-                         format: (w, x, y, z) with scalar_first=True
+        earth_center_radec -  caculate ra/dec for of earth center in the camera frame from the satellite
 
-        Returns:
-            (ra_deg, dec_deg) of Earth center in the CAMERA frame
+        :param attitude: The camera attitude.
+        :type CameraAttitude:
+        :param obs_time: Time (in UTC)
+        :type datetime:
+
+
+        :return: ra/dec for of earth center in the camera frame from the satellite
+        :rtype: tuple(float, float)
         """
-        sat_eci_km = self._sat_eci_km(obs_time)
+        v_eci = self.earth_center_vector(obs_time)
 
-        quat_cam_to_eci = attitude.quat_cam_to_eci
+        if attitude is not None:
+            quat_cam_to_eci = attitude.quat_cam_to_eci
 
-        # 1. Direction from satellite → Earth center in ECI
-        v_eci = -np.array(sat_eci_km, dtype=float)
-        v_eci /= np.linalg.norm(v_eci)
+            # 2. Build rotation: camera → ECI
+            rot_eci = R.from_quat(quat_cam_to_eci, scalar_first=True)
 
-        # 2. Build rotation: camera → ECI
-        rot_eci = R.from_quat(quat_cam_to_eci, scalar_first=True)
+            # 3. Invert to get ECI → camera
+            rot_cam = rot_eci.inv()
 
-        # 3. Invert to get ECI → camera
-        rot_cam = rot_eci.inv()
-
-        # 4. Rotate Earth direction into camera frame
-        v_cam = rot_cam.apply(v_eci)
+            # 4. Rotate Earth direction into camera frame
+            v_cam = rot_cam.apply(v_eci)
+            v_eci = v_cam
 
         # 5. Convert camera-frame vector → RA/Dec
-        x, y, z = v_cam
-        ra_deg  = np.degrees(np.arctan2(y, x)) % 360
-        dec_deg = np.degrees(np.arcsin(z))
-
+        ra_deg  = np.degrees(np.arctan2(v_eci[1], v_eci[0])) % 360
+        dec_deg = np.degrees(np.arcsin(v_eci[2]))
         return ra_deg, dec_deg
 
     def earth_angular_radius(self, obs_time:datetime):
@@ -109,7 +106,7 @@ class Earth:
 
         :param camera: The camera.
         :type CameraIntrinsics:
-        :param attitude: The attitude.
+        :param attitude: The camera attitude.
         :type CameraAttitude:
         :param obs_time: The time (in UTC).
         :type datetime:

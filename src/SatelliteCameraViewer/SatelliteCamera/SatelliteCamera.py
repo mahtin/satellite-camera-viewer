@@ -353,36 +353,43 @@ class SatelliteCamera():
         #  same rate it orbits (once per orbit). I.e. Reaction Wheels / Momentum Wheels, Control Moment Gyros (CMGs),
         #  Thrusters (Propulsion), or Magnetorquers (Magnetic Torquers)
 
-        print('choose_attitude()',
-            'pointing=', pointing,
-            'sat=', sat_yaw_deg, sat_pitch_deg, sat_roll_deg,
-            'cam=', cam_yaw_deg, cam_pitch_deg, cam_roll_deg,
-            'q[wxyz]=', qw, qx, qy, qz,
-            'earth=', earth_lat_deg, earth_lon_deg,
-            'star=', star_ra_deg, star_dec_deg
-        )
+        verbose = False
+        if verbose:
+            print('choose_attitude()',
+                'pointing=', pointing,
+                'sat=', sat_yaw_deg, sat_pitch_deg, sat_roll_deg,
+                'cam=', cam_yaw_deg, cam_pitch_deg, cam_roll_deg,
+                'q[wxyz]=', qw, qx, qy, qz,
+                'earth=', earth_lat_deg, earth_lon_deg,
+                'star=', star_ra_deg, star_dec_deg
+            )
 
         # we always reset and recaculate later
         self._reset_attitude()
 
         # Satellite pointing - if defined
         if None not in [sat_yaw_deg, sat_pitch_deg, sat_roll_deg]:
-            print('choose_attitude(): set sat')
+            if verbose:
+                print('choose_attitude(): set sat')
             self._sat_attitude = self.Attitude(sat_yaw_deg, sat_pitch_deg, sat_roll_deg)
             self._sat_quat_body_to_eci = None
-            print('choose_attitude(): set sat', self.sat_attitude)
+            if verbose:
+                print('choose_attitude(): set sat', self.sat_attitude)
         else:
             self._sat_attitude = None
             self._sat_quat_body_to_eci = None
-            print('choose_attitude(): set sat', 'None')
+            if verbose:
+                print('choose_attitude(): set sat', 'None')
 
         # Camera pointing - if defined
         if None not in [cam_yaw_deg, cam_pitch_deg, cam_roll_deg]:
             self._cam_attitude = self.Attitude(cam_yaw_deg, cam_pitch_deg, cam_roll_deg)
-            print('choose_attitude(): set cam', self.cam_attitude)
+            if verbose:
+                print('choose_attitude(): set cam', self.cam_attitude)
         else:
             self._cam_attitude = None
-            print('choose_attitude(): set cam', 'None')
+            if verbose:
+                print('choose_attitude(): set cam', 'None')
 
         # Example: Satellite pointing arbitrary direction (y/p/r) + camera offset (y/p/r) defined above (hopefully)
         if pointing == 'arbitrary':
@@ -509,7 +516,7 @@ class SatelliteCamera():
 
     def earth_center_radec_simple(self):
         """ earth_center_radec_simple """
-        return self._earth.earth_center_radec(self.obs_time)
+        return self._earth.earth_center_radec_simple(self.obs_time)
 
     def earth_center_radec(self):
         """ earth_center_radec """

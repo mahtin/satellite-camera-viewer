@@ -106,6 +106,7 @@ class CoreCode:
 
 		self._switch_accelerate_time = False
 		self._switch_match_stars = False
+		self._switch_earth_vector = False
 
 		self._pointing = 'vv'
 		self._stars_plot = None
@@ -325,6 +326,19 @@ class CoreCode:
 		# Lat, long & altitude of satellite
 		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.lon_lat_alt()
 		self.plot_earthtrack_dot(sat_lon_deg, sat_lat_deg)
+
+		if self._switch_earth_vector:
+			print('')
+			v = self.nikon.earth_center_vector()
+			print('Earth: vector = [%.1f, %.1f, %.1f]' % (v[0], v[1], v[2]))
+			v = self.nikon.earth_center_vector_icrs()
+			print('Earth: vector = %s' % (str(v).replace('\n',' ')))
+			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
+			print('Earth: ra,dec = [%5.1f,%5.1f]' % (earth_ra_deg, earth_dec_deg))
+			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec()
+			print('Earth: ra,dec = [%5.1f,%5.1f]' % (earth_ra_deg, earth_dec_deg))
+
+			print('')
 
 		# build return string - showing camera info
 		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()
@@ -675,6 +689,10 @@ class CoreCode:
 			self.ui.star_found_text(s)
 			self.ui.misc_text(s)
 
+	def do_earth_vector(self, value):
+		""" do_earth_vector """
+		self._switch_earth_vector = value
+
 	def do_mag(self, value):
 		""" do_mag """
 		self._do_stars_real(False)
@@ -691,8 +709,8 @@ class CoreCode:
 		self.update_starfield_and_more()
 		self.draw()
 
-	def do_realtime(self, value):
-		""" do_realtime """
+	def do_accelerate(self, value):
+		""" do_accelerate """
 		self._switch_accelerate_time = value
 		# reset line data - otherwise it's messy
 		self.plot_starfield_centerline_clear()
@@ -762,7 +780,7 @@ class CoreCode:
 		self._scbsc5.max_mag = mag
 
 		# RESET accelerate
-		self.ui.realtime_button_set(False)
+		self.ui.accelerate_button_set(False)
 		self._switch_accelerate_time = False
 
 		# RESET show stars
@@ -850,7 +868,7 @@ class CoreCode:
 		# update the time and recaculate the attitude (based on the new time)
 		# and deal with time interval and timers
 		if self._switch_accelerate_time is True:
-			# jump time ahead quickly - TODO this value should be based on orbital params
+			# accelerate - i.e. jump time ahead quickly - TODO this value should be based on orbital params
 			seconds = (60 - self.nikon.obs_time.second) + 60
 			self.nikon.adjust_by_seconds(seconds)
 			# hence step is half a second
