@@ -37,17 +37,26 @@ def viewer(args=None):
 	# start the graphing for the starfield!
 	core.plot_in_tk(starfield_graph_frame, 'starfield')
 
-	# various buttons
 	row = 0
 	col = 0
-	ui.realtime_button(adjustments_frame, row, col)
+
+	# various buttons
+	buttons_frame = ui.frame(adjustments_frame, row=row, col=col, padx=0, pady=0,  borderwidth=0, sticky='nw')
 	row += 1
 
-	ui.stars_button(adjustments_frame, row, col)
-	row += 1
+	b_row = 0
+	b_col = 0
+	ui.accelerate_button(buttons_frame, b_row, b_col)
+	b_row += 1
+	ui.stars_button(buttons_frame, b_row, b_col)
+	b_row += 1
+	ui.match_stars_button(buttons_frame, b_row, b_col)
+	b_row += 1
+	b_col += 1
+	b_row = 0
+	ui.earth_vector_button(buttons_frame, b_row, b_col)
 
-	ui.match_stars_button(adjustments_frame, row, col)
-	row += 1
+	# TODO add more buttons here.
 
 	# focal length and star magnitude choices
 

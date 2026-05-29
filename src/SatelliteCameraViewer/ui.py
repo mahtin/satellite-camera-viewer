@@ -32,13 +32,15 @@ class UserInterface:
 		self._camera_info_box = None
 		self._star_found_text_box = None
 		self._misc_text_box = None
-		self._realtime_button = None
+
+		self._accelerate_button = None
 		self._focal_length_buttons = {}
 		self._star_mag_buttons = {}
 		self._satellite_attitude_buttons ={}
 		self._rpy_label = None
 		self._sat_label = None
 		self._photo_label = None
+
 		self._rpy_sliders = {}
 
 		# rpy_values_deg - values of Roll, Pitch, and Yaw sliders.
@@ -145,20 +147,20 @@ class UserInterface:
 
 	# BUTTONS
 
-	def do_realtime(self, value):
-		""" do_realtime """
-		self.core.do_realtime(bool(value.get()))
+	def do_accelerate(self, value):
+		""" do_accelerate """
+		self.core.do_accelerate(bool(value.get()))
 
-	def realtime_button(self, parent, row, col):
-		""" realtime_button """
-		self._realtime_state = tk.BooleanVar(value=False)
-		b = ttk.Checkbutton(parent, text='Accelerate?', variable=self._realtime_state, command=lambda value=self._realtime_state: self.do_realtime(value))
+	def accelerate_button(self, parent, row, col):
+		""" accelerate_button """
+		self._accelerate_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Accelerate?', variable=self._accelerate_state, command=lambda value=self._accelerate_state: self.do_accelerate(value))
 		b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
-		self._realtime_button = b
+		self._accelerate_button = b
 
-	def realtime_button_set(self, value):
-		""" realtime_button_set """
-		self._realtime_state.set(bool(value))
+	def accelerate_button_set(self, value):
+		""" accelerate_button_set """
+		self._accelerate_state.set(bool(value))
 
 	def do_stars(self, value):
 		""" do_stars """
@@ -189,6 +191,21 @@ class UserInterface:
 	def match_stars_button_set(self, value):
 		""" match_stars_button_set """
 		self._match_stars_state.set(bool(value))
+
+	def do_earth_vector(self, value):
+		""" do_earth_vector """
+		self.core.do_earth_vector(bool(value.get()))
+
+	def earth_vector_button(self, parent, row, col):
+		""" earth_vector_button """
+		self._earth_vector_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Earth Vector?', variable=self._earth_vector_state, command=lambda value=self._earth_vector_state: self.do_earth_vector(value))
+		b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
+		self._earth_vector_button = b
+
+	def earth_vector_button_set(self, value):
+		""" earth_vector_button_set """
+		self._earth_vector_state.set(bool(value))
 
 	# STAR MAGNITUDE
 
