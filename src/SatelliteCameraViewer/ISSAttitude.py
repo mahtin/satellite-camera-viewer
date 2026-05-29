@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation as R
 from astropy.coordinates import get_sun, GCRS
 from astropy.time import Time
 import astropy.units as u
-from sgp4.api import Satrec, jday
+from sgp4.api import Satrec, WGS72, SGP4_ERRORS
 
 class ISSAttitude:
 	"""
@@ -58,12 +58,16 @@ class ISSAttitude:
 		:return: A tuple (r_eci_km in Km, v_eci_km_s in Km/s) from a two-line TLE.
 		:rtype: (float, float)
 		"""
-		sat = Satrec.twoline2rv(tle_line1, tle_line2)
+		sat = Satrec.twoline2rv(tle_line1, tle_line2, WGS72)
 		now_utc = datetime.now(timezone.utc)
-		jd, fr = jday(now_utc.year, now_utc.month, now_utc.day, now_utc.hour, now_utc.minute, now_utc.second + now_utc.microsecond/1e6)
-		error, r_eci, v_eci = sat.sgp4(jd, fr)
+		t = Time(now_utc)
+		# error: nonzero for any dates that produced errors, 0 otherwise.
+		# r_teme_km: position vectors in kilometers.
+		# v_teme_km_s: velocity vectors in kilometers per second.
+		# The positional vectors returned by SGP4 are in TEME (True Equator Mean Equinox)
+		error, r_eci, v_eci = sat.sgp4(t.jd1, t.jd2)
 		if error != 0:
-			raise RuntimeError('SGP4 propagation error code: %s' % (error)) from None
+			raise RuntimeError('SGP4 error value/code: %d: "%s"' % (error, SGP4_ERRORS[error])) from None
 		return r_eci, v_eci
 
 	# ------------------------------------------------------------
