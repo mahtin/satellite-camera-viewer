@@ -41,6 +41,7 @@ class NikonD5Camera:
 		self.radec_to_pixel             = self._sc.radec_to_pixel
 
 		self.sat_lon_lat_alt            = self._sc.sat_lon_lat_alt
+		self.sat_in_eclipse             = self._sc.sat_in_eclipse
 
 		self.earth_center_vector        = self._sc.earth_center_vector
 		self.earth_center_vector_icrs   = self._sc.earth_center_vector_icrs

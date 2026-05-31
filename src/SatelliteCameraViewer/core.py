@@ -294,7 +294,7 @@ class CoreCode:
 		p = self.plot_pixels(nsteps=1)
 		self.items_plotted_add(p)
 
-		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec()
+		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
 		earth_radius_deg = self.nikon.earth_angular_radius()
 
 		if self._switch_match_stars:
@@ -312,8 +312,9 @@ class CoreCode:
 			earth_dec_rad = math.radians(float(earth_dec_deg))
 			earth_ra_rad = ra_fix([earth_ra_rad])[0]
 			# s = ... TODO
-			s = 1.0 * self._starfield_fig.dpi
-			_ = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
+			s = earth_radius_deg * 3.0 * self._starfield_fig.dpi
+			p = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
+			self.items_plotted_add(p)
 			try:
 				earth_points_deg = self.nikon.camera_fov_intercept_earth(border_step=10)
 				print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
@@ -321,11 +322,15 @@ class CoreCode:
 				# pixels = self.nikon.camera_fov_intercept_earth()
 				# print('camera_fov_intercept_earth():', 'pixels =', pixels)
 			except SatelliteCameraError as e:
-				print('camera_fov_intercept_earth():', e)
+				# print('camera_fov_intercept_earth():', e)
+				pass
 
 		# Lat, long & altitude of satellite
 		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.sat_lon_lat_alt()
 		self.plot_earthtrack_dot(sat_lon_deg, sat_lat_deg)
+
+		# Shadow ?
+		shadow = self.nikon.sat_in_eclipse()
 
 		if self._switch_earth_vector:
 			# TODO - this is debug only at present
@@ -344,6 +349,8 @@ class CoreCode:
 		s += '%s\n' % (str(self.nikon.camera))
 		s += '[%5.1f,%5.1f] @ %5.1f Km radius | %.1f deg width by %.1f deg height |' % (earth_ra_deg, earth_dec_deg, earth_radius_deg, angular_width, angular_height)
 		s += ' %.1f%% of whole sky' % (100.0*solid_angle_steradians/(4*math.pi))
+		if shadow:
+			s += ' | shadow'
 		self.ui.camera_info(s)
 
 	def plot_sun_moon(self):

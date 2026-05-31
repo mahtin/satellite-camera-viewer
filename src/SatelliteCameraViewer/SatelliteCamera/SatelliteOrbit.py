@@ -24,7 +24,7 @@ Satellite orbit from 2LE or TLE/3LE
 from datetime import datetime, timezone
 import numpy as np
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, TEME, GCRS, ITRS, EarthLocation
+from astropy.coordinates import SkyCoord, TEME, GCRS, ITRS, EarthLocation, get_body
 import astropy.units as u
 
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
@@ -105,6 +105,45 @@ class SatelliteOrbit:
         # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return r_teme_km, v_teme_km_s
+
+    def _sun_vector_eci_km(self, obs_time: datetime):
+        """
+        _sun_vector_eci_km - Returns Sun vector in ECI (GCRS) coordinates, km.
+        """
+        t = Time(obs_time.replace(tzinfo=timezone.utc))
+        sun_gcrs = get_body('sun', t)
+
+        x = sun_gcrs.cartesian.x.to(u.km).value
+        y = sun_gcrs.cartesian.y.to(u.km).value
+        z = sun_gcrs.cartesian.z.to(u.km).value
+
+        return np.array([x, y, z])
+
+    def sat_in_eclipse(self, obs_time: datetime):
+        """
+        in_eclipse - Returns True if saetellite is in Earth's umbra (full shadow).
+
+        :param obs_time: Observation time (in UTC).
+        :type obs_time: datetime
+        """
+
+        sun_eci_km = self._sun_vector_eci_km(obs_time)
+        # Unit vector from Earth to Sun
+        sun_vec = sun_eci_km / np.linalg.norm(sun_eci_km)
+
+        sat_eci_km = self.eci_position_vector(obs_time)
+        # Projection of satellite position onto Sun direction
+        projection_scalar = np.dot(sat_eci_km, sun_vec)
+
+        # If satellite is on the sunward side of Earth → cannot be in shadow
+        if projection_scalar > 0:
+            return False
+
+        # Perpendicular distance from satellite to Sun line
+        perpendicular_distance = np.linalg.norm(sat_eci_km - projection_scalar * sun_vec)
+
+        # is satellite inside Earth's shadow cylinder?
+        return perpendicular_distance < u.R_earth.to(u.km)
 
     def eci_position_vector(self, obs_time: datetime):
         """

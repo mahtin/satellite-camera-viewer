@@ -463,6 +463,10 @@ class SatelliteCamera():
         """ sat_lon_lat_alt """
         return self.sat_orbit.sat_lon_lat_alt(self.obs_time)
 
+    def sat_in_eclipse(self):
+        """ sat_in_eclipse """
+        return self.sat_orbit.sat_in_eclipse(self.obs_time)
+
     def pixel_to_radec(self, px, py):
         """ pixel_to_radec """
         return self.camera.pixel_to_radec(px, py, self.attitude, self.obs_time)
