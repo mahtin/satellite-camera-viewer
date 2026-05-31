@@ -153,12 +153,12 @@ class ISSAttitude:
 		Works across all modern Astropy versions.
 		"""
 		now = Time(datetime.now(timezone.utc))
-		sun = get_sun(now).transform_to(GCRS(obstime=now))
+		sun_gcrs = get_sun(now)
 
 		# Use the cartesian representation (always available)
-		x = sun.cartesian.x.to(u.km).value
-		y = sun.cartesian.y.to(u.km).value
-		z = sun.cartesian.z.to(u.km).value
+		x = sun_gcrs.cartesian.x.to(u.km).value
+		y = sun_gcrs.cartesian.y.to(u.km).value
+		z = sun_gcrs.cartesian.z.to(u.km).value
 
 		return np.array([x, y, z])
 
