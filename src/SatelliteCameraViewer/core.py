@@ -219,6 +219,7 @@ class CoreCode:
 		""" _paint_earth_axis - x and y axis. """
 		#self._earth_ax.set_extent([-180, 180, -90, 90], crs=projection())
 		self._earth_ax.set_global()
+		self._earth_ax.stock_img() # this is a bit excessive - but when has that stopped us?
 		self._earth_ax.coastlines(resolution='110m', color=self._COLORS['earth-coastline'])
 		self._earth_ax.grid(color=self._COLORS['earth-grid'], alpha=0.5)
 		#self._earth_ax.gridlines(draw_labels=True)
@@ -355,14 +356,6 @@ class CoreCode:
 
 	def plot_sun_moon(self):
 		""" plot_sun_moon - add sun and moon to the sky plot. """
-		fraction = moon_illumination(self.nikon.obs_time)
-		moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time)
-		moon_ra_rad = ra_fix([moon_ra_rad])[0]
-		if self._moon:
-			self._moon.set_offsets([[moon_ra_rad, moon_dec_rad]])
-		else:
-			self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
-
 		sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time)
 		sun_ra_rad = ra_fix([sun_ra_rad])[0]
 		# sun diameter is 0.533 degrees
@@ -370,6 +363,14 @@ class CoreCode:
 			self._sun.set_offsets([[sun_ra_rad, sun_dec_rad]])
 		else:
 			self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=1.0, s=300.0)
+
+		fraction = moon_illumination(self.nikon.obs_time)
+		moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time)
+		moon_ra_rad = ra_fix([moon_ra_rad])[0]
+		if self._moon:
+			self._moon.set_offsets([[moon_ra_rad, moon_dec_rad]])
+		else:
+			self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
 
 	def plot_earth_outline(self, earth_points_deg):
 		""" plot_earth_outline - add outline of earth to the sky plot. """
