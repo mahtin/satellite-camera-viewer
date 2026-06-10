@@ -44,6 +44,7 @@ def viewer(args=None):
 	buttons_frame = ui.frame(adjustments_frame, row=row, col=col, padx=0, pady=0,  borderwidth=0, sticky='nw')
 	row += 1
 
+        # column 0
 	b_row = 0
 	b_col = 0
 	ui.accelerate_button(buttons_frame, b_row, b_col)
@@ -52,9 +53,14 @@ def viewer(args=None):
 	b_row += 1
 	ui.match_stars_button(buttons_frame, b_row, b_col)
 	b_row += 1
+
+        # column 1
 	b_col += 1
 	b_row = 0
+	ui.constellation_boundaries_button(buttons_frame, b_row, b_col)
+	b_row += 1
 	ui.earth_vector_button(buttons_frame, b_row, b_col)
+	b_row += 1
 
 	# TODO add more buttons here.
 

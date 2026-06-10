@@ -88,6 +88,7 @@ class CoreCode:
 		self._nikon = NikonD5Camera()
 
 		self._constellation_boundaries = None
+		self._switch_constellation_boundaries = False
 
 		self._sun = None
 		self._moon = None
@@ -362,8 +363,17 @@ class CoreCode:
 		""" plot_constellation_boundaries - add constellation boundaries to the sky plot. """
 		if not self._constellation_boundaries:
 			self._constellation_boundaries = ConstellationBoundaries()
-		for segment in self._constellation_boundaries.data2plot():
-			_ = self._starfield_ax.plot(segment[0], segment[1], label='Constellation Boundary', color='lightblue', alpha=0.75, linewidth=1, linestyle='dashed')
+			self._constellation_boundaries_p = []
+		if self._switch_constellation_boundaries:
+			if len(self._constellation_boundaries_p) == 0:
+				for segment in self._constellation_boundaries.data2plot():
+					p = self._starfield_ax.plot(segment[0], segment[1], label='Constellation Boundary', color='lightblue', alpha=0.75, linewidth=1, linestyle='dashed')
+					self._constellation_boundaries_p.append(p[0])
+		else:
+			if len(self._constellation_boundaries_p) >= 0:
+				for p in self._constellation_boundaries_p:
+					p.remove()
+				self._constellation_boundaries_p = []
 
 	def plot_sun_moon(self):
 		""" plot_sun_moon - add sun and moon to the sky plot. """
@@ -704,6 +714,12 @@ class CoreCode:
 			self.ui.star_found_text(s)
 			self.ui.misc_text(s)
 
+	def do_constellation_boundaries(self, value):
+		""" do_constellation_boundaries """
+		self._switch_constellation_boundaries = value
+		self.plot_constellation_boundaries()
+		self.draw()
+
 	def do_earth_vector(self, value):
 		""" do_earth_vector """
 		self._switch_earth_vector = value
@@ -896,6 +912,7 @@ class CoreCode:
 
 		# now repaint/update sky
 		self.update_starfield_and_more()
+		self.plot_constellation_boundaries()
 		self.plot_sun_moon()		# add sun and moon move when time changes (oh so slightly)
 		self.draw()
 

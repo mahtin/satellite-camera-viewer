@@ -192,6 +192,21 @@ class UserInterface:
 		""" match_stars_button_set """
 		self._match_stars_state.set(bool(value))
 
+	def do_constellation_boundaries(self, value):
+		""" do_constellation_boundaries """
+		self.core.do_constellation_boundaries(bool(value.get()))
+
+	def constellation_boundaries_button(self, parent, row, col):
+		""" constellation_boundaries_button """
+		self._constellation_boundaries_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Constellation Boundaries?', variable=self._constellation_boundaries_state, command=lambda value=self._constellation_boundaries_state: self.do_constellation_boundaries(value))
+		b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
+		self._constellation_boundaries_button = b
+
+	def constellation_boundaries_button_set(self, value):
+		""" constellation_boundaries_button_set """
+		self._constellation_boundaries_state.set(bool(value))
+
 	def do_earth_vector(self, value):
 		""" do_earth_vector """
 		self.core.do_earth_vector(bool(value.get()))
