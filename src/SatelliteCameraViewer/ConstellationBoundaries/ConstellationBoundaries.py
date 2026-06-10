@@ -1,11 +1,11 @@
 """
-Constellation Boundaries 
+Constellation Boundaries
 """
 
 # https://watcheroftheskies.net/welcome.html (or https://pbarbier.com/ maybe)
 # https://watcheroftheskies.net/constellations/boundaries.html
 #
-# Merged edges ...
+# Interpolated merged edges (J2000, dec) ...
 # https://watcheroftheskies.net/constellations/lines_in_20.txt
 #
 # Bytes Format  Unit    Explanation
@@ -19,11 +19,15 @@ Constellation Boundaries
 # 16.5663214 -42.267474 612:628
 # 23.4455593 -36.312778 510:517
 #
+# See https://watcheroftheskies.net/constellations/9N.pdf for Orion map
+#
 
 import os
 import math
 from pathlib import Path
 from dataclasses import dataclass
+
+import requests
 
 @dataclass
 class Line:
@@ -38,13 +42,20 @@ class ConstellationBoundariesError(Exception):
 class ConstellationBoundaries:
     """ ConstellationBoundaries """
 
-    _NAME = 'lines_in_20.txt'
+    _BASE_URL = 'https://watcheroftheskies.net/constellations'
+
+    _NAME_J2000_BOUNDARIES = 'bound_in_20.txt'             # Interpolated boundaries (J2000, ccw, dec)
+    _NAME_J2000_MERGED_EDGES = 'lines_in_20.txt'           # Interpolated merged edges (J2000, dec)
+    _NAME_J2000_CONSTELLATION_CENTERS = 'centers_20.txt'   # Constellation centers (J2000, dec)
+
     _DIR_ConstellationBoundaries = '~/.cache/constellation-boundaries'
 
     def __init__(self, directory=None):
         """ ConstellationBoundaries """
 
-        self._name = self._NAME
+        self._base_url = self._BASE_URL
+
+        self._j2000_merged_edges = self._NAME_J2000_MERGED_EDGES
 
         if directory:
             self._directory = directory
@@ -57,20 +68,62 @@ class ConstellationBoundaries:
         if not self._directory.exists():
             raise ConstellationBoundariesError('%s: directory does not exist' % (self._directory)) from None
 
+        # first pass - just try the local file - mostly successful after first run
         try:
-            self._readfile()
+            r = self._readfile()
+            if r == 0:
+                # a cheap way to continue to the network
+                raise FileNotFoundError('zero length file') from None
+            # we are done!
+            return
         except FileNotFoundError:
-            raise ConstellationBoundariesError('%s: file does not exist' % (self._filename)) from None
+            # lets continue to the network
+            pass
         except PermissionError:
-            raise ConstellationBoundariesError('%s: permission error - file not readable' % (self._filename)) from None
+            raise ConstellationBoundariesError('%s: permission error - file not readable' % (self._local_filename)) from None
+
+        # second pass - go out to network and fetch contents
+        try:
+            r1 = self._network_fetch()
+        except requests.exceptions.ConnectionError as e:
+            try:
+                root_os_error = e.args[0].reason.args[0]
+            except (AttributeError, IndexError):
+                root_os_error = e
+            raise ConstellationBoundariesError('HTTP Error %s: %s' % (root_os_error, self._url)) from None
+        except requests.exceptions.HTTPError as e:
+            if 400 <= e.response.status_code < 500:
+                raise ConstellationBoundariesError('HTTP Client Error %d: %s' % (e.response.status_code, self._url)) from None
+            raise ConstellationBoundariesError('HTTP Server Error %d: %s' % (e.response.status_code, self._url)) from None
+
+        # a special case cleanup for network code - if a zero length result is returned
+        if r1 == 0:
+            # better clean up - just in case
+            self._local_filename.unlink(missing_ok=True)
+            raise ConstellationBoundariesError('network fetch zero length file') from None
+
+        # third pass - back to the local file as created by network code
+        try:
+            r2 = self._readfile()
+        except FileNotFoundError:
+            raise ConstellationBoundariesError('%s: file does not exist' % (self._local_filename)) from None
+
+        # sanity check to confirm that the network and the local file agree (in the simplest way)
+        if r1 != r2:
+            raise ConstellationBoundariesError('inconsistent length file') from None
+
+        # we are done!
+        return
 
     def _readfile(self):
+        """ _readfile() """
         self._a = {}
-        n_lines = 0
-        with self._filename.open('r', encoding='utf-8') as fd:
+        n_bytes = 0
+        with self._local_filename.open('r', encoding='utf-8') as fd:
             for line in fd:
+                n_bytes += len(line)
                 # no need to strip the line as we are very explcit about the line usage ...
-                ra_deg = float(line[0:10]) * 15.0 - 180.0    # converted from hours to degrees
+                ra_deg = float(line[0:10]) * 15.0            # converted from hours to degrees
                 dec_deg = float(line[11:21])
                 segment_key = line[22:29]
                 line = Line(ra_deg, dec_deg, segment_key)
@@ -78,13 +131,37 @@ class ConstellationBoundaries:
                     self._a[segment_key].append(line)
                 else:
                     self._a[segment_key] = [line]
-        return n_lines
+        return n_bytes
 
     @property
-    def _filename(self):
-        """ _filename() """
+    def _local_filename(self):
+        """ _local_filename() """
+        return self._directory / self._j2000_merged_edges
 
-        return self._directory / self._name
+    def _network_fetch(self):
+        """ _network_fetch() """
+        headers = {
+            # required to make website respond cleanly
+            'Accept-Encoding': 'text/plain',
+            'Referer': 'https://google.com/',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
+        }
+        response = requests.get(self._url, headers=headers, stream=True, timeout=20)
+        response.raise_for_status()
+        # partial network success at this point
+        n_bytes = 0
+        with self._local_filename.open('wb') as fd:
+            for chunk in response.iter_content(chunk_size=32*1024):
+                if chunk:
+                    fd.write(chunk)
+                    n_bytes += len(chunk)
+        # total network success at this point
+        return n_bytes
+
+    @property
+    def _url(self):
+        """ _url() """
+        return self._base_url + '/' + self._j2000_merged_edges
 
     def data(self):
         """ data() """
@@ -93,24 +170,31 @@ class ConstellationBoundaries:
     def data2plot(self):
         """ data2plot() """
         r = []
-        for segment,lines in self._a.items():
+
+        # TODO - remove this and move to main code - plus use numpy
+        def ra_fix(ra_rad):
+            """ ra_fix """
+            return -((ra_rad + math.pi) % (2 * math.pi) - math.pi)      # shift to [-pi, pi]
+
+        for lines in self._a.values():
             x = []
             y = []
             for line in lines:
-                # print('[%7.3f,%7.3f] <%s>' % (line.ra_deg, line.dec_deg, line.segment_key))
-                x.append(math.radians(line.ra_deg))
+                x.append(ra_fix(math.radians(line.ra_deg)))
                 y.append(math.radians(line.dec_deg))
             r.append((x,y))
         return r
 
 def _main(args=None):
     """ _main """
-    import sys
-    import matplotlib.pyplot as plt
+    import sys                       # pylint: disable=C0415
+    import matplotlib.pyplot as plt  # pylint: disable=C0415
 
     try:
         cb = ConstellationBoundaries()
     except ConstellationBoundariesError as e:
+        sys.exit(e)
+    except KeyboardInterrupt as e:
         sys.exit(e)
 
     fig = plt.figure(figsize=(14, 7))
@@ -130,4 +214,4 @@ def _main(args=None):
     plt.show()
 
 if __name__ == '__main__':
-    _main() 
+    _main()

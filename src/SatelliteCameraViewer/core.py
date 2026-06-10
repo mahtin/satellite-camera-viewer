@@ -11,6 +11,7 @@ from astropy.coordinates import SkyCoord
 
 from .SatelliteCamera import SatelliteCameraError
 from .BSC5Stars import BSC5Stars
+from .ConstellationBoundaries import ConstellationBoundaries
 from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
@@ -86,10 +87,13 @@ class CoreCode:
 		# camera
 		self._nikon = NikonD5Camera()
 
+		self._constellation_boundaries = None
+
 		self._sun = None
 		self._moon = None
 
 		self.plot_ecliptic()
+		self.plot_constellation_boundaries()
 		self.plot_sun_moon()
 		if False:
 			# not needed presently becaused the number of stars plotted is so low
@@ -353,6 +357,13 @@ class CoreCode:
 		if shadow:
 			s += ' | shadow'
 		self.ui.camera_info(s)
+
+	def plot_constellation_boundaries(self):
+		""" plot_constellation_boundaries - add constellation boundaries to the sky plot. """
+		if not self._constellation_boundaries:
+			self._constellation_boundaries = ConstellationBoundaries()
+		for segment in self._constellation_boundaries.data2plot():
+			_ = self._starfield_ax.plot(segment[0], segment[1], label='Constellation Boundary', color='lightblue', alpha=0.75, linewidth=1, linestyle='dashed')
 
 	def plot_sun_moon(self):
 		""" plot_sun_moon - add sun and moon to the sky plot. """
