@@ -11,7 +11,7 @@ from astropy.coordinates import SkyCoord
 
 from .SatelliteCamera import SatelliteCameraError
 from .BSC5Stars import BSC5Stars
-from .ConstellationBoundaries import ConstellationBoundaries
+from .Constellations import ConstellationBoundaries, ConstellationDatabase
 from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
@@ -19,7 +19,6 @@ from .DoCubesatViewer import DoCubesatViewer
 from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
 from .ecliptic import ecliptic, body, galactic_plane, moon_illumination
-from .constellation_database import ConstellationDatabase
 from .stars_in_polygon_icrs import stars_in_polygon_icrs
 
 #
