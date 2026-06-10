@@ -114,8 +114,9 @@ def moon_illumination(obs_time:datetime):
 
 def _main(args=None):
 	""" _main """
-	import math
-	from datetime import timezone, timedelta
+	import math                               # pylint: disable=C0415
+	from datetime import timezone, timedelta  # pylint: disable=C0415
+
 	location = [1000000.0, 1000000.0, 1000000000.0]
 	location = None
 	now_utc = datetime.now(timezone.utc)

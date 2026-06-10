@@ -16,28 +16,28 @@ class StarCatalog():
 
         try:
             # BSC5P - The Yale Bright Star Catalog, 5th Edition
-            from .catalog_bsc5 import CatalogBSC5
+            from .catalog_bsc5 import CatalogBSC5             # pylint: disable=C0415
             cls._known_catalogs['BSC5'] = CatalogBSC5
         except ImportError:
             pass
 
         try:
             # HYG (Hipparcos, Yale, Gliese)
-            from .catalog_hyg import CatalogHYG
+            from .catalog_hyg import CatalogHYG               # pylint: disable=C0415
             cls._known_catalogs['HYG'] = CatalogHYG
         except ImportError:
             pass
 
         try:
             # Smithsonian Astrophysical Observatory
-            from .catalog_sao import CatalogSAO
+            from .catalog_sao import CatalogSAO               # pylint: disable=C0415
             cls._known_catalogs['SAO'] = CatalogSAO
         except ImportError:
             pass
 
         try:
             # The Tycho-2 Catalogue of the 2.5 Million Brightest Stars
-            from .catalog_tycho_2 import CatalogTycho_2
+            from .catalog_tycho_2 import CatalogTycho_2       # pylint: disable=C0415
             cls._known_catalogs['Tycho-2'] = CatalogTycho_2
         except ImportError:
             pass

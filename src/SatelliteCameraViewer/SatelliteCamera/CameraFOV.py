@@ -12,7 +12,7 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from spherical_geometry import polygon as sgeom
 try:
-    import healpy as hp
+    import healpy as hp        # pylint: disable=C0415
 except ModuleNotFoundError:
     hp = None
 
