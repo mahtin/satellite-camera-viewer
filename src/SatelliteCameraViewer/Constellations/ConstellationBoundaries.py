@@ -24,6 +24,7 @@ Constellation Boundaries
 
 import os
 import math
+from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -55,6 +56,7 @@ class ConstellationBoundaries:
 
         self._base_url = self._BASE_URL
 
+        # we only process one of the image files on that website for now
         self._j2000_merged_edges = self._NAME_J2000_MERGED_EDGES
 
         if directory:
@@ -68,52 +70,65 @@ class ConstellationBoundaries:
         if not self._directory.exists():
             raise ConstellationBoundariesError('%s: directory does not exist' % (self._directory)) from None
 
+        self._read()
+
+    def _read(self):
+        """ _read() """
         # first pass - just try the local file - mostly successful after first run
         try:
             r = self._readfile()
             if r == 0:
                 # a cheap way to continue to the network
                 raise FileNotFoundError('zero length file') from None
-            # we are done!
+            # we are successfully done!
             return
         except FileNotFoundError:
-            # lets continue to the network
+            # lets continue to the network section of the code and not throw an error
             pass
         except PermissionError:
+            # hard to fix anything at this point - humans need to get involved
             raise ConstellationBoundariesError('%s: permission error - file not readable' % (self._local_filename)) from None
 
         # second pass - go out to network and fetch contents
         try:
             r1 = self._network_fetch()
         except requests.exceptions.ConnectionError as e:
+            # classic can't connect issue
+            self._local_filename.unlink(missing_ok=True)
             try:
                 root_os_error = e.args[0].reason.args[0]
             except (AttributeError, IndexError):
                 root_os_error = e
             raise ConstellationBoundariesError('HTTP Error %s: %s' % (root_os_error, self._url)) from None
         except requests.exceptions.HTTPError as e:
+            # this would be something like a 404 (Not Found) or 406 (Not Acceptable) response
+            self._local_filename.unlink(missing_ok=True)
             if 400 <= e.response.status_code < 500:
                 raise ConstellationBoundariesError('HTTP Client Error %d: %s' % (e.response.status_code, self._url)) from None
             raise ConstellationBoundariesError('HTTP Server Error %d: %s' % (e.response.status_code, self._url)) from None
+        except requests.exceptions.RequestException:
+            # something else happened - not great!
+            self._local_filename.unlink(missing_ok=True)
+            # let it pass up - it could be important to see what happened
+            raise
 
         # a special case cleanup for network code - if a zero length result is returned
         if r1 == 0:
-            # better clean up - just in case
+            # could happen - better clean up - just in case
             self._local_filename.unlink(missing_ok=True)
             raise ConstellationBoundariesError('network fetch zero length file') from None
 
-        # third pass - back to the local file as created by network code
+        # third pass - back to the local file as-created by network code
         try:
             r2 = self._readfile()
         except FileNotFoundError:
             raise ConstellationBoundariesError('%s: file does not exist' % (self._local_filename)) from None
 
-        # sanity check to confirm that the network and the local file agree (in the simplest way)
+        # a sanity check to confirm that the network and the local file agree (in the simplest possible way)
         if r1 != r2:
             raise ConstellationBoundariesError('inconsistent length file') from None
 
-        # we are done!
-        return
+        # we are successfully done!
 
     def _readfile(self):
         """ _readfile() """
@@ -133,11 +148,6 @@ class ConstellationBoundaries:
                     self._a[segment_key] = [line]
         return n_bytes
 
-    @property
-    def _local_filename(self):
-        """ _local_filename() """
-        return self._directory / self._j2000_merged_edges
-
     def _network_fetch(self):
         """ _network_fetch() """
         headers = {
@@ -155,8 +165,27 @@ class ConstellationBoundaries:
                 if chunk:
                     fd.write(chunk)
                     n_bytes += len(chunk)
-        # total network success at this point
+            # total network success at this point
+
+        # we should try to date the file correctly (do this after the file is closed above)
+        try:
+            # should be "Last-Modified: Mon, 31 Jan 2000 12:00:00 EST" style if headers are correct
+            last_modified = response.headers['Last-Modified']
+            last_modified_dt = datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
+            last_modified_ts = int(last_modified_dt.timestamp())
+            # change both atime and mtime on file
+            os.utime(self._local_filename, (last_modified_ts, last_modified_ts))
+        except (IndexError, ValueError):
+            # if the header is missing, or badly formatted, we just continue
+            pass
+
+        # total network success and hopefully timestamp success at this point
         return n_bytes
+
+    @property
+    def _local_filename(self):
+        """ _local_filename() """
+        return self._directory / self._j2000_merged_edges
 
     @property
     def _url(self):
