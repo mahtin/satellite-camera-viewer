@@ -29,6 +29,8 @@
 import re
 from .Constellation import Constellation
 
+# pylint: disable=unnecessary-lambda
+
 class ConstellationDatabase:
     """ ConstellationDatabase """
 
@@ -121,7 +123,7 @@ class ConstellationDatabase:
         ['Vela',                'Vel',      'Velr',      'Velorum',             'ancient (Ptolemy); 1756,Lacaille, split from Argo Navis',    'sails',    'γ Velorum',    '1.83'],
         ['Virgo',               'Vir',      'Virg',      'Virginis',            'ancient (Ptolemy)',        'virgin, maiden',    'Spica',    '0.97'],
         ['Volans',              'Vol',      'Voln',      'Volantis',            '1598,Plancius,Keyser,de Houtman, as Piscis Volans',    'flying fish',    'γ2Volantis',    '3.75'],
-        ['Vulpecula',           'Vul',      'Vulp',      'Vulpeculae',          '1690,Firmamentum Sobiescianum,Hevelius, as Vulpecula cum Ansere', "littlefox(originally, 'little fox with the goose')", 'α Vulpeculae' '4.40'],
+        ['Vulpecula',           'Vul',      'Vulp',      'Vulpeculae',          '1690,Firmamentum Sobiescianum,Hevelius, as Vulpecula cum Ansere', "littlefox(originally, 'little fox with the goose')", 'α Vulpeculae', '4.40'],
     ]
     _constellations = []
     _index = {}

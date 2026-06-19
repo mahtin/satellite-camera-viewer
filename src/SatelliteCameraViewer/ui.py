@@ -3,6 +3,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+# pylint: disable=unnecessary-lambda
+
 class UserInterface:
 	""" UserInterface """
 
@@ -317,7 +319,7 @@ class UserInterface:
 		lf = self.labelframe(parent, 'Attitude')
 		lf.grid(row=row, column=col, sticky='ew')
 		self.v_sliders = {}
-		max_width = max([len(k) for v,k in self._cam_slider_rpy_text.items()])
+		max_width = max(len(k) for v,k in self._cam_slider_rpy_text.items())
 		for k,v in self.rpy_values_deg.items():
 			l = ttk.Label(lf, text=self._cam_slider_rpy_text[k], width=max_width+5)
 			l.grid(row=row, column=col, padx=2, pady=2, sticky='ew')

@@ -14,6 +14,9 @@ from .user_agent import user_agent
 
 # Used by each catalog class - the class only needs to provide a _readstarfile() method
 
+class CatalogError(Exception):
+    """ CatalogError() """
+
 class Catalog():
     """ Catalog() """
 
@@ -47,7 +50,7 @@ class Catalog():
                 self._directory = Path(self._DIR_STAR_CATALOG).expanduser()
 
         if not os.path.exists(self._directory):
-            raise FileNotFoundError(self._directory) from None
+            raise CatalogError(self._directory) from None
         if not os.path.exists(self.directory()):
             os.mkdir(self.directory())
 
@@ -99,7 +102,7 @@ class Catalog():
         """ directory() """
 
         if not self._directory:
-            raise FileNotFoundError(self._directory) from None
+            raise CatalogError(self._directory) from None
 
         return self._directory / self._name
 
@@ -158,8 +161,8 @@ class Catalog():
             }
             try:
                 response = requests.get(url, headers=headers, stream=True)
-            except Exception as err:
-                self.__class__.log.debug('web requests() failed err=%s' % (err))
+            except Exception as e:
+                self.__class__.log.debug('web requests() failed e=%s' % (e))
                 continue
             try:
                 n_bytes = 0
@@ -215,7 +218,7 @@ class Catalog():
             # _readstarfile will write into _stars
             n_lines = self._readstarfile(self.directory(), self._max_mag, self._star_append)
             self.__class__.log.debug('%s from %s with %s records' % (self.name(), self.directory(), n_lines))
-        except FileNotFoundError as err:
+        except FileNotFoundError:
             self.__class__.log.error('star catalog file: %s' % (self.directory()))
             return 0
 
@@ -248,8 +251,8 @@ class Catalog():
         try:
             with open(filename, 'rb') as fd:
                 stars_b = fd.read()
-        except FileNotFoundError as err:
-            raise FileNotFoundError from err
+        except FileNotFoundError:
+            raise CatalogError(filename) from None
 
         # check digest and only return stars if correct
         signature1 = hmac.new(self._key, stars_b, hashlib.sha256).hexdigest()
@@ -257,14 +260,14 @@ class Catalog():
         try:
             with open(filename, 'r', encoding='utf-8') as fd:
                 signature2 = fd.read().rstrip()
-        except FileNotFoundError:
-            self.__class__.log.error('sig file:', type(err).__name__, err, self.directory())
-            raise FileNotFoundError from err
+        except FileNotFoundError as e:
+            self.__class__.log.error('sig file:', type(e).__name__, e, self.directory())
+            raise CatalogError(filename) from None
 
         if not hmac.compare_digest(signature1, signature2):
             # Danger Will Robinson - ignore it all!
             self.__class__.log.error('sig file mismatch: signature %s vs %s' % (signature1, signature2))
-            raise ValueError('sig file mismatch') from None
+            raise CatalogError('%s: sig file mismatch' % (filename)) from None
 
         # We have a correct sig - lets proceed!
         stars = pickle.loads(stars_b)
@@ -313,9 +316,9 @@ class Catalog():
 
         try:
             self._db = sqlite3.connect(filename)
-        except sqlite3.OperationalError as err:
-            self.__class__.log.error('db file:', type(err).__name__, err, self.directory())
-            pass
+        except sqlite3.OperationalError as e:
+            self.__class__.log.error('db file:', type(e).__name__, e, self.directory())
+            return None
 
         cur = self._db.cursor()
         if (memory and not shared) or fresh:

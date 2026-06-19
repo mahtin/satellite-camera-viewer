@@ -49,10 +49,10 @@ class PrecomputedCatalog:
 		if pattern is None or pattern == '':
 			self._all_found = self._find_stars_by_list()
 		else:
-			self._all_found = self._find_stars_by_seatch(pattern)
+			self._all_found = self._find_stars_by_search(pattern)
 
-	def _find_stars_by_seatch(self, pattern):
-		""" find_stars_by_seatch """
+	def _find_stars_by_search(self, pattern):
+		""" find_stars_by_search """
 		directory_path = self._CATALOG_DIR + '/' + self._collection
 
 		all_found = {}
@@ -78,7 +78,7 @@ class PrecomputedCatalog:
 
 	def _find_stars_by_list(self):
 		""" _find_stars_by_list """
-		pc = self._find_stars_by_seatch(self._precompute_cats)
+		pc = self._find_stars_by_search(self._precompute_cats)
 		# uniq the stars ...
 		all_found = {}
 		for v in pc.stars.values():

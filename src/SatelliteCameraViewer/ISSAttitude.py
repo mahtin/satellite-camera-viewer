@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-from astropy.coordinates import get_sun, GCRS
+from astropy.coordinates import get_sun
 from astropy.time import Time
 import astropy.units as u
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
