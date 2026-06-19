@@ -1,5 +1,6 @@
 """ ecliptic """
 
+import math
 from datetime import datetime
 import numpy as np
 from astropy.coordinates import SkyCoord, get_body, EarthLocation
@@ -42,16 +43,16 @@ def body(which:str, obs_time:datetime, location=None):
 	:rtype: tuple(float, float)
 	"""
 	t = Time(obs_time)
-	if location:
+	if location is not None:
 		# Location on Earth, initialized from geocentric coordinates.
 		location = EarthLocation.from_geocentric(location[0], location[1], location[2], unit='km')
 	# Get sun or moon or planets  position in GCRS frame
-	body_gcrs = get_body(which, t)
+	body_gcrs = get_body(which, t, location=location)
 	# Transform to ICRS (Equatorial) and extract RA/Dec in degrees
 	body_icrs = body_gcrs.transform_to('icrs')
 	return float(body_icrs.ra.rad), float(body_icrs.dec.rad)
 
-def sun(obs_time:datetime):
+def sun(obs_time:datetime, location=None):
 	"""
 	sun - return the position (in RA/DEC) for the sun. Using `body()` would be preferred.
 
@@ -61,7 +62,48 @@ def sun(obs_time:datetime):
 	:rtype: tuple(float, float)
 	"""
 	# now handled by body('sun')
-	return body('sun', obs_time)
+	return body('sun', obs_time, location)
+
+def planets(obs_time:datetime, location=None):
+	"""
+	planets - return the position (in RA/DEC) for the planets.
+
+	:param obs_time: Time of observation.
+	:type obs_time: datetime`
+	:return: The RA/DEC of the planets
+	:rtype: list(tuple(float, float))
+	"""
+
+	_planets = [
+		# Planet	Max	Min Brightness
+		('Mercury',	-2.5,	+5.5),
+		('Venus',	-4.9,	-3.8),
+		('Mars',	-3.0,	+1.8),
+		('Jupiter',	-2.9,	-1.6),
+		('Saturn',	+0.2,	+1.2),
+		# removed becuase 1) can't see them. 2) the function body() isn't perfect.
+		# ('Uanus',	+5.3,	+5.9),
+		# ('Neptune',	+7.7,	+8.0),
+		# ('Pluto',	+14.5,	+14.5),
+	]
+
+	names = []
+	ra_rad = []
+	dec_rad = []
+	mags = []
+	for p in _planets:
+		try:
+			ra, dec =  body(p[0], obs_time, location)
+		except KeyError:
+			# some planets are supported
+			continue
+		mag = (p[1] + p[2])/2
+		names.append(p[0])
+		ra_rad.append(ra)
+		dec_rad.append(dec)
+		mags.append(mag)
+		# print('%20s: [%5.1f,%5.1f]' % (p[0], math.degrees(ra), math.degrees(dec)))
+	return names, ra_rad, dec_rad, mags
 
 def earth_vector(obs_time:datetime, location=None):
 	""" earth_vector """

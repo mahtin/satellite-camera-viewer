@@ -18,7 +18,7 @@ from .DoCubesatViewer import DoCubesatViewer
 
 from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
-from .ecliptic import ecliptic, body, galactic_plane, moon_illumination
+from .ecliptic import ecliptic, body, planets, galactic_plane, moon_illumination
 from .stars_in_polygon_icrs import stars_in_polygon_icrs
 
 #
@@ -59,6 +59,7 @@ class CoreCode:
 		'constellations': 'red',
 		'sun': 'darkorange',
 		'moon': 'dimgrey',
+		'planets': 'blue',
 		'match': 'red',
 	}
 
@@ -91,10 +92,9 @@ class CoreCode:
 
 		self._sun = None
 		self._moon = None
+		self._planets = None
 
 		self.plot_ecliptic()
-		self.plot_constellation_boundaries()
-		self.plot_sun_moon()
 		if False:
 			# not needed presently becaused the number of stars plotted is so low
 			self.plot_galactic_plane()
@@ -326,8 +326,7 @@ class CoreCode:
 				self.plot_earth_outline(earth_points_deg)
 				# pixels = self.nikon.camera_fov_intercept_earth()
 				# print('camera_fov_intercept_earth():', 'pixels =', pixels)
-			except SatelliteCameraError as e:
-				# print('camera_fov_intercept_earth():', e)
+			except SatelliteCameraError:
 				pass
 
 		# Lat, long & altitude of satellite
@@ -376,21 +375,49 @@ class CoreCode:
 
 	def plot_sun_moon(self):
 		""" plot_sun_moon - add sun and moon to the sky plot. """
-		sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time)
+		location = self.nikon.camera.eci_position_vector()
+		sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time, location=location)
 		sun_ra_rad = ra_fix([sun_ra_rad])[0]
 		# sun diameter is 0.533 degrees
 		if self._sun:
-			self._sun.set_offsets([[sun_ra_rad, sun_dec_rad]])
+			self._sun.set_offsets([(sun_ra_rad, sun_dec_rad)])
+			# no text needed for the sun
+			# self._sun_text.set_position((sun_ra_rad, sun_dec_rad))
 		else:
-			self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=1.0, s=300.0)
+			self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=0.5, s=300.0)
+			# no text needed for the sun
+			# self._sun_text = self._starfield_ax.text(sun_ra_rad, sun_dec_rad, 'sun', color=self._COLORS['sun'], ha='center', va='bottom', alpha=0.5)
 
-		fraction = moon_illumination(self.nikon.obs_time)
-		moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time)
+		# fraction = moon_illumination(self.nikon.obs_time)
+		moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time, location=location)
 		moon_ra_rad = ra_fix([moon_ra_rad])[0]
 		if self._moon:
-			self._moon.set_offsets([[moon_ra_rad, moon_dec_rad]])
+			self._moon.set_offsets([(moon_ra_rad, moon_dec_rad)])
+			self._moon_text.set_position((moon_ra_rad, moon_dec_rad))
 		else:
 			self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
+			self._moon_text = self._starfield_ax.text(moon_ra_rad, moon_dec_rad, 'moon', color=self._COLORS['moon'], ha='center', va='bottom', alpha=0.5)
+
+	def plot_planets(self):
+		""" plot_planets - add planets to the sky plot. """
+
+		location = self.nikon.camera.eci_position_vector()
+		names, planets_ra_rad, planets_dec_rad, planets_mags = planets(self.nikon.obs_time, location=location)
+		planets_ra_rad = ra_fix(planets_ra_rad)
+		planets_size_pixels = mag_map(planets_mags)
+		if self._planets:
+			v = [(planets_ra_rad[ii], planets_dec_rad[ii]) for ii in range(len(planets_ra_rad))]
+			self._planets.set_offsets(v)
+			# self._planets.set_sizes(planets_sie_pixels)
+			for ii in range(len(planets_ra_rad)):
+				self._planet_texts[ii].set_position((planets_ra_rad[ii], planets_dec_rad[ii]))
+		else:
+			self._planets = self._starfield_ax.scatter(planets_ra_rad, planets_dec_rad, s=planets_size_pixels, color=self._COLORS['planets'], alpha=0.5)
+			# paint names just once - planets don't move that much.
+			self._planet_texts = []
+			for ii in range(len(planets_ra_rad)):
+				p = self._starfield_ax.text(planets_ra_rad[ii], planets_dec_rad[ii], names[ii], color=self._COLORS['planets'], ha='center', va='bottom', alpha=0.5)
+				self._planet_texts.append(p)
 
 	def plot_earth_outline(self, earth_points_deg):
 		""" plot_earth_outline - add outline of earth to the sky plot. """
@@ -619,7 +646,7 @@ class CoreCode:
 				dec_deg = star.dec.degree
 				try:
 					px, py = self.nikon.radec_to_pixel(ra_deg, dec_deg)
-				except SatelliteCameraError as e:
+				except SatelliteCameraError:
 					# outside the view of the camera - should not happen if polygon is accurate
 					continue
 				xy_list.append((px,py))
@@ -900,6 +927,7 @@ class CoreCode:
 		if self._switch_accelerate_time is True:
 			# accelerate - i.e. jump time ahead quickly - TODO this value should be based on orbital params
 			seconds = (60 - self.nikon.obs_time.second) + 60
+			seconds += 24*60*60
 			self.nikon.adjust_by_seconds(seconds)
 			# hence step is half a second
 			timer_step = 500
@@ -913,6 +941,7 @@ class CoreCode:
 		self.update_starfield_and_more()
 		self.plot_constellation_boundaries()
 		self.plot_sun_moon()		# add sun and moon move when time changes (oh so slightly)
+		self.plot_planets()		# add planets move when time changes (oh so slightly)
 		self.draw()
 
 		# and finally, setup trigger the next timer
