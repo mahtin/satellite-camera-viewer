@@ -22,6 +22,7 @@ def ecliptic(nsteps:int=180):
 	# 2. Transform to Equatorial (ICRS) coordinates
 	ecl_coords = SkyCoord(lon=lon_ecl*u.deg, lat=lat_ecl*u.deg, frame='geocentrictrueecliptic')
 	equatorial_coords = ecl_coords.icrs
+	equatorial_coords = ecl_coords.gcrs
 	# 3. wrap as needed
 	ra_rad = equatorial_coords.ra.wrap_at(180*u.deg).radian  # Wrap to -pi to pi for Mollweide
 	dec_rad = equatorial_coords.dec.radian
@@ -49,8 +50,7 @@ def body(which:str, obs_time:datetime, location=None):
 	# Get sun or moon or planets  position in GCRS frame
 	body_gcrs = get_body(which, t, location=location)
 	# Transform to ICRS (Equatorial) and extract RA/Dec in degrees
-	body_icrs = body_gcrs.transform_to('icrs')
-	return float(body_icrs.ra.rad), float(body_icrs.dec.rad)
+	return float(body_gcrs.ra.rad), float(body_gcrs.dec.rad)
 
 def sun(obs_time:datetime, location=None):
 	"""
@@ -62,7 +62,7 @@ def sun(obs_time:datetime, location=None):
 	:rtype: tuple(float, float)
 	"""
 	# now handled by body('sun')
-	return body('sun', obs_time, location)
+	return body('sun', obs_time, location=location)
 
 def planets(obs_time:datetime, location=None):
 	"""
@@ -78,10 +78,12 @@ def planets(obs_time:datetime, location=None):
 		# Planet	Max	Min Brightness
 		('Mercury',	-2.5,	+5.5),
 		('Venus',	-4.9,	-3.8),
+		# Not actual brighness of Earth. It's -20 to -23 from LEO satellite and -17 to -22 from GEO
+		('Earth',	-3.8,	-3.8),
 		('Mars',	-3.0,	+1.8),
 		('Jupiter',	-2.9,	-1.6),
 		('Saturn',	+0.2,	+1.2),
-		# removed becuase 1) can't see them. 2) the function body() isn't perfect.
+		# Removed becuase 1) can't see them. 2) the astropy function body() isn't perfect.
 		# ('Uanus',	+5.3,	+5.9),
 		# ('Neptune',	+7.7,	+8.0),
 		# ('Pluto',	+14.5,	+14.5),
@@ -93,7 +95,7 @@ def planets(obs_time:datetime, location=None):
 	mags = []
 	for p in _planets:
 		try:
-			ra, dec =  body(p[0], obs_time, location)
+			ra, dec =  body(p[0], obs_time, location=location)
 		except KeyError:
 			# some planets are supported
 			continue
@@ -102,7 +104,6 @@ def planets(obs_time:datetime, location=None):
 		ra_rad.append(ra)
 		dec_rad.append(dec)
 		mags.append(mag)
-		# print('%20s: [%5.1f,%5.1f]' % (p[0], math.degrees(ra), math.degrees(dec)))
 	return names, ra_rad, dec_rad, mags
 
 def earth_vector(obs_time:datetime, location=None):
