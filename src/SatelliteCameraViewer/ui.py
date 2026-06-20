@@ -194,6 +194,21 @@ class UserInterface:
 		""" match_stars_button_set """
 		self._match_stars_state.set(bool(value))
 
+	def do_planets_etc(self, value):
+		""" do_planets_etc """
+		self.core.do_planets_etc(bool(value.get()))
+
+	def planets_etc_button(self, parent, row, col):
+		""" planets_etc_button """
+		self._planets_etc_state = tk.BooleanVar(value=False)
+		b = ttk.Checkbutton(parent, text='Show Planets etc?', variable=self._planets_etc_state, command=lambda value=self._planets_etc_state: self.do_planets_etc(value))
+		b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
+		self._planets_etc_button = b
+
+	def planets_etc_button_set(self, value):
+		""" planets_etc_button_set """
+		self._planets_etc_state.set(bool(value))
+
 	def do_constellation_boundaries(self, value):
 		""" do_constellation_boundaries """
 		self.core.do_constellation_boundaries(bool(value.get()))

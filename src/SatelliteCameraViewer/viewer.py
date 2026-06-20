@@ -57,6 +57,8 @@ def viewer(args=None):
         # column 1
 	b_col += 1
 	b_row = 0
+	ui.planets_etc_button(buttons_frame, b_row, b_col)
+	b_row += 1
 	ui.constellation_boundaries_button(buttons_frame, b_row, b_col)
 	b_row += 1
 	ui.earth_vector_button(buttons_frame, b_row, b_col)
