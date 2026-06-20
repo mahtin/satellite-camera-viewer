@@ -57,6 +57,7 @@ class CoreCode:
 		'stars': 'black',
 		'stars-found': 'magenta',
 		'constellations': 'red',
+		'constellations-boundaries': 'lightblue',
 		'sun': 'darkorange',
 		'moon': 'dimgrey',
 		'planets': 'blue',
@@ -367,7 +368,7 @@ class CoreCode:
 		if self._switch_constellation_boundaries:
 			if len(self._constellation_boundaries_p) == 0:
 				for segment in self._constellation_boundaries.data2plot():
-					p = self._starfield_ax.plot(segment[0], segment[1], label='Constellation Boundary', color='lightblue', alpha=0.75, linewidth=1, linestyle='dashed')
+					p = self._starfield_ax.plot(segment[0], segment[1], label='Constellation Boundary', color=self._COLORS['constellations-boundaries'], alpha=0.75, linewidth=1, linestyle='dashed')
 					self._constellation_boundaries_p.append(p[0])
 		else:
 			if len(self._constellation_boundaries_p) >= 0:
@@ -412,7 +413,7 @@ class CoreCode:
 			else:
 				self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
 				fontdict = {'fontsize':self._ui.font['size']+2}
-				self._moon_text = self._starfield_ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'moon', color=self._COLORS['moon'], rotation=90, ha='center', va='bottom', alpha=0.5, fontdict=fontdict)
+				self._moon_text = self._starfield_ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'Moon', color=self._COLORS['moon'], rotation=90, ha='center', va='bottom', alpha=0.5, fontdict=fontdict)
 		else:
 			if self._moon:
 				self._moon.remove()
