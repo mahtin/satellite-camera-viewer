@@ -76,53 +76,66 @@ class CoreCode:
 		if ui is None:
 			raise ValueError('CoreCode() needs ui value') from None
 		self._ui = ui
+		# register ourselves with the UI
+		self._ui.core = self
 
 		self._timer_id = None
 
-		# starfield
-		self._create_starfield_subplot()
-		self._paint_starfield_axis()
-		# earth
-		self._create_earth_subplot()
-		self._paint_earth_axis()
 		# camera
 		self._nikon = NikonD5Camera()
 
-		self._switch_planets_etc = False
+		# pointing
+		self._pointing = 'vv'
 
-		self._constellation_boundaries = None
+		# switches
+		self._switch_accelerate_time = False
+		self._switch_stars = False
+		self._switch_match_stars = False
+		self._switch_earth_vector = False
+		self._switch_planets_etc = False
 		self._switch_constellation_boundaries = False
 
+		# plotted elements
 		self._sun = None
 		self._moon = None
 		self._planets = None
-
-		self.plot_ecliptic()
-		if False:
-			# not needed presently becaused the number of stars plotted is so low
-			self.plot_galactic_plane()
+		self._constellation_boundaries = None
 
 		self._items_plotted = []
-
 		self._starfield_centerline_plot = None
 		self._starfield_centerline_data = None
-
 		self._earthtrack = []
 		self._earthtrack_plot = None
 		self._earthtrack_mark = None
-
-		self._switch_accelerate_time = False
-		self._switch_match_stars = False
-		self._switch_earth_vector = False
-
-		self._pointing = 'vv'
 		self._stars_plot = None
 
-		mag = 5.0
-		self._scbsc5 = StarsConstellationsBSC5(mag)
+		# start the plotting...
+		self._setup_plot()
 
-		# register ourselves with the UI
-		self._ui.core = self
+		self._scbsc5 = None
+		self._mag = 5.0
+		# no need to do this now ... it will be done later when needed
+		# self._setup_stars()
+
+	def _setup_plot(self):
+		""" _setup_plot """
+		# starfield plot
+		self._create_starfield_subplot()
+		self._paint_starfield_axis()
+		self.plot_ecliptic()
+		# not needed presently becaused the number of stars plotted is so low
+		# self.plot_galactic_plane()
+		# earth plot
+		self._create_earth_subplot()
+		self._paint_earth_axis()
+
+	def _setup_stars(self):
+		""" _setup_stars """
+		if self._scbsc5 is None:
+			self._scbsc5 = StarsConstellationsBSC5(self._mag)
+			return
+		if self._scbsc5.max_mag != self._mag:
+			self._scbsc5.max_mag = self._mag
 
 	@property
 	def ui(self):
@@ -305,7 +318,7 @@ class CoreCode:
 		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
 		earth_radius_deg = self.nikon.earth_angular_radius()
 
-		if self._switch_match_stars:
+		if self._switch_stars and self._switch_match_stars:
 			# Star chart
 			p = self.plot_matched_closest_star()
 			if p:
@@ -379,8 +392,7 @@ class CoreCode:
 	def plot_sun(self):
 		""" plot_sun - add sun to the sky plot. """
 		if self._switch_planets_etc:
-			location = self.nikon.camera.eci_position_vector()
-			sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time, location=location)
+			sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time, self.nikon.camera.eci_position_vector)
 			sun_ra_rad = ra_fix([sun_ra_rad])[0]
 			# sun diameter is 0.533 degrees
 			if self._sun:
@@ -403,8 +415,7 @@ class CoreCode:
 	def plot_moon(self):
 		""" plot_moon - add moon to the sky plot. """
 		if self._switch_planets_etc:
-			location = self.nikon.camera.eci_position_vector()
-			moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time, location=location)
+			moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time, self.nikon.camera.eci_position_vector)
 			moon_ra_rad = ra_fix([moon_ra_rad])[0]
 			# fraction = moon_illumination(self.nikon.obs_time)
 			if self._moon:
@@ -424,8 +435,7 @@ class CoreCode:
 	def plot_planets(self):
 		""" plot_planets - add planets to the sky plot. """
 		if self._switch_planets_etc:
-			location = self.nikon.camera.eci_position_vector()
-			names, planets_ra_rad, planets_dec_rad, planets_mags = planets(self.nikon.obs_time, location=location)
+			names, planets_ra_rad, planets_dec_rad, planets_mags = planets(self.nikon.obs_time, self.nikon.camera.eci_position_vector)
 			planets_ra_rad = ra_fix(planets_ra_rad)
 			planets_size_pixels = mag_map(planets_mags)
 			if self._planets:
@@ -482,6 +492,7 @@ class CoreCode:
 	def plot_stars(self):
 		""" plot_star - add all the stars to the sky plot """
 		# BSC5 stars
+		self._setup_stars()
 		stars_ra_rad, stars_dec_rad, stars_mag = self._scbsc5.get_stars()
 		stars_ra_rad = ra_fix(stars_ra_rad)
 		stars_size_pixels = mag_map(stars_mag)
@@ -651,7 +662,6 @@ class CoreCode:
 
 	def _match_stars_in_polygon(self):
 		""" match_stars_in_polygon """
-
 		border_vectors = self.nikon.camera_fov_border_vectors(border_step=10)
 		# look for stars ...
 		inside_mask = stars_in_polygon_icrs(self._scbsc5.skycoords, border_vectors)
@@ -660,6 +670,7 @@ class CoreCode:
 
 	def camera_image_matched_stars(self):
 		""" camera_image_matched_stars """
+		self._setup_stars()
 		# now find all stars inside camara view ...
 		found_stars, inside_mask = self._match_stars_in_polygon()
 		if len(found_stars) == 0:
@@ -752,7 +763,7 @@ class CoreCode:
 			break
 
 		# TODO powered down for now - does not unpaint itself (yet)
-		if self._switch_match_stars:
+		if self._switch_stars and self._switch_match_stars:
 			star = matches[0]['bsc5']
 			diameter = mag_map(star.mag, multiplier=4.0)
 			ra_rad = ra_fix(ra_rad)
@@ -764,9 +775,8 @@ class CoreCode:
 
 	def do_match_stars(self, value):
 		""" do_match_stars """
-		match_stars_show = value
-		self._switch_match_stars = match_stars_show
-		if match_stars_show:
+		self._switch_match_stars = value
+		if self._switch_match_stars:
 			# also show stars if not showing
 			self._do_stars_real(False)
 			self.ui.stars_button_set(True)
@@ -796,7 +806,8 @@ class CoreCode:
 	def do_mag(self, value):
 		""" do_mag """
 		self._do_stars_real(False)
-		self._scbsc5.max_mag = value
+		self._mag = value
+		self._setup_stars()
 		# turn on stars button
 		self.ui.stars_button_set(True)
 		self._do_stars_real(True)
@@ -824,8 +835,9 @@ class CoreCode:
 
 	def _do_stars_real(self, value):
 		""" do_stars_real """
+		self._switch_stars = value
 		self.do_stars_clear()
-		if value:
+		if self._switch_stars:
 			# show stars
 			self._stars_plot = self.plot_stars()
 		self.draw()
@@ -875,9 +887,9 @@ class CoreCode:
 		self.nikon.camera.reload(focal_length_mm=float(focal_length))
 
 		# RESET star magnitude
-		mag = 5.0
-		self.ui.star_mag_buttons_set(mag=mag)
-		self._scbsc5.max_mag = mag
+		self._mag = 5.0
+		self.ui.star_mag_buttons_set(mag=self._mag)
+		self._setup_stars()
 
 		# RESET accelerate
 		self.ui.accelerate_button_set(False)
@@ -923,6 +935,8 @@ class CoreCode:
 
 	def _match_against_bsc5(self):
 		""" _match_against_bsc5 """
+
+		self._setup_stars()
 
 		# see if we actually match any stars within the view from the camera?
 		center_pixel_x = self.nikon.camera.nx/2

@@ -405,8 +405,8 @@ class SatelliteCamera():
 
         # Velocity-vector pointing camera (even with camera y/p/r defined above)
         if pointing == 'vv':
-            r_teme_km = self.eci_position_vector()
-            v_teme_km_s = self.eci_velocity_vector()
+            r_teme_km = self.eci_position_vector
+            v_teme_km_s = self.eci_velocity_vector
             r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
             v_gcrs_km_s = self.CameraAttitude.teme_to_gcrs_vector(v_teme_km_s, self.obs_time)  # same converter works
             self._sat_attitude = None
@@ -415,7 +415,7 @@ class SatelliteCamera():
 
         # Nadir-pointing camera (even with camera y/p/r defined above)
         if pointing == 'nadir':
-            r_teme_km = self.eci_position_vector()
+            r_teme_km = self.eci_position_vector
             r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
             self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_nadir_pointing(r_gcrs_km)
@@ -426,7 +426,7 @@ class SatelliteCamera():
             if None in [earth_lat_deg, earth_lon_deg]:
                 raise ValueError('%s: invalid pointing value' % (pointing)) from None
             # Point camera at ground location (lat,lon)
-            r_teme_km = self.eci_position_vector()
+            r_teme_km = self.eci_position_vector
             r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
             self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_ground(lat_deg=earth_lat_deg, lon_deg=earth_lon_deg, obs_time=self.obs_time, r_sat_gcrs_km=r_gcrs_km)
@@ -449,10 +449,12 @@ class SatelliteCamera():
 
         raise ValueError('%s: invalid pointing value' % (pointing)) from None
 
+    @property
     def eci_position_vector(self):
         """ eci_position_vector """
         return self.sat_orbit.eci_position_vector(self.obs_time)
 
+    @property
     def eci_velocity_vector(self):
         """ eci_velocity_vector """
         if self.sat_orbit is None:
