@@ -11,7 +11,7 @@ from astropy.coordinates import SkyCoord
 
 from .SatelliteCamera import SatelliteCameraError
 from .BSC5Stars import BSC5Stars
-from .Constellations import ConstellationBoundaries, ConstellationDatabase
+from .Constellations import ConstellationBoundaries, ConstellationDatabase, ConstellationLocations
 from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
@@ -57,7 +57,7 @@ class CoreCode:
 		'stars': 'black',
 		'stars-found': 'magenta',
 		'constellations': 'red',
-		'constellations-boundaries': 'lightblue',
+		'constellations-boundaries': 'royalblue',
 		'sun': 'darkorange',
 		'moon': 'dimgrey',
 		'planets': 'blue',
@@ -95,12 +95,6 @@ class CoreCode:
 		self._switch_planets_etc = False
 		self._switch_constellation_boundaries = False
 
-		# plotted elements
-		self._sun = None
-		self._moon = None
-		self._planets = None
-		self._constellation_boundaries = None
-
 		self._items_plotted = []
 		self._starfield_centerline_plot = None
 		self._starfield_centerline_data = None
@@ -111,6 +105,12 @@ class CoreCode:
 
 		# start the plotting...
 		self._setup_plot()
+
+		# plotted elements
+		self._sun = None
+		self._moon = None
+		self._planets = None
+		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
 
 		self._scbsc5 = None
 		self._mag = 5.0
@@ -373,22 +373,6 @@ class CoreCode:
 			s += ' | shadow'
 		self.ui.camera_info(s)
 
-	def plot_constellation_boundaries(self):
-		""" plot_constellation_boundaries - add constellation boundaries to the sky plot. """
-		if not self._constellation_boundaries:
-			self._constellation_boundaries = ConstellationBoundaries()
-			self._constellation_boundaries_p = []
-		if self._switch_constellation_boundaries:
-			if len(self._constellation_boundaries_p) == 0:
-				for segment in self._constellation_boundaries.data2plot():
-					p = self._starfield_ax.plot(segment[0], segment[1], label='Constellation Boundary', color=self._COLORS['constellations-boundaries'], alpha=0.75, linewidth=1, linestyle='dashed')
-					self._constellation_boundaries_p.append(p[0])
-		else:
-			if len(self._constellation_boundaries_p) >= 0:
-				for p in self._constellation_boundaries_p:
-					p.remove()
-				self._constellation_boundaries_p = []
-
 	def plot_sun(self):
 		""" plot_sun - add sun to the sky plot. """
 		if self._switch_planets_etc:
@@ -400,7 +384,7 @@ class CoreCode:
 				# no text needed for the sun
 				# self._sun_text.set_position((sun_ra_rad, sun_dec_rad))
 			else:
-				self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=0.5, s=300.0)
+				self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=0.5, s=500.0, marker='*')
 				# no text needed for the sun
 				# fontdict = {'fontsize':self._ui.font['size']+2}
 				# self._sun_text = self._starfield_ax.text(sun_ra_rad, sun_dec_rad, '  ' + 'sun', color=self._COLORS['sun'], rotation=90, ha='center', va=bottom', alpha=0.5, fontdict=fontdict)
@@ -424,7 +408,7 @@ class CoreCode:
 			else:
 				self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
 				fontdict = {'fontsize':self._ui.font['size']+2}
-				self._moon_text = self._starfield_ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'Moon', color=self._COLORS['moon'], rotation=90, ha='center', va='bottom', alpha=0.5, fontdict=fontdict)
+				self._moon_text = self._starfield_ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'Moon', color=self._COLORS['moon'], rotation=90, alpha=0.5, fontdict=fontdict, ha='center', va='bottom')
 		else:
 			if self._moon:
 				self._moon.remove()
@@ -796,7 +780,7 @@ class CoreCode:
 	def do_constellation_boundaries(self, value):
 		""" do_constellation_boundaries """
 		self._switch_constellation_boundaries = value
-		self.plot_constellation_boundaries()
+		self._constellation_boundaries.change(self._switch_constellation_boundaries)
 		self.draw()
 
 	def do_earth_vector(self, value):
@@ -996,7 +980,7 @@ class CoreCode:
 
 		# now repaint/update sky
 		self.update_starfield_and_more()
-		self.plot_constellation_boundaries()
+		self._constellation_boundaries.change(self._switch_constellation_boundaries)
 		self.plot_planets_etc()		# add planets move when time changes (oh so slightly)
 		self.draw()
 
@@ -1045,3 +1029,57 @@ class StarsConstellationsBSC5:
 			constellations = ['Ori', 'Sgr']
 		const_ra_rad, const_dec_rad, const_mag = self._bsc5.get_constellations(constellations=constellations)
 		return const_ra_rad, const_dec_rad, const_mag
+
+class PaintConstellation:
+	""" PaintConstellation """
+
+	def __init__(self, ax, color='red'):
+		""" PaintConstellation """
+		self.ax = ax
+		self.color = color
+		self._cb = None
+		self._p = []
+		# self._cl = None
+		# self._t = []
+
+	def change(self, value):
+		""" change """
+		if self._cb is None:
+			self._cb = ConstellationBoundaries()
+			# text names not really needed
+			# self._cl = ConstellationLocations()
+		if value:
+			self._enable()
+		else:
+			self._disable()
+
+	def _enable(self):
+		""" _enable """
+		if len(self._p) > 0:
+			# already painted
+			return
+		for segment in self._cb.data2plot():
+			p = self.ax.plot(
+				segment[0], segment[1],
+				label='Constellation Boundary',
+				color=self.color, alpha=0.75,
+				linewidth=1, linestyle='dashed')
+			self._p.append(p[0])
+		# text names not really needed
+		#for constellation in self._cl.data.values():
+		#	ra_rad = math.radians(constellation.ra_deg)
+		#	dec_rad = math.radians(constellation.dec_deg)
+		#	t = self.ax.text(ra_rad, dec_rad, constellation.name, rotation=45, color=self.color, alpha=1.0)
+		#	self._t.append(t)
+
+	def _disable(self):
+		""" _disable """
+		if len(self._p) == 0:
+			# nothimg painted
+			return
+		for p in self._p:
+			p.remove()
+		self._p = []
+		# for t in self._t:
+		# 	t.remove()
+		# self._t = []
