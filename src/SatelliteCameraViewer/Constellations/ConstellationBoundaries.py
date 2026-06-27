@@ -31,8 +31,8 @@ from dataclasses import dataclass
 import requests
 
 @dataclass
-class Line:
-    """ Attitude """
+class ConstellationBoundary:
+    """ ConstellationBoundary """
     ra_deg: float = 0.0
     dec_deg: float = 0.0
     segment_key: str = None
@@ -141,7 +141,7 @@ class ConstellationBoundaries:
                 ra_deg = float(line[0:10]) * 15.0            # converted from hours to degrees
                 dec_deg = float(line[11:21])
                 segment_key = line[22:29]
-                line = Line(ra_deg, dec_deg, segment_key)
+                line = ConstellationBoundary(ra_deg, dec_deg, segment_key)
                 if segment_key in self._a:
                     self._a[segment_key].append(line)
                 else:
