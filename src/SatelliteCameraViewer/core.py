@@ -10,11 +10,12 @@ import cartopy.crs as ccrs
 from astropy.coordinates import SkyCoord
 
 from .SatelliteCamera import SatelliteCameraError
-from .BSC5Stars import BSC5Stars
-from .Constellations import ConstellationBoundaries, ConstellationDatabase, ConstellationLocations
+from .Constellations import ConstellationDatabase
 from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
+from .StarsConstellationsBSC5 import StarsConstellationsBSC5
+from .PaintConstellation import PaintConstellation
 
 from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
@@ -64,6 +65,12 @@ class CoreCode:
 		'match': 'red',
 	}
 
+	# Orion and Sagittarius because they are not next to each other
+	_CONSTELLATIONS = [
+		'Ori',
+		'Sgr'
+	]
+
 	_verbose = False
 
 	def __init__(self, ui:UserInterface=None):
@@ -101,7 +108,6 @@ class CoreCode:
 		self._earthtrack = []
 		self._earthtrack_plot = None
 		self._earthtrack_mark = None
-		self._stars_plot = None
 
 		# start the plotting...
 		self._setup_plot()
@@ -132,7 +138,7 @@ class CoreCode:
 	def _setup_stars(self):
 		""" _setup_stars """
 		if self._scbsc5 is None:
-			self._scbsc5 = StarsConstellationsBSC5(self._mag)
+			self._scbsc5 = StarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
 			return
 		if self._scbsc5.max_mag != self._mag:
 			self._scbsc5.max_mag = self._mag
@@ -473,22 +479,6 @@ class CoreCode:
 			ra_rad = ra_fix(ra_rad)
 			_ = self._starfield_ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=self._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
 
-	def plot_stars(self):
-		""" plot_star - add all the stars to the sky plot """
-		# BSC5 stars
-		self._setup_stars()
-		stars_ra_rad, stars_dec_rad, stars_mag = self._scbsc5.get_stars()
-		stars_ra_rad = ra_fix(stars_ra_rad)
-		stars_size_pixels = mag_map(stars_mag)
-
-		const_ra_rad, const_dec_rad, const_mag = self._scbsc5.get_constellations()
-		const_ra_rad = ra_fix(const_ra_rad)
-		const_size_pixels = mag_map(const_mag)
-
-		p1 = self._starfield_ax.scatter(stars_ra_rad, stars_dec_rad, s=stars_size_pixels, alpha=1, color=self._COLORS['stars'], zorder=5)
-		p2 = self._starfield_ax.scatter(const_ra_rad, const_dec_rad, s=const_size_pixels, alpha=1, color=self._COLORS['constellations'], zorder=5)
-		return p1, p2
-
 	def plot_earthtrack_dot(self, lon_deg:float, lat_deg:float):
 		""" plot_earthtrack_dot """
 		# We significantly round down because the earth map is tiny on the screen and we don't need many decimal places
@@ -648,13 +638,13 @@ class CoreCode:
 		""" match_stars_in_polygon """
 		border_vectors = self.nikon.camera_fov_border_vectors(border_step=10)
 		# look for stars ...
+		self._setup_stars()
 		inside_mask = stars_in_polygon_icrs(self._scbsc5.skycoords, border_vectors)
 		found_stars = self._scbsc5.skycoords[inside_mask]
 		return found_stars, inside_mask
 
 	def camera_image_matched_stars(self):
 		""" camera_image_matched_stars """
-		self._setup_stars()
 		# now find all stars inside camara view ...
 		found_stars, inside_mask = self._match_stars_in_polygon()
 		if len(found_stars) == 0:
@@ -663,6 +653,7 @@ class CoreCode:
 			return None
 
 		# all the stars (will be masked before use)
+		self._setup_stars()
 		stars_ra_rad, stars_dec_rad, stars_mag = self._scbsc5.get_stars()
 		stars_ra_rad = stars_ra_rad[inside_mask]
 		stars_dec_rad = stars_dec_rad[inside_mask]
@@ -791,7 +782,6 @@ class CoreCode:
 		""" do_mag """
 		self._do_stars_real(False)
 		self._mag = value
-		self._setup_stars()
 		# turn on stars button
 		self.ui.stars_button_set(True)
 		self._do_stars_real(True)
@@ -813,6 +803,7 @@ class CoreCode:
 		# reset timer interval
 		self.timer_reset()
 
+	# called from UI ...
 	def do_stars(self, value):
 		""" do_stars """
 		self._do_stars_real(value)
@@ -820,18 +811,16 @@ class CoreCode:
 	def _do_stars_real(self, value):
 		""" do_stars_real """
 		self._switch_stars = value
-		self.do_stars_clear()
 		if self._switch_stars:
 			# show stars
-			self._stars_plot = self.plot_stars()
+			self._setup_stars()
+			self._scbsc5.clear_stars()
+			self._scbsc5.plot_stars()
+		else:
+			# hide stars
+			self._setup_stars()
+			self._scbsc5.clear_stars()
 		self.draw()
-
-	def do_stars_clear(self):
-		""" do_stars_clear """
-		if self._stars_plot is not None:
-			for p in self._stars_plot:
-				p.remove()
-			self._stars_plot = None
 
 	def do_satellite_selection(self, val):
 		""" do_satellite_selection """
@@ -872,15 +861,15 @@ class CoreCode:
 
 		# RESET star magnitude
 		self._mag = 5.0
-		self.ui.star_mag_buttons_set(mag=self._mag)
 		self._setup_stars()
+		self.ui.star_mag_buttons_set(mag=self._mag)
 
 		# RESET accelerate
 		self.ui.accelerate_button_set(False)
 		self._switch_accelerate_time = False
 
 		# RESET show stars
-		self.do_stars_clear()
+		self._do_stars_real(False)
 		self.ui.stars_button_set(False)
 
 		# RESET rpy
@@ -920,8 +909,6 @@ class CoreCode:
 	def _match_against_bsc5(self):
 		""" _match_against_bsc5 """
 
-		self._setup_stars()
-
 		# see if we actually match any stars within the view from the camera?
 		center_pixel_x = self.nikon.camera.nx/2
 		center_pixel_y = self.nikon.camera.ny/2
@@ -939,6 +926,7 @@ class CoreCode:
 		coords_list_icrs = SkyCoord(coords_list, unit='deg', frame='icrs')
 
 		# For each image direction, find nearest star in catalog
+		self._setup_stars()
 		idx, sep2d, _ = coords_list_icrs.match_to_catalog_sky(self._scbsc5.skycoords)
 
 		# Return matches with separation info
@@ -986,100 +974,3 @@ class CoreCode:
 
 		# and finally, setup trigger the next timer
 		self._timer_id = self._ui.root.after(timer_step, lambda: self.timer_went_off())
-
-class StarsConstellationsBSC5:
-	""" StarsConstellationsBSC5 """
-
-	def __init__(self, mag=5.0):
-		""" StarsConstellationsBSC5 """
-		self._bsc5 = BSC5Stars(max_mag=mag)
-
-		# self.stars = self._bsc5.stars
-		# self.skycoords = self._bsc5.skycoords
-
-	@property
-	def stars(self):
-		""" stars """
-		return self._bsc5.stars
-
-	@property
-	def skycoords(self):
-		""" skycoords """
-		return self._bsc5.skycoords
-
-	@property
-	def max_mag(self):
-		""" max_mag """
-		return self._bsc5.max_mag
-
-	@max_mag.setter
-	def max_mag(self, value):
-		""" max_mag """
-		self._bsc5.max_mag = value
-
-	def get_stars(self):
-		""" stars """
-		stars_ra_rad, stars_dec_rad, stars_mag = self._bsc5.get_stars()
-		return stars_ra_rad, stars_dec_rad, stars_mag
-
-	def get_constellations(self, constellations=None):
-		""" constellations """
-		if constellations is None:
-			# Orion and Sagittarius becuase they are not next to each other
-			constellations = ['Ori', 'Sgr']
-		const_ra_rad, const_dec_rad, const_mag = self._bsc5.get_constellations(constellations=constellations)
-		return const_ra_rad, const_dec_rad, const_mag
-
-class PaintConstellation:
-	""" PaintConstellation """
-
-	def __init__(self, ax, color='red'):
-		""" PaintConstellation """
-		self.ax = ax
-		self.color = color
-		self._cb = None
-		self._p = []
-		# self._cl = None
-		# self._t = []
-
-	def change(self, value):
-		""" change """
-		if self._cb is None:
-			self._cb = ConstellationBoundaries()
-			# text names not really needed
-			# self._cl = ConstellationLocations()
-		if value:
-			self._enable()
-		else:
-			self._disable()
-
-	def _enable(self):
-		""" _enable """
-		if len(self._p) > 0:
-			# already painted
-			return
-		for segment in self._cb.data2plot():
-			p = self.ax.plot(
-				segment[0], segment[1],
-				label='Constellation Boundary',
-				color=self.color, alpha=0.75,
-				linewidth=1, linestyle='dashed')
-			self._p.append(p[0])
-		# text names not really needed
-		#for constellation in self._cl.data.values():
-		#	ra_rad = math.radians(constellation.ra_deg)
-		#	dec_rad = math.radians(constellation.dec_deg)
-		#	t = self.ax.text(ra_rad, dec_rad, constellation.name, rotation=45, color=self.color, alpha=1.0)
-		#	self._t.append(t)
-
-	def _disable(self):
-		""" _disable """
-		if len(self._p) == 0:
-			# nothimg painted
-			return
-		for p in self._p:
-			p.remove()
-		self._p = []
-		# for t in self._t:
-		# 	t.remove()
-		# self._t = []
