@@ -17,42 +17,64 @@ class StarsConstellationsBSC5:
 		if self._constellations is None:
 			# Orion and Sagittarius because they are not next to each other
 			self._constellations = ['Ori', 'Sgr']
-		self._bsc5 = BSC5Stars(max_mag=mag)
+		self._mag = mag
+		self._bsc5 = None
 		self._stars_plot = None
+
+	def _prime(self):
+		""" _prime """
+		if self._bsc5 is None:
+			self._bsc5 = BSC5Stars(max_mag=self._mag)
 
 	@property
 	def stars(self):
 		""" stars """
+		self._prime()
 		return self._bsc5.stars
 
 	@property
 	def skycoords(self):
 		""" skycoords """
+		self._prime()
 		return self._bsc5.skycoords
 
 	@property
 	def max_mag(self):
 		""" max_mag """
-		return self._bsc5.max_mag
+		return self._mag
 
 	@max_mag.setter
 	def max_mag(self, value):
 		""" max_mag """
-		self._bsc5.max_mag = value
+		if self._mag != value:
+			self._mag = value
+			self._prime()
+		self._bsc5.max_mag = self._mag
 
 	def get_stars(self):
 		""" get_stars """
+		self._prime()
 		return self._bsc5.get_stars()
 
 	def get_constellations(self):
 		""" get_constellations """
+		self._prime()
 		return self._bsc5.get_constellations(constellations=self._constellations)
 
-	def plot_stars(self):
-		""" plot_star - add all the stars to the sky plot """
+	def change(self, value):
+		""" change """
+		self._prime()
+		if value:
+			self._enable()
+		else:
+			self._disable()
+
+	def _enable(self):
+		""" _enable - add all the stars to the sky plot """
 		if self._stars_plot is not None:
 			# already plotted
 			return
+		self._prime()
 		self._stars_plot = []
 
 		# stars ...
@@ -69,12 +91,11 @@ class StarsConstellationsBSC5:
 		p2 = self._ax.scatter(constellations_ra_rad, constellations_dec_rad, s=constellations_size_pixels, alpha=1, color=self._constellation_colors, zorder=5)
 		self._stars_plot.append(p2)
 
-	def clear_stars(self):
-		""" clear_stars """
+	def _disable(self):
+		""" _disable """
 		if self._stars_plot is None:
-			# already not plotted
+			# not plotted
 			return
 		for p in self._stars_plot:
 			p.remove()
 		self._stars_plot = None
-

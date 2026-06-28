@@ -94,6 +94,9 @@ class CoreCode:
 		# pointing
 		self._pointing = 'vv'
 
+		# stars
+		self._mag = 5.0
+
 		# switches
 		self._switch_accelerate_time = False
 		self._switch_stars = False
@@ -117,11 +120,7 @@ class CoreCode:
 		self._moon = None
 		self._planets = None
 		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
-
-		self._scbsc5 = None
-		self._mag = 5.0
-		# no need to do this now ... it will be done later when needed
-		# self._setup_stars()
+		self._scbsc5 = StarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
 
 	def _setup_plot(self):
 		""" _setup_plot """
@@ -134,14 +133,6 @@ class CoreCode:
 		# earth plot
 		self._create_earth_subplot()
 		self._paint_earth_axis()
-
-	def _setup_stars(self):
-		""" _setup_stars """
-		if self._scbsc5 is None:
-			self._scbsc5 = StarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
-			return
-		if self._scbsc5.max_mag != self._mag:
-			self._scbsc5.max_mag = self._mag
 
 	@property
 	def ui(self):
@@ -638,7 +629,6 @@ class CoreCode:
 		""" match_stars_in_polygon """
 		border_vectors = self.nikon.camera_fov_border_vectors(border_step=10)
 		# look for stars ...
-		self._setup_stars()
 		inside_mask = stars_in_polygon_icrs(self._scbsc5.skycoords, border_vectors)
 		found_stars = self._scbsc5.skycoords[inside_mask]
 		return found_stars, inside_mask
@@ -653,7 +643,6 @@ class CoreCode:
 			return None
 
 		# all the stars (will be masked before use)
-		self._setup_stars()
 		stars_ra_rad, stars_dec_rad, stars_mag = self._scbsc5.get_stars()
 		stars_ra_rad = stars_ra_rad[inside_mask]
 		stars_dec_rad = stars_dec_rad[inside_mask]
@@ -782,6 +771,7 @@ class CoreCode:
 		""" do_mag """
 		self._do_stars_real(False)
 		self._mag = value
+		self._scbsc5.max_mag = self._mag
 		# turn on stars button
 		self.ui.stars_button_set(True)
 		self._do_stars_real(True)
@@ -811,15 +801,7 @@ class CoreCode:
 	def _do_stars_real(self, value):
 		""" do_stars_real """
 		self._switch_stars = value
-		if self._switch_stars:
-			# show stars
-			self._setup_stars()
-			self._scbsc5.clear_stars()
-			self._scbsc5.plot_stars()
-		else:
-			# hide stars
-			self._setup_stars()
-			self._scbsc5.clear_stars()
+		self._scbsc5.change(self._switch_stars)
 		self.draw()
 
 	def do_satellite_selection(self, val):
@@ -861,7 +843,7 @@ class CoreCode:
 
 		# RESET star magnitude
 		self._mag = 5.0
-		self._setup_stars()
+		self._scbsc5.max_mag = self._mag
 		self.ui.star_mag_buttons_set(mag=self._mag)
 
 		# RESET accelerate
@@ -926,7 +908,6 @@ class CoreCode:
 		coords_list_icrs = SkyCoord(coords_list, unit='deg', frame='icrs')
 
 		# For each image direction, find nearest star in catalog
-		self._setup_stars()
 		idx, sep2d, _ = coords_list_icrs.match_to_catalog_sky(self._scbsc5.skycoords)
 
 		# Return matches with separation info
