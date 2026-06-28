@@ -1,15 +1,15 @@
-""" StarsConstellationsBSC5 """
+""" PaintStarsConstellationsBSC5 """
 
 import math
 
 from .BSC5Stars import BSC5Stars
 from .misc import ra_fix, mag_map
 
-class StarsConstellationsBSC5:
-	""" StarsConstellationsBSC5 """
+class PaintStarsConstellationsBSC5:
+	""" PaintStarsConstellationsBSC5 """
 
 	def __init__(self, ax, star_colors='red', constellation_colors='red', constellations=None, mag=5.0):
-		""" StarsConstellationsBSC5 """
+		""" PaintStarsConstellationsBSC5 """
 		self._ax = ax
 		self._star_colors = star_colors
 		self._constellation_colors = constellation_colors

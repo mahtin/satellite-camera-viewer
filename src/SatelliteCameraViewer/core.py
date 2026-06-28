@@ -14,7 +14,7 @@ from .Constellations import ConstellationDatabase
 from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
-from .StarsConstellationsBSC5 import StarsConstellationsBSC5
+from .PaintStarsConstellationsBSC5 import PaintStarsConstellationsBSC5
 from .PaintSunMoonPlanets import PaintSunMoonPlanets
 from .PaintConstellation import PaintConstellation
 
@@ -119,7 +119,7 @@ class CoreCode:
 		# plotted elements
 		self._sun_moon_planets = PaintSunMoonPlanets(self._starfield_ax, self._COLORS['sun'], self._COLORS['moon'], self._COLORS['planets'], fontdict={'fontsize':self._ui.font['size']+2})
 		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
-		self._scbsc5 = StarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
+		self._scbsc5 = PaintStarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
 
 	def _setup_plot(self):
 		""" _setup_plot """
