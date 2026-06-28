@@ -15,6 +15,7 @@ from .NikonD5Camera import NikonD5Camera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
 from .StarsConstellationsBSC5 import StarsConstellationsBSC5
+from .PaintSunMoonPlanets import PaintSunMoonPlanets
 from .PaintConstellation import PaintConstellation
 
 from .ui import UserInterface
@@ -116,9 +117,7 @@ class CoreCode:
 		self._setup_plot()
 
 		# plotted elements
-		self._sun = None
-		self._moon = None
-		self._planets = None
+		self._sun_moon_planets = PaintSunMoonPlanets(self._starfield_ax, self._COLORS['sun'], self._COLORS['moon'], self._COLORS['planets'], fontdict={'fontsize':self._ui.font['size']+2})
 		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
 		self._scbsc5 = StarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
 
@@ -369,83 +368,6 @@ class CoreCode:
 		if shadow:
 			s += ' | shadow'
 		self.ui.camera_info(s)
-
-	def plot_sun(self):
-		""" plot_sun - add sun to the sky plot. """
-		if self._switch_planets_etc:
-			sun_ra_rad, sun_dec_rad = body('sun', self.nikon.obs_time, self.nikon.camera.eci_position_vector)
-			sun_ra_rad = ra_fix([sun_ra_rad])[0]
-			# sun diameter is 0.533 degrees
-			if self._sun:
-				self._sun.set_offsets([(sun_ra_rad, sun_dec_rad)])
-				# no text needed for the sun
-				# self._sun_text.set_position((sun_ra_rad, sun_dec_rad))
-			else:
-				self._sun = self._starfield_ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._COLORS['sun'], alpha=0.5, s=500.0, marker='*')
-				# no text needed for the sun
-				# fontdict = {'fontsize':self._ui.font['size']+2}
-				# self._sun_text = self._starfield_ax.text(sun_ra_rad, sun_dec_rad, '  ' + 'sun', color=self._COLORS['sun'], rotation=90, ha='center', va=bottom', alpha=0.5, fontdict=fontdict)
-		else:
-			if self._sun:
-				self._sun.remove()
-				self._sun = None
-				# no text needed for the sun
-				# self._sun_text.remove()
-				# self._sun_text = None
-
-	def plot_moon(self):
-		""" plot_moon - add moon to the sky plot. """
-		if self._switch_planets_etc:
-			moon_ra_rad, moon_dec_rad = body('moon', self.nikon.obs_time, self.nikon.camera.eci_position_vector)
-			moon_ra_rad = ra_fix([moon_ra_rad])[0]
-			# fraction = moon_illumination(self.nikon.obs_time)
-			if self._moon:
-				self._moon.set_offsets([(moon_ra_rad, moon_dec_rad)])
-				self._moon_text.set_position((moon_ra_rad, moon_dec_rad))
-			else:
-				self._moon = self._starfield_ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._COLORS['moon'], alpha=1.0, s=50.0)
-				fontdict = {'fontsize':self._ui.font['size']+2}
-				self._moon_text = self._starfield_ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'Moon', color=self._COLORS['moon'], rotation=90, alpha=0.5, fontdict=fontdict, ha='center', va='bottom')
-		else:
-			if self._moon:
-				self._moon.remove()
-				self._moon = None
-				self._moon_text.remove()
-				self._moon_text = None
-
-	def plot_planets(self):
-		""" plot_planets - add planets to the sky plot. """
-		if self._switch_planets_etc:
-			names, planets_ra_rad, planets_dec_rad, planets_mags = planets(self.nikon.obs_time, self.nikon.camera.eci_position_vector)
-			planets_ra_rad = ra_fix(planets_ra_rad)
-			planets_size_pixels = mag_map(planets_mags)
-			if self._planets:
-				v = [(planets_ra_rad[ii], planets_dec_rad[ii]) for ii in range(len(planets_ra_rad))]
-				self._planets.set_offsets(v)
-				# self._planets.set_sizes(planets_sie_pixels)
-				for ii in range(len(planets_ra_rad)):
-					self._planets_texts[ii].set_position((planets_ra_rad[ii], planets_dec_rad[ii]))
-			else:
-				self._planets = self._starfield_ax.scatter(planets_ra_rad, planets_dec_rad, s=planets_size_pixels, color=self._COLORS['planets'], alpha=0.5)
-				# paint names just once - planets don't move that much.
-				self._planets_texts = []
-				fontdict = {'fontsize':self._ui.font['size']+2}
-				for ii in range(len(planets_ra_rad)):
-					p = self._starfield_ax.text(planets_ra_rad[ii], planets_dec_rad[ii], '  ' + names[ii], color=self._COLORS['planets'], rotation=90, ha='center', va='bottom', alpha=0.5, fontdict=fontdict)
-					self._planets_texts.append(p)
-		else:
-			if self._planets:
-				self._planets.remove()
-				self._planets = None
-				for p in self._planets_texts:
-					p.remove()
-				self._planets_texts = None
-
-	def plot_planets_etc(self):
-		""" plot_planets_etc """
-		self.plot_sun()
-		self.plot_moon()
-		self.plot_planets()
 
 	def plot_earth_outline(self, earth_points_deg):
 		""" plot_earth_outline - add outline of earth to the sky plot. """
@@ -754,7 +676,7 @@ class CoreCode:
 	def do_planets_etc(self, value):
 		""" do_planets_etc """
 		self._switch_planets_etc = value
-		self.plot_planets_etc()
+		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.obs_time, self.nikon.camera.eci_position_vector)
 		self.draw()
 
 	def do_constellation_boundaries(self, value):
@@ -950,7 +872,7 @@ class CoreCode:
 		# now repaint/update sky
 		self.update_starfield_and_more()
 		self._constellation_boundaries.change(self._switch_constellation_boundaries)
-		self.plot_planets_etc()		# add planets move when time changes (oh so slightly)
+		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.obs_time, self.nikon.camera.eci_position_vector)
 		self.draw()
 
 		# and finally, setup trigger the next timer

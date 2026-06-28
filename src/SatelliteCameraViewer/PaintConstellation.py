@@ -9,8 +9,8 @@ class PaintConstellation:
 
 	def __init__(self, ax, color='red'):
 		""" PaintConstellation """
-		self.ax = ax
-		self.color = color
+		self._ax = ax
+		self._color = color
 		self._cb = None
 		self._p = []
 		# self._cl = None
@@ -34,17 +34,17 @@ class PaintConstellation:
 			return
 		for segment in self._cb.data2plot():
 			# segments are in radians
-			p = self.ax.plot(
+			p = self._ax.plot(
 				segment[0], segment[1],
 				label='Constellation Boundary',
-				color=self.color, alpha=0.75,
+				color=self._color, alpha=0.75,
 				linewidth=1, linestyle='dashed')
 			self._p.append(p[0])
 		# text names not really needed
 		#for constellation in self._cl.data.values():
 		#	ra_rad = math.radians(constellation.ra_deg)
 		#	dec_rad = math.radians(constellation.dec_deg)
-		#	t = self.ax.text(ra_rad, dec_rad, constellation.name, rotation=45, color=self.color, alpha=1.0)
+		#	t = self._ax.text(ra_rad, dec_rad, constellation.name, rotation=45, color=self._color, alpha=1.0)
 		#	self._t.append(t)
 
 	def _disable(self):
