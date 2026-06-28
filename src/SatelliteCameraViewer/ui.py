@@ -295,7 +295,7 @@ class UserInterface:
 		""" satellite_selection """
 		s_default = satellite_names[0]
 		self._satellite_selected = tk.StringVar(value=s_default)
-		drop = ttk.OptionMenu(parent, self._satellite_selected, *satellite_names, command=lambda val: self.do_satellite_selection(val))
+		drop = ttk.OptionMenu(parent, self._satellite_selected, satellite_names[0], *satellite_names, command=lambda val: self.do_satellite_selection(val))
 		drop.grid(row=row, column=col, columnspan=7, padx=2, pady=2, sticky='ew')
 		self._satellite_selection_drop = drop
 
