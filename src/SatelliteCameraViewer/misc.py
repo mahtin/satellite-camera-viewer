@@ -105,9 +105,9 @@ def split_plot_mollweide_line(ra_rad_or_deg, dec_rad_or_deg, is_radians=False):
 		"""
 
 		# Determine which boundary is crossed
-		if ra1 > 0 and ra2 < 0:
+		if ra2 < 0 < ra1:
 			boundary = np.pi
-		elif ra1 < 0 and ra2 > 0:
+		elif ra1 < 0 < ra2:
 			boundary = -np.pi
 		else:
 			# no boundary crossing

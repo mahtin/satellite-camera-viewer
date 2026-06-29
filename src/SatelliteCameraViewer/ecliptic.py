@@ -157,7 +157,6 @@ def moon_illumination(obs_time:datetime):
 
 def _main(args=None):
 	""" _main """
-	import math                               # pylint: disable=C0415
 	from datetime import timezone, timedelta  # pylint: disable=C0415
 
 	location = [1000000.0, 1000000.0, 1000000000.0]
@@ -168,21 +167,21 @@ def _main(args=None):
 		new_date = midnight_utc + timedelta(days=d)
 		ev = earth_vector(new_date, location)
 		print(ev)
-		continue
-		illum_percent = moon_illumination(new_date)
-		moon_ra_rad, moon_dec_rad = body('moon', new_date, location)
-		moon_ra_deg = math.degrees(moon_ra_rad)
-		moon_dec_deg = math.degrees(moon_dec_rad)
-		earth_ra_rad, earth_dec_rad = body('earth', new_date, location)
-		earth_ra_deg = math.degrees(earth_ra_rad)
-		earth_dec_deg = math.degrees(earth_dec_rad)
-		print('%3d: %s [%5.1f,%5.1f] [%5.1f,%5.1f] Moon Illumination: %5.1f%% %s' % (
-			d,
-			new_date.strftime('%Y-%m-%d %H:%M'),
-			earth_ra_deg, earth_dec_deg,
-			moon_ra_deg, moon_dec_deg,
-			illum_percent*100,
-			'\u2592' * int(illum_percent*100+0.5)))
+		if False:
+			illum_percent = moon_illumination(new_date)
+			moon_ra_rad, moon_dec_rad = body('moon', new_date, location)
+			moon_ra_deg = math.degrees(moon_ra_rad)
+			moon_dec_deg = math.degrees(moon_dec_rad)
+			earth_ra_rad, earth_dec_rad = body('earth', new_date, location)
+			earth_ra_deg = math.degrees(earth_ra_rad)
+			earth_dec_deg = math.degrees(earth_dec_rad)
+			print('%3d: %s [%5.1f,%5.1f] [%5.1f,%5.1f] Moon Illumination: %5.1f%% %s' % (
+				d,
+				new_date.strftime('%Y-%m-%d %H:%M'),
+				earth_ra_deg, earth_dec_deg,
+				moon_ra_deg, moon_dec_deg,
+				illum_percent*100,
+				'\u2592' * int(illum_percent*100+0.5)))
 
 if __name__ == '__main__':
 	_main()

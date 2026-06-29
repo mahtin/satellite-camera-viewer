@@ -15,7 +15,7 @@ class PaintSunMoonPlanets:
 		self._fontdict = fontdict
 		self._sun = None
 
-	def change(self, value, obs_time, eci_position_vector):
+	def change(self, value, obs_time=None, eci_position_vector=None):
 		""" change """
 		if value:
 			self._enable(obs_time, eci_position_vector)

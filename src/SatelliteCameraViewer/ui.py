@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-# pylint: disable=unnecessary-lambda
+## # pylint: disable=unnecessary-lambda
 
 class UserInterface:
 	""" UserInterface """
@@ -276,7 +276,7 @@ class UserInterface:
 		self._focal_length_buttons_variable = tk.IntVar(value=f_default)
 		for f in focal_lengths:
 			# radiobutton
-			b = ttk.Radiobutton(lf, text='%d mm' % f, variable=self._focal_length_buttons_variable, value=f, command=lambda f=f: self.do_focal_length(f))
+			b = ttk.Radiobutton(lf, text='%d mm' % f, variable=self._focal_length_buttons_variable, value=f, command=lambda value=f: self.do_focal_length(value))
 			b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
 			self._focal_length_buttons[f] = b
 			row += 1
@@ -293,11 +293,16 @@ class UserInterface:
 
 	def satellite_selection(self, parent, row, col, satellite_names):
 		""" satellite_selection """
-		s_default = satellite_names[0]
-		self._satellite_selected = tk.StringVar(value=s_default)
-		drop = ttk.OptionMenu(parent, self._satellite_selected, satellite_names[0], *satellite_names, command=lambda val: self.do_satellite_selection(val))
+		self._satellite_name_default = satellite_names[0]
+		self._satellite_selected = tk.StringVar(value=self._satellite_name_default)
+		drop = ttk.OptionMenu(parent, self._satellite_selected, self._satellite_name_default, *satellite_names, command=lambda value: self.do_satellite_selection(value))
 		drop.grid(row=row, column=col, columnspan=7, padx=2, pady=2, sticky='ew')
 		self._satellite_selection_drop = drop
+
+	def satellite_selection_set(self, value=0):
+		""" satellite_selection_set """
+		# can only do value = 0
+		self._satellite_selected.set(self._satellite_name_default)
 
 	# SATELLITE BUTTONS
 
@@ -307,14 +312,19 @@ class UserInterface:
 
 	def satellite_attitude_buttons(self, parent, row, col, attitude_names):
 		""" satellite_attitude_buttons """
-		a_default = attitude_names[0]
-		self._satellite_attitude_buttons_variable = tk.IntVar(value=a_default)
+		self._attitude_names_default = attitude_names[0]
+		self._satellite_attitude_buttons_variable = tk.IntVar(value=self._attitude_names_default)
 		for a in attitude_names:
 			# radiobutton
-			b = ttk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, value=a, command=lambda a=a: self.do_satellite_attitude(a))
+			b = ttk.Radiobutton(parent, text=a, variable=self._satellite_attitude_buttons_variable, value=a, command=lambda value=a: self.do_satellite_attitude(value))
 			b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
 			self._satellite_attitude_buttons[a] = b
 			col += 1
+
+	def satellite_attitude_set(self, value=0):
+		""" satellite_attitude_set """
+		# can only do value = 0
+		self._satellite_attitude_buttons_variable.set(self._attitude_names_default)
 
 	# ROLL PITCH YAW
 
@@ -347,7 +357,7 @@ class UserInterface:
 				# resolution=10.0,
 				# showvalue=True,
 				orient='horizontal',
-				command=lambda val,k=k: self.do_rpy(val, k))
+				command=lambda value,k=k: self.do_rpy(value, k))
 			s.grid(row=row, column=col, padx=2, pady=2, sticky='ew')
 			self._rpy_sliders[k] = s
 			row += 1
@@ -383,7 +393,7 @@ class UserInterface:
 			foreground='lightcoral',
 			font=(self.font['family'], self.font['size'], 'bold'),
 		)
-		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=lambda: self.do_reset())
+		b = ttk.Button(parent, text='RESET EVERYTHING', style='Reset.TButton', command=self.do_reset)
 		b.grid(row=row, column=col, padx=2, pady=2, sticky='ew')
 		self._reset_everything_button = b
 

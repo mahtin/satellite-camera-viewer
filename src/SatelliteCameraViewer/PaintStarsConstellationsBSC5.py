@@ -1,7 +1,5 @@
 """ PaintStarsConstellationsBSC5 """
 
-import math
-
 from .BSC5Stars import BSC5Stars
 from .misc import ra_fix, mag_map
 
@@ -46,10 +44,9 @@ class PaintStarsConstellationsBSC5:
 	@max_mag.setter
 	def max_mag(self, value):
 		""" max_mag """
-		if self._mag != value:
-			self._mag = value
-			self._prime()
-		self._bsc5.max_mag = self._mag
+		self._mag = value
+		if self._bsc5 is not None:
+			self._bsc5.max_mag = self._mag
 
 	def get_stars(self):
 		""" get_stars """

@@ -1,27 +1,26 @@
 """ PaintConstellation """
 
-import math
-
 from .Constellations import ConstellationBoundaries, ConstellationDatabase, ConstellationLocations
 
 class PaintConstellation:
 	""" PaintConstellation """
 
-	def __init__(self, ax, color='red'):
+	def __init__(self, ax, color='red', show_names=False):
 		""" PaintConstellation """
 		self._ax = ax
 		self._color = color
 		self._cb = None
 		self._p = []
-		# self._cl = None
-		# self._t = []
+		self._show_names = show_names
+		self._cl = None
+		self._t = []
 
 	def change(self, value):
 		""" change """
 		if self._cb is None:
 			self._cb = ConstellationBoundaries()
-			# text names not really needed
-			# self._cl = ConstellationLocations()
+			if self._show_names:
+				self._cl = ConstellationLocations()
 		if value:
 			self._enable()
 		else:
@@ -40,12 +39,10 @@ class PaintConstellation:
 				color=self._color, alpha=0.75,
 				linewidth=1, linestyle='dashed')
 			self._p.append(p[0])
-		# text names not really needed
-		#for constellation in self._cl.data.values():
-		#	ra_rad = math.radians(constellation.ra_deg)
-		#	dec_rad = math.radians(constellation.dec_deg)
-		#	t = self._ax.text(ra_rad, dec_rad, constellation.name, rotation=45, color=self._color, alpha=1.0)
-		#	self._t.append(t)
+		if self._show_names:
+			for constellation in self._cl.data.values():
+				t = self._ax.text(constellation.ra_rad, constellation.dec_rad, constellation.name, rotation=45, color=self._color, alpha=1.0)
+				self._t.append(t)
 
 	def _disable(self):
 		""" _disable """
@@ -55,6 +52,6 @@ class PaintConstellation:
 		for p in self._p:
 			p.remove()
 		self._p = []
-		# for t in self._t:
-		# 	t.remove()
-		# self._t = []
+		for t in self._t:
+			t.remove()
+		self._t = []

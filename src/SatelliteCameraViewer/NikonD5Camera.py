@@ -6,7 +6,7 @@ from .static_tles import static_tles
 class NikonD5Camera:
 	""" NikonD5Camera """
 
-	def __init__(self, tle=None, focal_length:float=50.0):
+	def __init__(self, satellite_name=None, focal_length:float=50.0):
 		self._obs_time = None
 		self._attitude = None
 
@@ -24,10 +24,6 @@ class NikonD5Camera:
 			nx=5568, ny=3712,
 			bcc=self._bcc
 		)
-
-		if tle is None:
-			# Define satellite orbit from TLE from a static set
-			tle = static_tles[0].as_array
 
 		# map SatelliteCamera() into this class (yes - there's a more pythonic way to do this)
 
@@ -51,7 +47,11 @@ class NikonD5Camera:
 		self.camera_fov_intercept_earth = self._sc.camera_fov_intercept_earth
 
 		# set everything up
-		self.tle = tle
+		if satellite_name is not None:
+			self.find_tle(satellite_name)
+		else:
+			# Define satellite orbit from TLE from a static set
+			self.tle = static_tles[0].as_array
 		self.now()
 		self.choose_attitude('vv')
 

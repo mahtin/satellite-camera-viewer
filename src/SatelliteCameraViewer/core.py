@@ -20,7 +20,7 @@ from .PaintConstellation import PaintConstellation
 
 from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
-from .ecliptic import ecliptic, body, planets, galactic_plane, moon_illumination
+from .ecliptic import ecliptic, galactic_plane
 from .stars_in_polygon_icrs import stars_in_polygon_icrs
 
 #
@@ -89,8 +89,10 @@ class CoreCode:
 
 		self._timer_id = None
 
+		self._satellite_name = 'ISS'
+
 		# camera
-		self._nikon = NikonD5Camera()
+		self._nikon = NikonD5Camera(satellite_name=self._satellite_name)
 
 		# pointing
 		self._pointing = 'vv'
@@ -728,7 +730,8 @@ class CoreCode:
 
 	def do_satellite_selection(self, val):
 		""" do_satellite_selection """
-		self.nikon.find_tle(val)
+		self._satellite_name = val
+		self.nikon.find_tle(self._satellite_name)
 		# remove satellite track
 		self.plot_starfield_centerline_clear()
 		self.plot_earthtrack_dot_clear()
@@ -773,8 +776,9 @@ class CoreCode:
 		self._switch_accelerate_time = False
 
 		# RESET show stars
-		self._do_stars_real(False)
+		self._switch_stars = False
 		self.ui.stars_button_set(False)
+		self._do_stars_real(False)
 
 		# RESET rpy
 		for k in self.ui.rpy_values_deg:
@@ -788,6 +792,28 @@ class CoreCode:
 		# RESET earth
 		self.plot_earthtrack_dot_clear()
 
+		# RESET sun, moon, planets
+		self._switch_planets_etc = False
+		self.ui.planets_etc_button_set(False)
+		self._sun_moon_planets.change(self._switch_planets_etc)
+
+		# RESET constellations
+		self._switch_constellation_boundaries = False
+		self.ui.constellation_boundaries_button_set(False)
+		self._constellation_boundaries.change(self._switch_constellation_boundaries)
+
+		# RESET earth vector
+		self._switch_earth_vector = False
+		self.ui.earth_vector_button_set(False)
+
+		# RESET satellite selection
+		self.ui.satellite_selection_set(0)
+		self._satellite_name = 'ISS'
+		self.nikon.find_tle(self._satellite_name)
+
+		# RESET satelliite attitude
+		self._pointing = 'vv'
+		self.ui.satellite_attitude_set(0)
 
 		# RESET text boxes
 		s = ''
@@ -875,5 +901,5 @@ class CoreCode:
 		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.obs_time, self.nikon.camera.eci_position_vector)
 		self.draw()
 
-		# and finally, setup trigger the next timer
-		self._timer_id = self._ui.root.after(timer_step, lambda: self.timer_went_off())
+		# and finally, setup to trigger outselves at the next timer time
+		self._timer_id = self._ui.root.after(timer_step, self.timer_went_off)
