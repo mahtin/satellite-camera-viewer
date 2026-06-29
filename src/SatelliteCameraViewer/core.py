@@ -89,16 +89,17 @@ class CoreCode:
 
 		self._timer_id = None
 
-		self._satellite_name = 'ISS'
-
-		# camera
-		self._nikon = NikonD5Camera(satellite_name=self._satellite_name)
+		# self._satellite_name = static_tles[0].name
+		self._satellite_name = 'ISS (ZARYA)'
 
 		# pointing
 		self._pointing = 'vv'
 
 		# stars
 		self._mag = 5.0
+
+		# camera
+		self._nikon = NikonD5Camera(satellite_name=self._satellite_name)
 
 		# switches
 		self._switch_accelerate_time = False
@@ -259,6 +260,49 @@ class CoreCode:
 		self.plot_starfield_centerline_data()
 		self.plot_starfield_centerline()
 
+		self.do_pointing()
+
+		# border
+		p = self.plot_border_vectors()
+		self.items_plotted_add(p)
+
+		# camera view /box/polygon
+		show_box = False
+		show_poly = False
+		show_hull = False
+		if show_box:
+			# A box does not show edges correctly
+			p = self.plot_corners()
+			self.items_plotted_add(p)
+		if show_poly:
+			# Four dots in the corners
+			p = self.plot_polygons()
+			self.items_plotted_add(p)
+		if show_hull:
+			p = self.plot_hull()
+			self.items_plotted_add(p)
+
+		# a matrix of pixels (1 negates it)
+		p = self.plot_pixels(nsteps=1)
+		self.items_plotted_add(p)
+
+		if self._switch_stars and self._switch_match_stars:
+			self.do_match()
+
+		if self._switch_earth_vector:
+			# TODO - this is debug only at present
+			v1 = self.nikon.earth_center_vector()
+			v2 = self.nikon.earth_center_vector_icrs()
+			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
+			cam_earth_ra_deg, cam_earth_dec_deg = self.nikon.earth_center_radec()
+			print('Earth: vector = [%6.3f, %6.3f, %6.3f] %s' % (v1[0], v1[1], v1[2], str(v2).replace('\n',' ')), end='')
+			print(' ra,dec = [%6.2f,%6.2f] [%6.2f,%6.2f]' % (earth_ra_deg, earth_dec_deg, cam_earth_ra_deg, cam_earth_dec_deg))
+
+		# finally, show where we are at
+		self.do_info()
+
+	def do_pointing(self):
+		""" do_pointing """
 		# adjust camera/satellite attitude
 		if self._pointing == 'vv':
 			# follow satellite path (it's velocity vector)
@@ -289,75 +333,47 @@ class CoreCode:
 		#self.nikon.camera.choose_attitude('nadir')
 		#self.nikon.camera.choose_attitude('ground', earth_lat_deg=36.974117, earth_lon_deg=-122.030792)
 
-		# border
-		p = self.plot_border_vectors()
-		self.items_plotted_add(p)
-
-		# camera view /box/polygon
-		show_box = False
-		show_poly = False
-		show_hull = False
-		if show_box:
-			# A box does not show edges correctly
-			p = self.plot_corners()
+	def do_match(self):
+		""" do_match """
+		# Star chart
+		p = self.plot_matched_closest_star()
+		if p:
 			self.items_plotted_add(p)
-		if show_poly:
-			# Four dots in the corners
-			p = self.plot_polygons()
-			self.items_plotted_add(p)
-		if show_hull:
-			p = self.plot_hull()
+		# Camera
+		p = self.camera_image_matched_stars()
+		if p:
 			self.items_plotted_add(p)
 
-		# matrix of pixels (a matrix of pixels)
-		p = self.plot_pixels(nsteps=1)
-		self.items_plotted_add(p)
-
+		# Earth intercept (maybe)
 		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
 		earth_radius_deg = self.nikon.earth_angular_radius()
+		earth_ra_rad = math.radians(float(earth_ra_deg))
+		earth_dec_rad = math.radians(float(earth_dec_deg))
+		earth_ra_rad = ra_fix([earth_ra_rad])[0]
+		# s = ... TODO
+		s = earth_radius_deg * 3.0 * self._starfield_fig.dpi
+		p = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
+		self.items_plotted_add(p)
+		try:
+			earth_points_deg = self.nikon.camera_fov_intercept_earth(border_step=10)
+			print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
+			self.plot_earth_outline(earth_points_deg)
+			# pixels = self.nikon.camera_fov_intercept_earth()
+			# print('camera_fov_intercept_earth():', 'pixels =', pixels)
+		except SatelliteCameraError:
+			pass
 
-		if self._switch_stars and self._switch_match_stars:
-			# Star chart
-			p = self.plot_matched_closest_star()
-			if p:
-				self.items_plotted_add(p)
-			# Camera
-			p = self.camera_image_matched_stars()
-			if p:
-				self.items_plotted_add(p)
-			# Earth intercept (maybe)
-
-			earth_ra_rad = math.radians(float(earth_ra_deg))
-			earth_dec_rad = math.radians(float(earth_dec_deg))
-			earth_ra_rad = ra_fix([earth_ra_rad])[0]
-			# s = ... TODO
-			s = earth_radius_deg * 3.0 * self._starfield_fig.dpi
-			p = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
-			self.items_plotted_add(p)
-			try:
-				earth_points_deg = self.nikon.camera_fov_intercept_earth(border_step=10)
-				print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
-				self.plot_earth_outline(earth_points_deg)
-				# pixels = self.nikon.camera_fov_intercept_earth()
-				# print('camera_fov_intercept_earth():', 'pixels =', pixels)
-			except SatelliteCameraError:
-				pass
-
+	def do_info(self):
+		""" do_info """
 		# Lat, long & altitude of satellite
 		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.sat_lon_lat_alt()
 		self.plot_earthtrack_dot(sat_lon_deg, sat_lat_deg)
 
+		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
+		earth_radius_deg = self.nikon.earth_angular_radius()
+		
 		# Shadow ?
 		shadow = self.nikon.sat_in_eclipse()
-
-		if self._switch_earth_vector:
-			# TODO - this is debug only at present
-			v1 = self.nikon.earth_center_vector()
-			v2 = self.nikon.earth_center_vector_icrs()
-			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
-			cam_earth_ra_deg, cam_earth_dec_deg = self.nikon.earth_center_radec()
-			print('Earth: vector = [%6.3f, %6.3f, %6.3f] %s' % (v1[0], v1[1], v1[2], str(v2).replace('\n',' ')), end='')
-			print(' ra,dec = [%6.2f,%6.2f] [%6.2f,%6.2f]' % (earth_ra_deg, earth_dec_deg, cam_earth_ra_deg, cam_earth_dec_deg))
 
 		# build return string - showing camera info
 		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()
@@ -808,7 +824,7 @@ class CoreCode:
 
 		# RESET satellite selection
 		self.ui.satellite_selection_set(0)
-		self._satellite_name = 'ISS'
+		self._satellite_name = 'ISS (ZARYA)'
 		self.nikon.find_tle(self._satellite_name)
 
 		# RESET satelliite attitude
