@@ -3,10 +3,11 @@ Constellation Locations
 """
 
 import os
+import math
 from pathlib import Path
 from dataclasses import dataclass
 
-# constellation-locations.tsv 
+# constellation-locations.tsv
 #
 # Name                  IAU Abbr.       Center RA (h m s)       Center DEC (°)
 # Andromeda             And             00h48m48s               +36d55m
@@ -17,11 +18,11 @@ class ConstellationLocation:
     """ ConstellationLocation """
     name: str = None
     abbr: str = None
-    ra_deg: float = 0.0
-    dec_deg: float = 0.0
+    ra_rad: float = 0.0
+    dec_rad: float = 0.0
 
     def __str__(self):
-        return '[%s [%6.2f,%6.2f] ; %s]' % (self.abbr, self.ra_deg, self.dec_deg, self.name)
+        return '[%s [%6.2f,%6.2f] ; %s]' % (self.abbr, math.degrees(self.ra_rad), math.degrees(self.dec_rad), self.name)
 
 class ConstellationLocationsError(Exception):
     """ ConstellationLocationsError """
@@ -93,7 +94,7 @@ class ConstellationLocations:
                     continue
                 items = [item for item in line.strip().split('\t') if item]
                 # print(items)
-                constellation = ConstellationLocation(items[0], items[1], _hms_to_degrees(items[2]), _dm_to_degrees(items[3]))
+                constellation = ConstellationLocation(items[0], items[1], math.radians(_hms_to_degrees(items[2])), math.radians(_dm_to_degrees(items[3])))
                 self._a[constellation.abbr] = constellation
         return n_constellations
 
@@ -105,7 +106,6 @@ class ConstellationLocations:
 def _main(args=None):
     """ _main """
     import sys                       # pylint: disable=C0415
-    import math                      # ylint: disable=C0415
     import matplotlib.pyplot as plt  # pylint: disable=C0415
 
     try:
@@ -121,17 +121,15 @@ def _main(args=None):
     fig.set_layout_engine(layout='tight')
     fig.patch.set_facecolor('#ebebeb')
     ax = fig.add_subplot(111, projection='mollweide')
+    ax.set_title('Constellation Locations')
     ax.set_facecolor('whitesmoke')
+    ax.grid(True)
     ax.grid(color='lightgrey', alpha=0.5)
 
     for constellation in cl.data.values():
-        ra_rad = math.radians(constellation.ra_deg)
-        dec_rad = math.radians(constellation.dec_deg)
-        _ = ax.scatter(ra_rad, dec_rad, s=20, marker='*', color='red', alpha=0.5)
-        _ = ax.text(ra_rad, dec_rad, constellation.name, rotation=45, color='red', alpha=0.5)
+        _ = ax.scatter(constellation.ra_rad, constellation.dec_rad, s=20, marker='*', color='red', alpha=0.5)
+        _ = ax.text(constellation.ra_rad, constellation.dec_rad, constellation.name, rotation=45, color='red', alpha=0.5)
 
-    ax.grid(True)
-    ax.set_title('Constellation Locations')
     plt.show()
 
 if __name__ == '__main__':

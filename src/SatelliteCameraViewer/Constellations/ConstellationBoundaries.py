@@ -92,6 +92,10 @@ class ConstellationBoundaries:
         # second pass - go out to network and fetch contents
         try:
             r1 = self._network_fetch()
+        except requests.exceptions.Timeout:
+            # classic can't connect issue with timeout
+            self._local_filename.unlink(missing_ok=True)
+            raise ConstellationBoundariesError('HTTP Error %s: %s' % ('Timeout', self._url)) from None
         except requests.exceptions.ConnectionError as e:
             # classic can't connect issue
             self._local_filename.unlink(missing_ok=True)
