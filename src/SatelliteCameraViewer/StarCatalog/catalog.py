@@ -160,8 +160,11 @@ class Catalog():
                 'User-Agent': user_agent(),
             }
             try:
-                response = requests.get(url, headers=headers, stream=True)
-            except Exception as e:
+                response = requests.get(url, headers=headers, stream=True, timeout=20)
+            except requests.exceptions.Timeout:
+                self.__class__.log.debug('web requests() failed - timeout!')
+                continue
+            except (requests.exceptions.ConnectionError,requests.exceptions.HTTPError,requests.exceptions.RequestException) as e:
                 self.__class__.log.debug('web requests() failed e=%s' % (e))
                 continue
             try:
@@ -191,7 +194,7 @@ class Catalog():
         filename = (self.directory() / self.name().lower()).with_suffix(suffix)
         try:
             age = int(time.time() - os.stat(filename).st_mtime)
-        except:
+        except (FileNotFoundError,PermissionError):
             return None
         return age
 
