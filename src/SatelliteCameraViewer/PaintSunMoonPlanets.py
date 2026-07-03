@@ -1,17 +1,22 @@
 """ PaintSunMoonPlanets """
 
-from .misc import ra_fix, mag_map
-from .ecliptic import body, planets, moon_illumination
+from .misc import ra_fix, mag_map, split_plot_mollweide_line
+from .ecliptic import ecliptic, galactic_plane, body, planets, moon_illumination
 
 class PaintSunMoonPlanets:
 	""" PaintSunMoonPlanets """
 
-	def __init__(self, ax, color_sun='red', color_moon='red', color_planets='red', fontdict=None):
+	# not needed presently becaused the number of stars plotted is so low (plus it doesn't look good either)
+	_PAINT_GALACTIC = False
+
+	def __init__(self, ax, color_sun='red', color_moon='red', color_planets='red', color_galactic='red', color_ecliptic='red', fontdict=None):
 		""" PaintSunMoonPlanets """
 		self._ax = ax
 		self._color_sun = color_sun
 		self._color_moon = color_moon
 		self._color_planets = color_planets
+		self._color_galactic = color_galactic
+		self._color_ecliptic = color_ecliptic
 		self._fontdict = fontdict
 		self._sun = None
 
@@ -45,6 +50,11 @@ class PaintSunMoonPlanets:
 			for ii in range(len(planets_ra_rad)):
 				self._planets_texts[ii].set_position((planets_ra_rad[ii], planets_dec_rad[ii]))
 		else:
+			if self._PAINT_GALACTIC:
+				self._galactic_plan = self._plot_galactic_plane()
+			else:
+				self._galactic_plan = []
+			self._ecliptic = self._plot_ecliptic()
 			self._sun = self._ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._color_sun, alpha=0.5, s=500.0, marker='*')
 			# no text needed for the sun
 			# self._sun_text = self._ax.text(sun_ra_rad, sun_dec_rad, '  ' + 'sun', color=self._color_sun, rotation=90, ha='center', va=bottom', alpha=0.5, fontdict=self._fontdict)
@@ -62,6 +72,12 @@ class PaintSunMoonPlanets:
 		if self._sun is None:
 			# nothimg painted
 			return
+		for p in self._galactic_plan:
+			# p.set_data([], [])
+			p.remove()
+		for p in self._ecliptic:
+			# p.set_data([], [])
+			p.remove()
 		self._sun.remove()
 		self._sun = None
 		# no text needed for the sun
@@ -76,3 +92,25 @@ class PaintSunMoonPlanets:
 		for p in self._planets_texts:
 			p.remove()
 		self._planets_texts = []
+
+	def _plot_galactic_plane(self):
+		""" _plot_galactic_plane - add galactic plan line to the sky plot. """
+		ra_dec_rad = galactic_plane()
+		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
+		r = []
+		for ra_rad, dec_rad in segments:
+			ra_rad = ra_fix(ra_rad)
+			p = self._ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.25, color=self._color_galactic, linewidth=30.0) #, linestyle='dashed')
+			r.append(p[0])
+		return r
+
+	def _plot_ecliptic(self):
+		""" _plot_ecliptic - add ecliptic line to the sky plot """
+		ra_dec_rad = ecliptic()
+		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
+		r = []
+		for ra_rad, dec_rad in segments:
+			ra_rad = ra_fix(ra_rad)
+			p = self._ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=self._color_ecliptic, linewidth=0.75, linestyle='dotted')
+			r.append(p[0])
+		return r

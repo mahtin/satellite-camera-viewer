@@ -20,7 +20,6 @@ from .PaintConstellation import PaintConstellation
 
 from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
-from .ecliptic import ecliptic, galactic_plane
 from .stars_in_polygon_icrs import stars_in_polygon_icrs
 
 #
@@ -119,8 +118,16 @@ class CoreCode:
 		# start the plotting...
 		self._setup_plot()
 
-		# plotted elements
-		self._sun_moon_planets = PaintSunMoonPlanets(self._starfield_ax, self._COLORS['sun'], self._COLORS['moon'], self._COLORS['planets'], fontdict={'fontsize':self._ui.font['size']+2})
+		# plotted elements - this is just the setup - they are enabled/disabled via the UI
+		self._sun_moon_planets = PaintSunMoonPlanets(
+			self._starfield_ax,
+			self._COLORS['sun'],
+			self._COLORS['moon'],
+			self._COLORS['planets'],
+			self._COLORS['sky-galactic'],
+			self._COLORS['sky-ecliptic'],
+			fontdict={'fontsize':self._ui.font['size']+2}
+		)
 		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
 		self._scbsc5 = PaintStarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
 
@@ -129,9 +136,6 @@ class CoreCode:
 		# starfield plot
 		self._create_starfield_subplot()
 		self._paint_starfield_axis()
-		self.plot_ecliptic()
-		# not needed presently becaused the number of stars plotted is so low
-		# self.plot_galactic_plane()
 		# earth plot
 		self._create_earth_subplot()
 		self._paint_earth_axis()
@@ -357,7 +361,7 @@ class CoreCode:
 		try:
 			earth_points_deg = self.nikon.camera_fov_intercept_earth(border_step=10)
 			print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
-			self.plot_earth_outline(earth_points_deg)
+			_ = self.plot_earth_outline(earth_points_deg)
 			# pixels = self.nikon.camera_fov_intercept_earth()
 			# print('camera_fov_intercept_earth():', 'pixels =', pixels)
 		except SatelliteCameraError:
@@ -393,22 +397,6 @@ class CoreCode:
 		dec_rad = [math.radians(float(v[1])) for v in earth_points_deg]
 		ra_rad = ra_fix(ra_rad)
 		return self._starfield_ax.plot(ra_rad, dec_rad, label='Earth Outline', alpha=0.25, color=self._COLORS['earth'], linewidth=4.0)
-
-	def plot_galactic_plane(self):
-		""" plot_galactic_plane - add galactic plan line to the sky plot. """
-		ra_dec_rad = galactic_plane()
-		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
-		for ra_rad, dec_rad in segments:
-			ra_rad = ra_fix(ra_rad)
-			_ = self._starfield_ax.plot(ra_rad, dec_rad, label='Galactic Plane', alpha=0.25, color=self._COLORS['sky-galactic'], linewidth=30.0) #, linestyle='dashed')
-
-	def plot_ecliptic(self):
-		""" plot_ecliptic - add ecliptic line to the sky plot """
-		ra_dec_rad = ecliptic()
-		segments = split_plot_mollweide_line(ra_dec_rad[0], ra_dec_rad[1], is_radians=True)
-		for ra_rad, dec_rad in segments:
-			ra_rad = ra_fix(ra_rad)
-			_ = self._starfield_ax.plot(ra_rad, dec_rad, label='Ecliptic Plane', alpha=0.75, color=self._COLORS['sky-ecliptic'], linewidth=0.75, linestyle='dotted')
 
 	def plot_earthtrack_dot(self, lon_deg:float, lat_deg:float):
 		""" plot_earthtrack_dot """
