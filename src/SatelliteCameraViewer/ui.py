@@ -1,7 +1,10 @@
 """ ui.py """
 
+import platform
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+
+from . import __version__
 
 ## # pylint: disable=unnecessary-lambda
 
@@ -17,9 +20,10 @@ class UserInterface:
 	def __init__(self, title=None):
 		""" UserInterface """
 		self._root = tk.Tk()
+		# self._root.iconbitmap(default="satellite-camera-viewer.ico") 
 
-		# configure UI gloablly first
-		self._root.option_add('*Font', (self.font['family'], self.font['size'] - 2))
+		# configure UI gloablly first (presently disabled - as it affects the menu bar)
+		# self._root.option_add('*Font', (self.font['family'], self.font['size'] - 2))
 
 		self._style = ttk.Style()
 		self._style.configure('Horizontal.TScale', sliderthickness=0, borderwidth=0, sliderlength=0)	# does not work - hence zeros
@@ -27,7 +31,7 @@ class UserInterface:
 		self._style.configure('TOptionMenu', font=(self.font['family'], self.font['size']-2, ''))
 		self._style.configure('TCheckbutton', font=(self.font['family'], self.font['size']-2, ''))
 		self._style.configure('TMenubutton', font=(self.font['family'], self.font['size']-2, ''))
-		self._style.configure('TRadiobutton', justify='left',  font=(self.font['family'], self.font['size']-2, ''))
+		self._style.configure('TRadiobutton', justify='left', font=(self.font['family'], self.font['size']-2, ''))
 
 		self._core = None
 		self._title_label = None
@@ -97,6 +101,46 @@ class UserInterface:
 		f = ttk.LabelFrame(parent, text=text, borderwidth=borderwidth, relief=relief)
 		f.grid(row=row, column=col, columnspan=colspan, padx=padx, pady=pady, sticky=sticky)
 		return f
+
+	# MENU BAR etc
+
+	def show_about(self):
+		""" show_about - Defines the uniform content for the About Dialog """
+		messagebox.showinfo(
+			'About Satellite Camera Viewer',
+			'Satellite Camera Viewer\n' +
+			'Version %s\n\n' % (__version__) +
+			'(c) 2026 Martin J Levy\n' +
+			'All rights reserved\n\n' +
+			'https://github.com/mahtin/satellite-camera-viewer\n\n' + 
+			'Built with Python, Tkinter, Matplotlib.pyplot, AstroPy, PyVista, and more'
+		)
+
+	def menubar(self):
+		""" menubar """
+
+		self._menubar = tk.Menu(self.root)
+
+		# File menu ...
+		file_menu = tk.Menu(self._menubar, tearoff=0)
+		file_menu.add_command(label='New File', command=lambda: print('DEBUG: New File clicked'))
+		file_menu.add_command(label='Open', command=lambda: print('DEBUG: Open clicked'))
+		file_menu.add_separator()
+		file_menu.add_command(label='Exit', command=self.root.quit)
+		self._menubar.add_cascade(label='File', menu=file_menu)
+
+		# Help menu ...
+		help_menu = tk.Menu(self._menubar, tearoff=0)
+		help_menu.add_command(label='About', command=self.show_about)
+		self._menubar.add_cascade(label='Help', menu=help_menu)
+
+		# add the menubar
+		self.root.config(menu=self._menubar)
+
+		# special case code for specific os's ... sadly
+		if platform.system() == 'Darwin':
+			# special case on Mac ... add to apple menu
+			self.root.createcommand('tk::mac::ShowAboutBox', self.show_about)
 
 	# TITLE
 

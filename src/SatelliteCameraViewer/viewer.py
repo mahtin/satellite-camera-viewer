@@ -19,8 +19,14 @@ def viewer(args=None):
 	This code only exits when the window is close and/or via ^C.
 
 	"""
+
+	# start UI first
 	ui = UserInterface(title='Satellite Camera Viewer')
+	# start core and pass it the UI
 	core = CoreCode(ui=ui)
+
+	# this is the basics of an OS dependent menu bar
+	menu_bat = ui.menubar()
 
 	# all the frames ...
 	top_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, anchor='n')
