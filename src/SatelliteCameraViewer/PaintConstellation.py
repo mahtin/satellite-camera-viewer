@@ -41,7 +41,7 @@ class PaintConstellation:
 			self._p.append(p[0])
 		if self._show_names:
 			for constellation in self._cl.data.values():
-				t = self._ax.text(constellation.ra_rad, constellation.dec_rad, constellation.name, rotation=45, color=self._color, alpha=1.0)
+				t = self._ax.text(constellation.ra_rad, constellation.dec_rad, constellation.name, rotation=45, color=self._color, alpha=1.0, clip_on=True)
 				self._t.append(t)
 
 	def _disable(self):

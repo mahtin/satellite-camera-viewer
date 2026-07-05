@@ -57,14 +57,14 @@ class PaintSunMoonPlanets:
 			self._ecliptic = self._plot_ecliptic()
 			self._sun = self._ax.scatter([sun_ra_rad], [sun_dec_rad], color=self._color_sun, alpha=0.5, s=500.0, marker='*')
 			# no text needed for the sun
-			# self._sun_text = self._ax.text(sun_ra_rad, sun_dec_rad, '  ' + 'sun', color=self._color_sun, rotation=90, ha='center', va=bottom', alpha=0.5, fontdict=self._fontdict)
+			# self._sun_text = self._ax.text(sun_ra_rad, sun_dec_rad, '  ' + 'sun', color=self._color_sun, rotation=90, ha='center', va=bottom', alpha=0.5, fontdict=self._fontdict, clip_on=True)
 			self._moon = self._ax.scatter([moon_ra_rad], [moon_dec_rad], color=self._color_moon, alpha=1.0, s=50.0)
-			self._moon_text = self._ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'Moon', color=self._color_moon, rotation=90, alpha=0.5, fontdict=self._fontdict, ha='center', va='bottom')
+			self._moon_text = self._ax.text(moon_ra_rad, moon_dec_rad, '  ' + 'Moon', color=self._color_moon, rotation=90, alpha=0.5, fontdict=self._fontdict, ha='center', va='bottom', clip_on=True)
 			self._planets = self._ax.scatter(planets_ra_rad, planets_dec_rad, s=planets_size_pixels, color=self._color_planets, alpha=0.5)
 			# paint names just once - planets don't move that much.
 			self._planets_texts = []
 			for ii in range(len(planets_ra_rad)):
-				p = self._ax.text(planets_ra_rad[ii], planets_dec_rad[ii], '  ' + planets_names[ii], color=self._color_planets, rotation=90, ha='center', va='bottom', alpha=0.5, fontdict=self._fontdict)
+				p = self._ax.text(planets_ra_rad[ii], planets_dec_rad[ii], '  ' + planets_names[ii], color=self._color_planets, rotation=90, ha='center', va='bottom', alpha=0.5, fontdict=self._fontdict, clip_on=True)
 				self._planets_texts.append(p)
 
 	def _disable(self):
