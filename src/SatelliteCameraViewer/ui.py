@@ -1,8 +1,9 @@
 """ ui.py """
 
+import sys
 import platform
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, TclError
 
 from . import __version__
 
@@ -20,7 +21,7 @@ class UserInterface:
 	def __init__(self, title=None):
 		""" UserInterface """
 		self._root = tk.Tk()
-		# self._root.iconbitmap(default="satellite-camera-viewer.ico") 
+		self._set_icon()
 
 		# configure UI gloablly first (presently disabled - as it affects the menu bar)
 		# self._root.option_add('*Font', (self.font['family'], self.font['size'] - 2))
@@ -102,18 +103,43 @@ class UserInterface:
 		f.grid(row=row, column=col, columnspan=colspan, padx=padx, pady=pady, sticky=sticky)
 		return f
 
+	# PROGRAM ICON
+
+	def _set_icon(self):
+		""" _set_icon """
+		# self._root.iconbitmap(default='satellite-camera-viewer.xbm')
+		platform_os = platform.system()
+		try:
+			if platform_os == 'Windows':
+				# Windows handles .ico files perfectly via iconbitmap
+				self._root.iconbitmap('img/satellite-camera-viewer-icon.ico')
+			elif platform_os == 'Darwin':  # macOS
+				# Use a PNG or GIF file with iconphoto
+				self._root.iconphoto(False, tk.PhotoImage(file='img/satellite-camera-viewer-icon.png'))
+			else:
+				# Linux / alternative environments
+				self._root.iconphoto(True, tk.PhotoImage(file='img/satellite-camera-viewer-icon.png'))
+		except TclError as e:
+			print('TclError: program icon not loaded:', e, '(low priority - continuing)', file=sys.stderr)
+
 	# MENU BAR etc
 
-	def show_about(self):
-		""" show_about - Defines the uniform content for the About Dialog """
+	def _show_help_info(self):
+		""" _show_help_info - Defines the uniform content for the Help Dialog """
 		messagebox.showinfo(
-			'About Satellite Camera Viewer',
-			'Satellite Camera Viewer\n' +
-			'Version %s\n\n' % (__version__) +
-			'(c) 2026 Martin J Levy\n' +
-			'All rights reserved\n\n' +
-			'https://github.com/mahtin/satellite-camera-viewer\n\n' + 
-			'Built with Python, Tkinter, Matplotlib.pyplot, AstroPy, PyVista, and more'
+			title='Help Satellite Camera Viewer',
+			message='Satellite Camera Viewer\nVersion %s' % (__version__),
+			detail='help coming soon',
+		)
+
+	def _show_about_info(self):
+		""" _show_about_info - Defines the uniform content for the About Dialog """
+		messagebox.showinfo(
+			title='About Satellite Camera Viewer',
+			message='Satellite Camera Viewer\nVersion %s' % (__version__),
+			detail='(c) 2026 Martin J Levy\nAll rights reserved\n\n' +
+				'https://github.com/mahtin/satellite-camera-viewer\n' +
+				'Built with Python, Tkinter, Matplotlib.pyplot, AstroPy, PyVista, ...',
 		)
 
 	def menubar(self):
@@ -131,7 +157,9 @@ class UserInterface:
 
 		# Help menu ...
 		help_menu = tk.Menu(self._menubar, tearoff=0)
-		help_menu.add_command(label='About', command=self.show_about)
+		help_menu.add_command(label='Help', command=self._show_help_info)
+		help_menu.add_separator()
+		help_menu.add_command(label='About', command=self._show_about_info)
 		self._menubar.add_cascade(label='Help', menu=help_menu)
 
 		# add the menubar
@@ -140,7 +168,7 @@ class UserInterface:
 		# special case code for specific os's ... sadly
 		if platform.system() == 'Darwin':
 			# special case on Mac ... add to apple menu
-			self.root.createcommand('tk::mac::ShowAboutBox', self.show_about)
+			self.root.createcommand('tk::mac::ShowAboutBox', self._show_about_info)
 
 	# TITLE
 
