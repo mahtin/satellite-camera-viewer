@@ -1,6 +1,6 @@
 """ ConstellationBoundaries """
 
-__version__ = '0.2.0'
+__version__ = '0.6.1'
 
 from .Constellation import Constellation
 from .ConstellationBoundaries import ConstellationBoundaries, ConstellationBoundariesError
