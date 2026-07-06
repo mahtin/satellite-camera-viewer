@@ -21,6 +21,7 @@ Satellite orbit from 2LE or TLE/3LE
 # Note: The specific inertial reference frame used is often the J2000 frame, meaning the X-axis points to the
 # vernal equinox at the epoch of Jan 1, 2000, at noon.
 
+import math
 from datetime import datetime, timezone
 import numpy as np
 from astropy.time import Time
@@ -206,3 +207,15 @@ class SatelliteOrbit:
         if sat_lon_deg < 0.0:
             sat_lon_deg += 360.0
         return sat_lon_deg, sat_lat_deg, sat_alt_km
+
+    def sat_rev_per_day(self):
+        """ sat_rev_per_day """
+        mean_motion_per_min_rad = self._sat.no
+        # Convert to revolutions per day for easier reading
+        rev_per_day = mean_motion_per_min_rad * 60.0 * 24.0 / (2.0 * np.pi)
+        return rev_per_day
+
+    def sat_period_seconds(self):
+        """ sat_period_seconds """
+        period_seconds = 60.0 * 60.0 * 24.0 / self.sat_rev_per_day()
+        return period_seconds
