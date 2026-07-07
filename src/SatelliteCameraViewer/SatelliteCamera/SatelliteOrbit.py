@@ -29,6 +29,7 @@ from astropy.coordinates import SkyCoord, TEME, GCRS, ITRS, EarthLocation, get_b
 import astropy.units as u
 
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
+from sgp4.conveniences import sat_epoch_datetime
 
 class SatelliteOrbit:
     """ SatelliteOrbit """
@@ -219,3 +220,18 @@ class SatelliteOrbit:
         """ sat_period_seconds """
         period_seconds = 60.0 * 60.0 * 24.0 / self.sat_rev_per_day()
         return period_seconds
+
+    def sat_epoch_age(self):
+        """ sat_epoch_age """
+        tle_epoch_utc = sat_epoch_datetime(self._sat).replace(tzinfo=timezone.utc)
+        current_time_utc = datetime.now(timezone.utc)
+        return current_time_utc - tle_epoch_utc
+
+    def sat_altitude_inclination(self):
+        """ sat_altitude - Perigee, Apogee, and Inclination """
+        return self._sat.radiusearthkm * self._sat.altp, self._sat.radiusearthkm * self._sat.alta, self._sat.inclo
+
+    @property
+    def sat_num(self):
+        """ sat_num """
+        return self._sat.satnum
