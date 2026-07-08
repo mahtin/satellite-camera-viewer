@@ -110,8 +110,8 @@ class TLEFetch:
 			except (FileNotFoundError,PermissionError):
 				self._j = None
 			# see if the file is still young enough... make this slightly random to help not hit the server too much
-			age_days, age_hours = self.age()
-			if (age_days * 24 + age_hours) <= random.randint(self._TLE_AGE_OK-1, self._TLE_AGE_OK+1):
+			epoch_age_days, epoch_age_hours = self.epoch_age()
+			if (epoch_age_days * 24 + epoch_age_hours) <= random.randint(self._TLE_AGE_OK-1, self._TLE_AGE_OK+1):
 				return self._j
 			# see if we fetched recently (via the age of the file) ...
 			file_age = self._file_age()
@@ -136,8 +136,8 @@ class TLEFetch:
 
 		return self._j
 
-	def age(self):
-		""" age """
+	def epoch_age(self):
+		""" epoch_age """
 		self._get()
 		if self._j is None:
 			return 0, 0
@@ -147,11 +147,11 @@ class TLEFetch:
 			# should not happen; but if it does, we return zeros
 			return 0, 0
 		current_time_utc = datetime.now(timezone.utc)
-		age_timedelta = current_time_utc - tle_epoch_utc
+		epoch_age_timedelta = current_time_utc - tle_epoch_utc
 
-		age_days = int(age_timedelta.days)
-		age_hours = int(age_timedelta.seconds / (60*60))
-		return age_days, age_hours
+		epoch_age_days = int(epoch_age_timedelta.days)
+		epoch_age_hours = int(epoch_age_timedelta.seconds / (60*60))
+		return epoch_age_days, epoch_age_hours
 
 	def _get(self):
 		""" _get() """
@@ -271,10 +271,10 @@ def _main(args=None):
 		# j = tf.get()
 		tle = tf.tle3line()
 		if debug:
-			age_days, age_hours = tf.age()
+			epoch_age_days, epoch_age_hours = tf.epoch_age()
 			print('# age: %s %s %s %s' % (
-				age_days, 'days' if age_days > 1 else 'day',
-				age_hours, 'hours' if age_hours > 1 else 'hour',
+				epoch_age_days, 'days' if epoch_age_days > 1 else 'day',
+				epoch_age_hours, 'hours' if epoch_age_hours > 1 else 'hour',
 			), end='\t')
 
 		print('#', tf.satelliteId, tf.name, tf.date.isoformat())
