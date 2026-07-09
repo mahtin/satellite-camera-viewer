@@ -5,10 +5,14 @@ import stat
 import json
 import time
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import requests
+
+#
+# This code can retrieve from either tle.ivanstanojevic.me or celestrak.org and uses the json format from the first one.
+#
 
 #
 # https://tle.ivanstanojevic.me/#docs
@@ -25,10 +29,16 @@ import requests
 # }
 #
 # Everything received is stored as json so that the metadata is preserved.
-# Files are timestamped based on the date returned in the json porttion of the file (which is the decoded epoch date anyway).
+# Files are timestamped based on the date returned in the json date value in the file (which is the decoded epoch date anyway).
 #
-# Date example... ~/.cache/tle.ivanstanojevic.me/69792/69792.2026-07-05T05:54:20.tle.json
-# Quick access... ~/.cache/tle.ivanstanojevic.me/69792/69792.latest--tle--values.tle.json
+# CelesTrak is a three line acsii format and this code converts it back into the json format above.
+#
+# Date example... ~/.cache/tle-fetch/69792/69792.2026-07-05T05:54:20.tle.json
+# Quick access... ~/.cache/tle-fetch/69792/69792.latest--tle--values.tle.json
+#
+# The dated file is "touch'ed" to adjust it's times to match the epoch. Hence ls -lt works (as does ls -l because of ISO date in name)
+#
+# No dependancies are used in this code. You're welcome to wrap this with "sgp4.api" for "Satrec" processing, or another library.
 #
 
 class TLEFetchError(Exception):
@@ -37,36 +47,41 @@ class TLEFetchError(Exception):
 class TLEFetch:
 	""" TLEFetch """
 
-	_URL_IVAN = 'https://tle.ivanstanojevic.me/api/tle/%d'
-	_URL_CELESTRAK = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=%d&FORMAT=TLE'
+	_SOURCES = {
+		'Ivan': 'https://tle.ivanstanojevic.me/api/tle/%d',
+		'CelesTrak': 'https://celestrak.org/NORAD/elements/gp.php?CATNR=%d&FORMAT=TLE',
+	}
 
-	_DIR_TLECache = '~/.cache/tle.ivanstanojevic.me'
+	_DIR_TLEFetch = '~/.cache/tle-fetch'
+
 	_LATEST_PREFIX = 'latest--tle--values'
 	_EXTENSION = 'tle.json'
-	_TLE_AGE_OK = 24			# be ok with a TLE file that has an epoch that's up to the age of +/- 24 hours
-	_FILE_AGE_OK = 2			# recheck after +/- 2 hours if the local file epoch is older than 24 hours (above)
+
+	_TLE_AGE_OK = 18			# be ok with a TLE file that has an epoch that's up to the age of +/- 18 hours
+	_FILE_AGE_OK = 2			# recheck after +/- 2 hours if the local file epoch is older than 18 hours (above)
+
+	_RETRY_COUNT = 4			# try connection (in case of timeout) four times
+
+	_session = None				# we keep the requests session open over many calls - more efficient
 
 	def __init__(self, sat_id:int, source='Ivan', directory:str=None):
 		""" ConstellationLocations """
 
 		self._sat_id = sat_id
 
-		if source not in ['Ivan', 'CelesTrak']:
+		if source not in self._SOURCES.keys():
 			raise TLEFetchError('%s: source not supported' % (source)) from None
 
-		self._url_source = source
+		self._source = source
 
-		if self._url_source == 'Ivan':
-			self._url = self._URL_IVAN % (self.sat_id)
-		if self._url_source == 'CelesTrak':
-			self._url = self._URL_CELESTRAK % (self.sat_id)
+		self._url = self._SOURCES[self._source] % (self.sat_id)
 
 		if directory:
 			self._directory = directory
 		else:
 			self._directory = os.getenv('TLECACHE_LOCATION')
 			if not self._directory:
-				self._directory = self._DIR_TLECache
+				self._directory = self._DIR_TLEFetch
 		self._directory = Path(self._directory).expanduser() / str(self.sat_id)
 		self._directory.mkdir(parents=True, exist_ok=True)
 		if not self._directory.exists():
@@ -120,19 +135,26 @@ class TLEFetch:
 				self._file_read()
 			except (FileNotFoundError,PermissionError):
 				self._j = None
-			# see if the file is still young enough... make this slightly random to help not hit the server too much
-			epoch_age_days, epoch_age_hours = self.epoch_age()
-			if (epoch_age_days * 24 + epoch_age_hours) <= random.randint(self._TLE_AGE_OK-1, self._TLE_AGE_OK+1):
-				return self._j
-			# see if we fetched recently (via the age of the file) ...
-			file_age = self._file_age()
-			if file_age is not None and file_age <= random.randint(self._FILE_AGE_OK-1, self._FILE_AGE_OK+1) * 60 * 60:
-				# we don't want to hit the server too often
-				return self._j
+			if self._j:
+				# see if the file is still young enough... make this slightly random to help not hit the server too much
+				epoch_age_days, epoch_age_hours = self.epoch_age()
+				if (epoch_age_days * 24 + epoch_age_hours) <= random.randint(self._TLE_AGE_OK-1, self._TLE_AGE_OK+1):
+					return self._j
+				# see if we fetched recently (via the age of the file) ...
+				file_age = self._file_age()
+				if file_age is not None and file_age <= random.randint(self._FILE_AGE_OK-1, self._FILE_AGE_OK+1) * 60 * 60:
+					# we don't want to hit the server too often
+					return self._j
 
 		# clearly worth network checking again ...
+		self._j = None
 		try:
-			self._network_read()
+			retry_count = self._RETRY_COUNT
+			while self._j is None and retry_count > 0:
+				self._network_read()
+				retry_count -= 1
+			if self._j is None:
+				raise TLEFetchError('Timeout on connection after %d times' % (self._RETRY_COUNT)) from None
 		except TLEFetchError as e:
 			raise TLEFetchError(e) from None
 
@@ -223,23 +245,27 @@ class TLEFetch:
 	def _network_read(self):
 		""" network_read """
 
+		self._j = None
 		def _network_fetch(url:str):
 			""" _network_fetch() """
 			headers = {
 				# required to make website respond cleanly
-				'Accept-Encoding': 'text/plain',
+				'Accept': 'text/plain',
+				'Accept-Encoding': 'identity',
 				'Referer': 'https://google.com/',
 				'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
 			}
-			response = requests.get(url, headers=headers, timeout=20)
+			if TLEFetch._session is None:
+				TLEFetch._session = requests.Session()
+			response = TLEFetch._session.get(url, headers=headers, timeout=20)
 			response.raise_for_status()
 			return response
 
 		try:
 			response = _network_fetch(self._url)
 		except requests.exceptions.Timeout:
-			# classic can't connect issue with timeout
-			raise TLEFetchError('HTTP Error %s: %s' % ('Timeout', self._url)) from None
+			# classic can't connect issue with timeout - lets retry
+			return
 		except requests.exceptions.ConnectionError as e:
 			# classic can't connect issue
 			try:
@@ -257,49 +283,61 @@ class TLEFetch:
 			# let it pass up - it could be important to see what happened
 			raise TLEFetchError(e) from None
 
-		if self._url_source == 'Ivan':
+		# process results depending on source chosen.
+		if self._source == 'Ivan':
+			# so simple
 			self._j = response.json()
 
-		if self._url_source == 'CelesTrak':
-			three_lines = response.text.splitlines()
+		if self._source == 'CelesTrak':
 			# syntetic creation of JSON data - it's kinda reversed; but so be it.
+			tle_three_lines = response.text.splitlines()
 			self._j = {
-				'satelliteId': self._tle_to_sat_id(three_lines[1]),
-				'name': three_lines[0].strip(),
-				'date': self._tle_to_datetime(three_lines[1]),
-				'line1': three_lines[1],
-				'line2': three_lines[2],
+				# these three duplicate the info from Ivan ...
+				'@context': 'https://www.w3.org/ns/hydra/context.jsonld',
+				'@id': self._url,
+				'@type': 'Tle',
+				# now synthesize the rest ...
+				'satelliteId': self._tle_to_sat_id(tle_three_lines[1]),
+				'name': tle_three_lines[0].strip(),
+				'date': self._tle_to_datetime(tle_three_lines[1]).isoformat(),
+				'line1': tle_three_lines[1],
+				'line2': tle_three_lines[2],
 			}
+
+	def __del__(self):
+		""" __del__ """
+		# is this really needed? No. Do we do it anyway? Yes.
+		if TLEFetch._session is not None:
+			# clean up after ourselves
+			TLEFetch._session.close()
+			TLEFetch._session = None
 
 	def _tle_to_sat_id(self, line1):
 		""" _tle_to_sat_id """
-		return int(line_1[2:8].strip())
+		return int(line1[2:7].strip())
 
 	def _tle_to_datetime(self, line1):
 		""" _tle_to_datetime """
 
 		# Extract the epoch substring from TLE line 1 (columns 19-32)
 		epoch_str = line1[18:32].strip()
-
 		year_str = epoch_str[:2]
 		day_fraction = epoch_str[2:]
-
 		# Calculate full 4-digit year (e.g., 2026)
 		year = int(year_str)
 		year += 2000 if year < 57 else 1900
-
 		# Calculate days and fractional seconds
 		total_days = float(day_fraction)
 		day_of_year = int(total_days)
 		fraction = total_days - day_of_year
-
 		# Convert day of year to month and day
 		# Create a base date on Jan 1st of that year
-		base_date = datetime(year, 1, 1).replace(tzinfo=timezone.utc)
-
+		base_date = datetime(year, 1, 1)
 		# timedelta takes days, so we add (day_of_year - 1) days
 		# plus the fractional day converted to hours/minutes/seconds
 		epoch_datetime = base_date + timedelta(days=day_of_year - 1, seconds=fraction * 86400)
+		# dump the microseconds - we don't need that much accuracy and dump the timezone
+		epoch_datetime = epoch_datetime.replace(microsecond=0, tzinfo=timezone.utc)
 
 		return epoch_datetime
 
