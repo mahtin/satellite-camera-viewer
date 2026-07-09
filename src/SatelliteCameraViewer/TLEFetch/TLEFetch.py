@@ -1,12 +1,14 @@
 """ TLEFetch """
 
 import os
+import sys
 import stat
 import json
 import time
 import random
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from dataclasses import dataclass
 
 import requests
 
@@ -41,6 +43,69 @@ import requests
 # No dependancies are used in this code. You're welcome to wrap this with "sgp4.api" for "Satrec" processing, or another library.
 #
 
+@dataclass
+class TLE:
+	""" TLE """
+	name: str = ''
+	""" name - optional comment line naming the satellite if using TLE/3LE """
+	line1: str = ''
+	""" line1 - first line of 2LE, second line of TLE/3LE """
+	line2: str = ''
+	""" line2 - second line of 2LE, third line of TLE/3LE """
+
+	def __str__(self):
+		""" __str__ """
+		return '[%s,%s,%s]' % (self.name, self.line1, self.line2)
+
+	@property
+	def as_array(self):
+		""" as_array """
+		return [self.name, self.line1, self.line2]
+
+	@property
+	def tle2line(self):
+		""" tle2line """
+		return self.as_array[1:]
+
+	@property
+	def tle3line(self):
+		""" tle3line """
+		return self.as_array
+
+	@property
+	def epoch_age(self):
+		""" epoch_age - Extract the epoch string """
+
+		# line1, chars 18-31 (0-indexed)
+		epoch_str = self.line1[18:32].strip()
+
+		# Parse the year and the day of the year (including fractional day)
+		year_two_digit = int(epoch_str[:2])
+		day_fraction = float(epoch_str[2:])
+
+		# Determine the full 4-digit year (assumes post-1957 for space age)
+		epoch_year = (1900 if year_two_digit >= 57 else 2000) + year_two_digit
+
+		# Convert fractional day to hours, minutes, seconds
+		total_seconds = day_fraction * 24 * 60 * 60
+		days = int(total_seconds // (24 * 60 * 60))
+		remainder = total_seconds % (24 * 60 * 60)
+		hours = int(remainder // (60 * 60))
+		remainder %= (60 * 60)
+		minutes = int(remainder // 60)
+		seconds = int(remainder % 60)
+
+		# Create a datetime object for the epoch starting with month, day being Jan/1'st and then adding the rest
+		epoch_month = 1
+		epoch_day = 1
+		epoch_date_utc = datetime(epoch_year, epoch_month, epoch_day, tzinfo=timezone.utc) + timedelta(days=days - 1, hours=hours, minutes=minutes, seconds=seconds)
+
+		# Calculate the age
+		current_time_utc = datetime.now(timezone.utc).replace(microsecond=0)
+		tle_age = current_time_utc - epoch_date_utc
+
+		return epoch_date_utc, tle_age
+
 class TLEFetchError(Exception):
 	""" TLEFetchError """
 
@@ -64,18 +129,16 @@ class TLEFetch:
 
 	_session = None				# we keep the requests session open over many calls - more efficient
 
-	def __init__(self, sat_id:int, source='Ivan', directory:str=None):
+	def __init__(self, sat_id:int, source:str='Ivan', directory:str=None, debug:bool=False):
 		""" ConstellationLocations """
-
+		self._j = None
+		self._tle = None
+		self._debug = debug
 		self._sat_id = sat_id
-
 		if source not in self._SOURCES.keys():
 			raise TLEFetchError('%s: source not supported' % (source)) from None
-
 		self._source = source
-
 		self._url = self._SOURCES[self._source] % (self.sat_id)
-
 		if directory:
 			self._directory = directory
 		else:
@@ -86,8 +149,6 @@ class TLEFetch:
 		self._directory.mkdir(parents=True, exist_ok=True)
 		if not self._directory.exists():
 			raise TLEFetchError('%s: directory does not exist' % (self._directory)) from None
-
-		self._j = None
 
 	@property
 	def sat_id(self):
@@ -116,11 +177,21 @@ class TLEFetch:
 			# should not happen; but if it does...
 			raise TLEFetchError('date invalid in TLE info') from None
 
+	@property
+	def tle(self):
+		""" tle"""
+		self._get()
+		if self._tle is None:
+			self._tle = TLE(self._j['name'], self._j['line1'], self._j['line2'])
+		return self._tle
+
+	@property
 	def tle2line(self):
 		""" tle2line """
 		self._get()
 		return [self._j['line1'], self._j['line2']]
 
+	@property
 	def tle3line(self):
 		""" tle3line """
 		self._get()
@@ -128,6 +199,8 @@ class TLEFetch:
 
 	def get(self):
 		""" get """
+		if self._debug:
+			print('TLEFetch: GET', self._sat_id, file=sys.stderr)
 		# try local first...
 		filename = self._local_filename()
 		if filename.exists() and filename.stat().st_size > 0:
@@ -135,6 +208,7 @@ class TLEFetch:
 				self._file_read()
 			except (FileNotFoundError,PermissionError):
 				self._j = None
+				self._tle = None
 			if self._j:
 				# see if the file is still young enough... make this slightly random to help not hit the server too much
 				epoch_age_days, epoch_age_hours = self.epoch_age()
@@ -148,6 +222,7 @@ class TLEFetch:
 
 		# clearly worth network checking again ...
 		self._j = None
+		self._tle = None
 		try:
 			retry_count = self._RETRY_COUNT
 			while self._j is None and retry_count > 0:
@@ -199,11 +274,17 @@ class TLEFetch:
 
 	def _file_read(self):
 		""" _file_read """
+		if self._debug:
+			print('TLEFetch: FILE_READ', self._sat_id, file=sys.stderr)
+		self._j = None
+		self._tle = None
 		with self._local_filename().open(mode='r', encoding='utf-8') as fd:
 			self._j = json.load(fd)
 
 	def _file_write(self):
 		""" _file_write """
+		if self._debug:
+			print('TLEFetch: FILE_WRITE', self._sat_id, file=sys.stderr)
 		if self._j is None:
 			raise TLEFetchError('no daat to write') from None
 
@@ -226,7 +307,8 @@ class TLEFetch:
 			filename.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
 		except PermissionError:
-			# print('PERMISSION ERROR')
+			if self._debug:
+				print('TLEFetch: PERMISSION ERROR', self._sat_id, file=sys.stderr)
 			# just means we already have that date saved-away - not an issue
 			pass
 		except Exception as e:
@@ -244,18 +326,22 @@ class TLEFetch:
 
 	def _network_read(self):
 		""" network_read """
-
+		if self._debug:
+			print('TLEFetch: NETWORK_READ', self._sat_id, file=sys.stderr)
 		self._j = None
+		self._tle = None
 		def _network_fetch(url:str):
 			""" _network_fetch() """
 			headers = {
 				# required to make website respond cleanly
-				'Accept': 'text/plain',
+				'Accept': 'application/json, text/plain',
 				'Accept-Encoding': 'identity',
 				'Referer': 'https://google.com/',
 				'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0',
 			}
 			if TLEFetch._session is None:
+				if self._debug:
+					print('TLEFetch: NETWORK_SESSION', self._sat_id, file=sys.stderr)
 				TLEFetch._session = requests.Session()
 			response = TLEFetch._session.get(url, headers=headers, timeout=20)
 			response.raise_for_status()
@@ -265,6 +351,8 @@ class TLEFetch:
 			response = _network_fetch(self._url)
 		except requests.exceptions.Timeout:
 			# classic can't connect issue with timeout - lets retry
+			if self._debug:
+				print('TLEFetch: TIMEOUT', self._sat_id, file=sys.stderr)
 			return
 		except requests.exceptions.ConnectionError as e:
 			# classic can't connect issue
@@ -272,14 +360,20 @@ class TLEFetch:
 				root_os_error = e.args[0].reason.args[0]
 			except (AttributeError, IndexError):
 				root_os_error = e
+			if self._debug:
+				print('TLEFetch: HTTP Error', self._sat_id, 'code=', root_os_error, file=sys.stderr)
 			raise TLEFetchError('HTTP Error %s: %s' % (root_os_error, self._url)) from None
 		except requests.exceptions.HTTPError as e:
 			# this would be something like a 404 (Not Found) or 406 (Not Acceptable) response
+			if self._debug:
+				print('TLEFetch: HTTP Error', self._sat_id, 'code=', e.response.status_code, file=sys.stderr)
 			if 400 <= e.response.status_code < 500:
 				raise TLEFetchError('HTTP Client Error %d: %s' % (e.response.status_code, self._url)) from None
 			raise TLEFetchError('HTTP Server Error %d: %s' % (e.response.status_code, self._url)) from None
 		except requests.exceptions.RequestException as e:
 			# something else happened - not great!
+			if self._debug:
+				print('TLEFetch: HTTP Error', self._sat_id, 'code=', e, file=sys.stderr)
 			# let it pass up - it could be important to see what happened
 			raise TLEFetchError(e) from None
 
@@ -287,6 +381,7 @@ class TLEFetch:
 		if self._source == 'Ivan':
 			# so simple
 			self._j = response.json()
+			self._tle = None
 
 		if self._source == 'CelesTrak':
 			# syntetic creation of JSON data - it's kinda reversed; but so be it.
@@ -303,14 +398,7 @@ class TLEFetch:
 				'line1': tle_three_lines[1],
 				'line2': tle_three_lines[2],
 			}
-
-	def __del__(self):
-		""" __del__ """
-		# is this really needed? No. Do we do it anyway? Yes.
-		if TLEFetch._session is not None:
-			# clean up after ourselves
-			TLEFetch._session.close()
-			TLEFetch._session = None
+			self._tle = None
 
 	def _tle_to_sat_id(self, line1):
 		""" _tle_to_sat_id """
@@ -318,18 +406,15 @@ class TLEFetch:
 
 	def _tle_to_datetime(self, line1):
 		""" _tle_to_datetime """
-
 		# Extract the epoch substring from TLE line 1 (columns 19-32)
 		epoch_str = line1[18:32].strip()
-		year_str = epoch_str[:2]
-		day_fraction = epoch_str[2:]
+		year_two_digit = int(epoch_str[:2])
+		day_fraction = float(epoch_str[2:])
 		# Calculate full 4-digit year (e.g., 2026)
-		year = int(year_str)
-		year += 2000 if year < 57 else 1900
+		year = (2000 if year_two_digit < 57 else 1900) + year_two_digit
 		# Calculate days and fractional seconds
-		total_days = float(day_fraction)
-		day_of_year = int(total_days)
-		fraction = total_days - day_of_year
+		day_of_year = int(day_fraction)
+		fraction = day_fraction - day_of_year
 		# Convert day of year to month and day
 		# Create a base date on Jan 1st of that year
 		base_date = datetime(year, 1, 1)
@@ -338,7 +423,6 @@ class TLEFetch:
 		epoch_datetime = base_date + timedelta(days=day_of_year - 1, seconds=fraction * 86400)
 		# dump the microseconds - we don't need that much accuracy and dump the timezone
 		epoch_datetime = epoch_datetime.replace(microsecond=0, tzinfo=timezone.utc)
-
 		return epoch_datetime
 
 def _main(args=None):
@@ -351,20 +435,20 @@ def _main(args=None):
 	source = 'CelesTrak'
 
 	satellites = {
-		'iss': 25544,
-		'goes_15': 36411,
-		'arktika_m2': 58584,
-		'landsat_9': 49260,
-		'css': 48274,
-		'hst': 20580,
-		'swift_telescope': 28485,
-		'link_rescue': 69792,
+		25544:	'iss',
+		36411:	'goes_15',
+		58584:	'arktika_m2',
+		49260:	'landsat_9',
+		48274:	'css',
+		20580:	'hst',
+		28485:	'swift_telescope',
+		69792:	'link_rescue',
 	}
 
-	for name, sat_id in satellites.items():
-		tf = TLEFetch(sat_id, source=source)
+	for sat_id, variable_name in satellites.items():
+		tf = TLEFetch(sat_id, source=source, debug=debug)
 		# j = tf.get()
-		tle = tf.tle3line()
+		tle = tf.tle
 		if debug:
 			epoch_age_days, epoch_age_hours = tf.epoch_age()
 			print('# age: %s %s %s %s' % (
@@ -372,13 +456,12 @@ def _main(args=None):
 				epoch_age_hours, 'hours' if epoch_age_hours > 1 else 'hour',
 			), end='\t')
 
-		print('#', tf.satelliteId, tf.name, tf.date.isoformat())
-		print('%s_%d_tle = [' % (name, sat_id))
-		print('\t' + "'" + tle[1] + "',")
-		print('\t' + "'" + tle[2] + "',")
+		print('#', tf.satelliteId, tle.name, tf.date.isoformat())
+		print('%s_%d_tle = [' % (variable_name, sat_id))
+		print('\t' + "'" + tle.line1 + "',")
+		print('\t' + "'" + tle.line2 + "',")
 		print(']')
 		print('')
 
 if __name__ == '__main__':
-	import sys			# pylint: disable=C0415
 	_main(args=sys.argv[1:])
