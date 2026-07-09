@@ -37,7 +37,8 @@ class TLEFetchError(Exception):
 class TLEFetch:
 	""" TLEFetch """
 
-	_URL = 'https://tle.ivanstanojevic.me/api/tle/%d'
+	_URL_IVAN = 'https://tle.ivanstanojevic.me/api/tle/%d'
+	_URL_CELESTRAK = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=%d&FORMAT=TLE'
 
 	_DIR_TLECache = '~/.cache/tle.ivanstanojevic.me'
 	_LATEST_PREFIX = 'latest--tle--values'
@@ -45,10 +46,20 @@ class TLEFetch:
 	_TLE_AGE_OK = 24			# be ok with a TLE file that has an epoch that's up to the age of +/- 24 hours
 	_FILE_AGE_OK = 2			# recheck after +/- 2 hours if the local file epoch is older than 24 hours (above)
 
-	def __init__(self, sat_id:int, directory:str=None):
+	def __init__(self, sat_id:int, source='Ivan', directory:str=None):
 		""" ConstellationLocations """
 
 		self._sat_id = sat_id
+
+		if source not in ['Ivan', 'CelesTrak']:
+			raise TLEFetchError('%s: source not supported' % (source)) from None
+
+		self._url_source = source
+
+		if self._url_source == 'Ivan':
+			self._url = self._URL_IVAN % (self.sat_id)
+		if self._url_source == 'CelesTrak':
+			self._url = self._URL_CELESTRAK % (self.sat_id)
 
 		if directory:
 			self._directory = directory
@@ -222,31 +233,75 @@ class TLEFetch:
 			}
 			response = requests.get(url, headers=headers, timeout=20)
 			response.raise_for_status()
-			return response.json()
+			return response
 
-		url = self._URL % (self.sat_id)
-		self._j = None
 		try:
-			self._j = _network_fetch(url)
+			response = _network_fetch(self._url)
 		except requests.exceptions.Timeout:
 			# classic can't connect issue with timeout
-			raise TLEFetchError('HTTP Error %s: %s' % ('Timeout', url)) from None
+			raise TLEFetchError('HTTP Error %s: %s' % ('Timeout', self._url)) from None
 		except requests.exceptions.ConnectionError as e:
 			# classic can't connect issue
 			try:
 				root_os_error = e.args[0].reason.args[0]
 			except (AttributeError, IndexError):
 				root_os_error = e
-			raise TLEFetchError('HTTP Error %s: %s' % (root_os_error, url)) from None
+			raise TLEFetchError('HTTP Error %s: %s' % (root_os_error, self._url)) from None
 		except requests.exceptions.HTTPError as e:
 			# this would be something like a 404 (Not Found) or 406 (Not Acceptable) response
 			if 400 <= e.response.status_code < 500:
-				raise TLEFetchError('HTTP Client Error %d: %s' % (e.response.status_code, url)) from None
-			raise TLEFetchError('HTTP Server Error %d: %s' % (e.response.status_code, url)) from None
+				raise TLEFetchError('HTTP Client Error %d: %s' % (e.response.status_code, self._url)) from None
+			raise TLEFetchError('HTTP Server Error %d: %s' % (e.response.status_code, self._url)) from None
 		except requests.exceptions.RequestException as e:
 			# something else happened - not great!
 			# let it pass up - it could be important to see what happened
 			raise TLEFetchError(e) from None
+
+		if self._url_source == 'Ivan':
+			self._j = response.json()
+
+		if self._url_source == 'CelesTrak':
+			three_lines = response.text.splitlines()
+			# syntetic creation of JSON data - it's kinda reversed; but so be it.
+			self._j = {
+				'satelliteId': self._tle_to_sat_id(three_lines[1]),
+				'name': three_lines[0].strip(),
+				'date': self._tle_to_datetime(three_lines[1]),
+				'line1': three_lines[1],
+				'line2': three_lines[2],
+			}
+
+	def _tle_to_sat_id(self, line1):
+		""" _tle_to_sat_id """
+		return int(line_1[2:8].strip())
+
+	def _tle_to_datetime(self, line1):
+		""" _tle_to_datetime """
+
+		# Extract the epoch substring from TLE line 1 (columns 19-32)
+		epoch_str = line1[18:32].strip()
+
+		year_str = epoch_str[:2]
+		day_fraction = epoch_str[2:]
+
+		# Calculate full 4-digit year (e.g., 2026)
+		year = int(year_str)
+		year += 2000 if year < 57 else 1900
+
+		# Calculate days and fractional seconds
+		total_days = float(day_fraction)
+		day_of_year = int(total_days)
+		fraction = total_days - day_of_year
+
+		# Convert day of year to month and day
+		# Create a base date on Jan 1st of that year
+		base_date = datetime(year, 1, 1).replace(tzinfo=timezone.utc)
+
+		# timedelta takes days, so we add (day_of_year - 1) days
+		# plus the fractional day converted to hours/minutes/seconds
+		epoch_datetime = base_date + timedelta(days=day_of_year - 1, seconds=fraction * 86400)
+
+		return epoch_datetime
 
 def _main(args=None):
 	""" _main """
@@ -254,6 +309,8 @@ def _main(args=None):
 	debug = False
 	if args and len(args) >= 1:
 		debug = bool(args[0] == '-d')
+
+	source = 'CelesTrak'
 
 	satellites = {
 		'iss': 25544,
@@ -267,7 +324,7 @@ def _main(args=None):
 	}
 
 	for name, sat_id in satellites.items():
-		tf = TLEFetch(sat_id)
+		tf = TLEFetch(sat_id, source=source)
 		# j = tf.get()
 		tle = tf.tle3line()
 		if debug:
