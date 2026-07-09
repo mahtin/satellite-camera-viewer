@@ -1,0 +1,14 @@
+# MANIFEST.in
+
+include LICENSE
+include README.md
+include CHANGELOG.md
+
+# required for program icon ...
+include img/satellite-camera-viewer-icon.*
+
+# cleaning up after python ...
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .DS_Store
+prune docs/build
