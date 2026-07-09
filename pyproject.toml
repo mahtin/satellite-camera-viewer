@@ -1,13 +1,13 @@
 [build-system]
 requires = [
-  'setuptools>=61.0.0'
+    'setuptools>=61.0.0'
 ]
 build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'satellite-camera-viewer'
-version = '0.5.1'
-description = 'A full sky star chart showing the view from a camera mounted on a earth orbiting satellite'
+version = '0.6.1'
+description = 'A full sky star chart application showing the view from a camera mounted on a earth orbiting satellite'
 readme = 'README.md'
 requires-python = '>=3.10'
 classifiers = [
@@ -18,23 +18,41 @@ classifiers = [
 ]
 license = 'MIT'
 license-files = ['LICENSE' ]
-authors = [ { name = 'Martin J Levy', email = 'mahtin@mahtin.com' } ]
+authors = [
+    { name = 'Martin J Levy', email = 'mahtin@mahtin.com' }
+]
 dependencies = [
-  'astropy>=7.2.0',
-  'numpy>=2.4.0',
-  'matplotlib>=3.10.0',
-  'cartopy>=0.25.0',
-  'pyvista>=0.47.0',
-  'requests>=2.33.0',
-  'scipy>=1.17.0',
-  'sgp4>=2.25',
-  'spherical-geometry>=1.4.0',
-  'pillow==12.2.0',
+    'astropy>=7.2.0',
+    'numpy>=2.4.0',
+    'matplotlib>=3.10.0',
+    'cartopy>=0.25.0',
+    'pyvista>=0.47.0',
+    'requests>=2.33.0',
+    'scipy>=1.17.0',
+    'sgp4>=2.25',
+    'spherical-geometry>=1.4.0',
+    'pillow==12.2.0',
 ]
 
 [tool.setuptools.packages.find]
-where = ['src/']
-include = [ 'SatelliteCameraViewer', 'SatelliteCameraViewer.SatelliteCamera', 'SatelliteCameraViewer.Cubesat', 'SatelliteCameraViewer.StarCatalog', 'SatelliteCameraViewer.CameraImage' ]
+where = [
+    'src/',
+]
+include = [
+    'SatelliteCameraViewer',
+    'SatelliteCameraViewer.CameraImage',
+    'SatelliteCameraViewer.Constellations',
+    'SatelliteCameraViewer.Cubesat',
+    'SatelliteCameraViewer.SatelliteCamera',
+    'SatelliteCameraViewer.StarCatalog',
+]
+
+[tool.setuptools.package-data]
+SatelliteCameraViewer = [
+    '*.png',
+    '*.ico',
+    '*.xbm',
+]
 
 [project.optional-dependencies]
 dev = [ 'pytest>=7.0.0' ]
@@ -47,5 +65,5 @@ satellitecameraviewer = 'SatelliteCameraViewer.__main__:main'
 'Repository' = 'https://github.com/mahtin/satellite-camera-viewer'
 'Documentation' = 'https://satellite-camera-viewer.readthedocs.io/'
 'Bug Tracker' = 'https://github.com/mahtin/satellite-camera-viewer/issues'
-'Changelog' = "https://github.com/mahtin/satellite-camera-viewer/blob/main/CHANGELOG.md"
+'Changelog' = 'https://github.com/mahtin/satellite-camera-viewer/blob/main/CHANGELOG.md'
 
