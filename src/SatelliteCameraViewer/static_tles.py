@@ -23,10 +23,20 @@ class TLE:
         return [self.name, self.line1, self.line2]
 
     @property
+    def tle2line(self):
+        """ tle2line """
+        return self.as_array[1:]
+
+    @property
+    def tle3line(self):
+        """ tle3line """
+        return self.as_array
+
+    @property
     def age(self):
         """ age - Extract the epoch string """
 
-	# line1, chars 18-31 (0-indexed)
+        # line1, chars 18-31 (0-indexed)
         epoch_str = self.line1[18:32].strip()
 
         # Parse the year and the day of the year (including fractional day)

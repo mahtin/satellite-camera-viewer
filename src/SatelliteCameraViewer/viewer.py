@@ -99,13 +99,18 @@ def viewer(args=None):
 	def setup_satellite_selection(parent):
 		""" setup_satellite_selection """
 		satellite_frame = ui.labelframe(parent, 'Satellite Selection', row=row, col=0, colspan=2, sticky='nw')
-		satellite_names = [v.name for v in static_tles]
 		s_row = 0
 		s_col = 0
+
+		# 1) satellite selection section
+		satellite_names = [v.name for v in static_tles]
 		ui.satellite_selection(satellite_frame, s_row, s_col, satellite_names)
 		s_row += 1
+
+		# 2) satellite camera pointing section
 		attitude_names = ['vv', 'nadir', 'ground', 'star']
 		ui.satellite_attitude_buttons(satellite_frame, s_row, s_col, attitude_names)
+		s_row += 1
 
 	setup_focal_length(choices_frame)
 	setup_star_magnitude(choices_frame)
