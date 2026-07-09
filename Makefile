@@ -5,7 +5,7 @@
 PYTHON = python3
 PYLINT = pylint
 TWINE = ${PYTHON} -m twine
-BUILD = ${PYTHON} -m build -C--quiet
+BUILD = ${PYTHON} -m build -C--quiet .
 
 NAME = "satellite-camera-viewer"
 NAME_ = "satellite_camera_viewer"
@@ -71,6 +71,7 @@ upload-github:
 
 upload-pypi: whl
 	@ v=`ls -t dist/${NAME_}-*-py3-none-any.whl | head -1` ; echo $(TWINE) check $$v ; $(TWINE) check $$v
+	${TWINE} check `ls -t dist/${NAME_}-*-py3-none-any.whl|head -1`
 	${TWINE} upload --repository ${NAME} `ls -t dist/${NAME_}-*-py3-none-any.whl|head -1`
 
 DOCS = "docs"
