@@ -270,6 +270,9 @@ class TLEFetch:
 		""" _local_filename() """
 		if prefix is None:
 			prefix = self._LATEST_PREFIX
+		if ':' in prefix:
+			# Windows is so unhappy with colons in the filename :(
+			prefix = prefix.replace(':', '-')
 		return self._directory / (str(self.sat_id) + '.' + prefix + '.' + self._EXTENSION)
 
 	def _file_read(self):
@@ -446,9 +449,13 @@ def _main(args=None):
 	}
 
 	for sat_id, variable_name in satellites.items():
-		tf = TLEFetch(sat_id, source=source, debug=debug)
-		# j = tf.get()
-		tle = tf.tle
+		try:
+			tf = TLEFetch(sat_id, source=source, debug=debug)
+			# j = tf.get()
+			tle = tf.tle
+		except TLEFetchError as e:
+			print('ERROR: TLEFetchError: %s' % (e), file=sys.stderr)
+			continue
 		if debug:
 			epoch_age_days, epoch_age_hours = tf.epoch_age()
 			print('# age: %s %s %s %s' % (
