@@ -1,7 +1,6 @@
 """ ui.py """
 
 import sys
-import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, TclError
 
@@ -21,8 +20,12 @@ class UserInterface:
 	def __init__(self, title=None):
 		""" UserInterface """
 		self._root = tk.Tk()
+		# this is a very low-level call that's not well documented in the Python code; but is here ...https://www.tcl-lang.org/man/tcl/TkCmd/tk.html
+		self._window_system = self.root.tk.call('tk', 'windowingsystem')	# returns x11, win32 or aqua
+		# self.root.protocol('WM_DELETE_WINDOW', self._on_closing)
 		self._set_icon()
-
+		# this is the basics of an OS independent menu bar
+		self._set_menubar()
 		# configure UI gloablly first (presently disabled - as it affects the menu bar)
 		# self._root.option_add('*Font', (self.font['family'], self.font['size'] - 2))
 
@@ -108,12 +111,11 @@ class UserInterface:
 	def _set_icon(self):
 		""" _set_icon """
 		# self._root.iconbitmap(default='satellite-camera-viewer.xbm')
-		platform_os = platform.system()
 		try:
-			if platform_os == 'Windows':
+			if self._window_system == 'win32':
 				# Windows handles .ico files perfectly via iconbitmap
 				self._root.iconbitmap('img/satellite-camera-viewer-icon.ico')
-			elif platform_os == 'Darwin':  # macOS
+			elif self._window_system == 'aqua':  # macOS
 				# Use a PNG or GIF file with iconphoto
 				self._root.iconphoto(False, tk.PhotoImage(file='img/satellite-camera-viewer-icon.png'))
 			else:
@@ -124,7 +126,7 @@ class UserInterface:
 
 	# MENU BAR etc
 
-	def _show_help_info(self):
+	def _show_help_info(self, event=None):
 		""" _show_help_info - Defines the uniform content for the Help Dialog """
 		messagebox.showinfo(
 			title='Help Satellite Camera Viewer',
@@ -132,7 +134,7 @@ class UserInterface:
 			detail='help coming soon',
 		)
 
-	def _show_about_info(self):
+	def _show_about_info(self, event=None):
 		""" _show_about_info - Defines the uniform content for the About Dialog """
 		messagebox.showinfo(
 			title='About Satellite Camera Viewer',
@@ -142,33 +144,113 @@ class UserInterface:
 				'Built with Python, Tkinter, Matplotlib.pyplot, AstroPy, PyVista, ...',
 		)
 
-	def menubar(self):
-		""" menubar """
+	def _menu_new_file(self, event=None):
+		""" _menu_new_file """
+		print('DEBUG: New File clicked', event)
+
+	def _menu_open_file(self, event=None):
+		""" _menu_open_file """
+		print('DEBUG: Open File clicked', event)
+
+	def _menu_save_file(self, event=None):
+		""" _menu_save_file """
+		print('DEBUG: Save File clicked', event)
+
+	def _window_close(self, event=None):
+		""" _window_close """
+		print('DEBUG: Window Close clicked', event)
+		# we only have one window - so it's a quit action by default
+		self.root.quit()
+
+	def _window_minimize(self, event=None):
+		""" _window_minimize """
+		print('DEBUG: Window Minimize clicked', event)
+		self._root.iconify()
+
+	def _menu_export(self, event=None):
+		""" _menu_export """
+		print('DEBUG: Export clicked', event)
+
+	def _menu_quit(self, event=None):
+		""" _menu_quit """
+		print('DEBUG: Quit clicked', event)
+		self.root.quit()
+
+	def _show_preferences(self):
+		""" _show_preferences """
+		print('DEBUG: Show Preferences clicked')
+
+	def _show(self, show):
+		""" _show """
+		if show:
+			print('DEBUG: Show event')
+		else:
+			# could stop timers etc etc
+			print('DEBUG: Hide event')
+
+	def _set_menubar(self):
+		""" _set_menubar """
 
 		self._menubar = tk.Menu(self.root)
 
+		self.root.option_add('*tearOff', False)
+
 		# File menu ...
-		file_menu = tk.Menu(self._menubar, tearoff=0)
-		file_menu.add_command(label='New File', command=lambda: print('DEBUG: New File clicked'))
-		file_menu.add_command(label='Open', command=lambda: print('DEBUG: Open clicked'))
+		file_menu = tk.Menu(self._menubar, tearoff=False)
+		file_menu.add_command(label='New...', accelerator='Command+N', command=self._menu_new_file)
+		file_menu.add_command(label='Open', accelerator='Command+O', command=self._menu_open_file)
+		file_menu.add_command(label='Save...', accelerator='Command+S', command=self._menu_save_file)
+		file_menu.add_command(label='Export', command=self._menu_export)
+		file_menu.add_command(label='Close Window', accelerator='Command+W', command=self._window_close)
 		file_menu.add_separator()
-		file_menu.add_command(label='Exit', command=self.root.quit)
+		# Quit does not belong on the File menu bar on MacOS ... but does on other OS's
+		if self._window_system != 'aqua':
+			file_menu.add_command(label='Quit', accelerator='Command+Q', command=self._menu_quit)
 		self._menubar.add_cascade(label='File', menu=file_menu)
 
 		# Help menu ...
-		help_menu = tk.Menu(self._menubar, tearoff=0)
-		help_menu.add_command(label='Help', command=self._show_help_info)
+		help_menu = tk.Menu(self._menubar, tearoff=False)
+		help_menu.add_command(label='Help', accelerator='Command+H', command=self._show_help_info)
 		help_menu.add_separator()
 		help_menu.add_command(label='About', command=self._show_about_info)
 		self._menubar.add_cascade(label='Help', menu=help_menu)
+
+		# Window menu ...
+		window_menu = tk.Menu(self._menubar, tearoff=False)
+		window_menu.add_command(label='Minimize', accelerator='Command+M', command=self._window_minimize)
+		self._menubar.add_cascade(label='Window', menu=window_menu)
 
 		# add the menubar
 		self.root.config(menu=self._menubar)
 
 		# special case code for specific os's ... sadly
-		if platform.system() == 'Darwin':
-			# special case on Mac ... add to apple menu
-			self.root.createcommand('tk::mac::ShowAboutBox', self._show_about_info)
+		if self._window_system == 'aqua':
+			# special case on Mac ... add to apple menu ... https://www.tcl-lang.org/man/tcl/TkCmd/tk_mac.html
+			self.root.createcommand('tk::mac::Quit', self._menu_quit)
+			# why isn't this ... 'tk::mac::ShowAboutBox'
+			self.root.createcommand('tkAboutDialog', self._show_about_info)
+			self.root.createcommand('tk::mac::ShowPreferences', self._show_preferences)
+
+			self.root.createcommand('tk::mac::OnHide', lambda: self._show(False))
+			self.root.createcommand('tk::mac::OnShow', lambda: self._show(True))
+
+		self.root.bind_all('<Command-h>', self._show_help_info)
+		self.root.bind_all('<Command-H>', self._show_help_info)
+		self.root.bind_all('<Command-n>', self._menu_new_file)
+		self.root.bind_all('<Command-N>', self._menu_new_file)
+		self.root.bind_all('<Command-o>', self._menu_open_file)
+		self.root.bind_all('<Command-O>', self._menu_open_file)
+		self.root.bind_all('<Command-s>', self._menu_save_file)
+		self.root.bind_all('<Command-S>', self._menu_save_file)
+		self.root.bind_all('<Command-w>', self._window_close)
+		self.root.bind_all('<Command-W>', self._window_close)
+
+		self.root.bind_all('<Command-m>', self._window_minimize)
+		self.root.bind_all('<Command-M>', self._window_minimize)
+
+		# These are added on all OS's as MacOS uses this via main menu item
+		self.root.bind_all('<Command-q>', self._menu_quit)
+		self.root.bind_all('<Command-Q>', self._menu_quit)
 
 	# TITLE
 
@@ -469,6 +551,25 @@ class UserInterface:
 		b.grid(row=row, column=col, padx=2, pady=2, sticky='ew')
 		self._reset_everything_button = b
 
+	# Bring to front after a small delay to allow for app init
+	def _center_and_delayed_bring_to_front_and_make_focus(self):
+		""" _center_and_delayed_bring_to_front_and_make_focus """
+		# center app window on screen
+		self.root.update_idletasks()
+		app_width = self.root.winfo_reqwidth()
+		app_height = self.root.winfo_reqheight()
+		x = (self.root.winfo_screenwidth() / 2) - (app_width / 2)
+		y = (self.root.winfo_screenheight() / 2) - (app_height / 2)
+		self.root.geometry('%dx%d+%d+%d' % (app_width, app_height, x, y))
+		# now make sure app is fully in focus
+		self.root.deiconify()			# Bring back if minimized
+		self.root.lift()			# Bring to top of Z-order
+		self.root.attributes('-topmost', True)	# Set always on top
+		self.root.focus_force()
+		self.root.attributes('-topmost', False)	# Optional: set to False to allow other apps over it
+
+
 	def mainloop(self):
 		""" mainloop """
+		_ = self.root.after(1, lambda: self._center_and_delayed_bring_to_front_and_make_focus())
 		self.root.mainloop()

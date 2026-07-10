@@ -25,9 +25,6 @@ def viewer(args=None):
 	# start core and pass it the UI
 	core = CoreCode(ui=ui)
 
-	# this is the basics of an OS dependent menu bar
-	menu_bat = ui.menubar()
-
 	# all the frames ...
 	top_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, anchor='n')
 	bottom_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, anchor='n')
@@ -179,24 +176,24 @@ def viewer(args=None):
 	# prime everything by runing timer expiry code
 	core.timer_went_off()
 
-	# Bring to front after a small delay to allow for app init
-	def center_and_delayed_bring_to_front_and_make_focus(ui):
-		""" center_and_delayed_bring_to_front_and_make_focus """
-		# center app window on screen
-		ui.root.update_idletasks()
-		app_width = ui.root.winfo_reqwidth()
-		app_height = ui.root.winfo_reqheight()
-		x = (ui.root.winfo_screenwidth() / 2) - (app_width / 2)
-		y = (ui.root.winfo_screenheight() / 2) - (app_height / 2)
-		ui.root.geometry('%dx%d+%d+%d' % (app_width, app_height, x, y))
-		# now make sure app is fully in focus
-		ui.root.deiconify()			# Bring back if minimized
-		ui.root.lift()				# Bring to top of Z-order
-		ui.root.attributes('-topmost', True)	# Set always on top
-		ui.root.focus_force()
-		ui.root.attributes('-topmost', False)	# Optional: set to False to allow other apps over it
+	## Bring to front after a small delay to allow for app init
+	#def center_and_delayed_bring_to_front_and_make_focus(ui):
+	#	""" center_and_delayed_bring_to_front_and_make_focus """
+	#	# center app window on screen
+	#	ui.root.update_idletasks()
+	#	app_width = ui.root.winfo_reqwidth()
+	#	app_height = ui.root.winfo_reqheight()
+	#	x = (ui.root.winfo_screenwidth() / 2) - (app_width / 2)
+	#	y = (ui.root.winfo_screenheight() / 2) - (app_height / 2)
+	#	ui.root.geometry('%dx%d+%d+%d' % (app_width, app_height, x, y))
+	#	# now make sure app is fully in focus
+	#	ui.root.deiconify()			# Bring back if minimized
+	#	ui.root.lift()				# Bring to top of Z-order
+	#	ui.root.attributes('-topmost', True)	# Set always on top
+	#	ui.root.focus_force()
+	#	ui.root.attributes('-topmost', False)	# Optional: set to False to allow other apps over it
 
-	_ = ui.root.after(1, lambda ui=ui: center_and_delayed_bring_to_front_and_make_focus(ui))
+	#_ = ui.root.after(1, lambda ui=ui: center_and_delayed_bring_to_front_and_make_focus(ui))
 
 	ui.mainloop()
 	# not reached
