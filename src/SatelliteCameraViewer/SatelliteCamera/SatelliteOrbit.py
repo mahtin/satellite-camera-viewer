@@ -21,12 +21,12 @@ Satellite orbit from 2LE or TLE/3LE
 # Note: The specific inertial reference frame used is often the J2000 frame, meaning the X-axis points to the
 # vernal equinox at the epoch of Jan 1, 2000, at noon.
 
-import math
 from datetime import datetime, timezone
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, TEME, GCRS, ITRS, EarthLocation, get_body
 import astropy.units as u
+from scipy.spatial.transform import Rotation as R
 
 from sgp4.api import Satrec, WGS72, SGP4_ERRORS
 from sgp4.conveniences import sat_epoch_datetime
@@ -73,6 +73,11 @@ class SatelliteOrbit:
         self._tle = tle
         self._rebuild_from_tle()
 
+    @property
+    def sat_num(self):
+        """ sat_num """
+        return self._sat.satnum
+
     def _rebuild_from_tle(self):
         """ _rebuild_from_tle """
         if self._tle is None or len(self._tle) not in [2,3] or None in self._tle:
@@ -89,7 +94,7 @@ class SatelliteOrbit:
 
     def _teme(self, obs_time:datetime):
         """
-        _teme
+        _teme() - TEME (True Equator, Mean Equinox) - an Earth-centered inertial (ECI) coordinate frame
 
         :param obs_time: Time (in UTC).
         :type t: datetime
@@ -108,9 +113,38 @@ class SatelliteOrbit:
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return r_teme_km, v_teme_km_s
 
+    def _lvlh(self, obs_time: datetime):
+        """
+        _lvlh() - LVLH (Local Vertical, Local Horizontal) - a rotating, spacecraft-centered coordinate system
+
+        :param obs_time: Time (in UTC).
+        :type t: datetime
+
+        :return: Returns LVLH frame unit vectors from time (and hence ECI position and velocity).
+            Based on ESA ISS Reference Frame Definition:
+            Z_LVLH = -r_hat (nadir or -zenith)
+            Y_LVLH = -h_hat (opposite orbit normal)
+            X_LVLH = Y × Z (velocity direction)
+        :rtype: dict
+        """
+        r_eci, v_eci = self._teme(obs_time)
+        r = np.array(r_eci)
+        v = np.array(v_eci)
+
+        z_lvlh = -r / np.linalg.norm(r)
+        h = np.cross(r, v)
+        y_lvlh = -h / np.linalg.norm(h)
+        x_lvlh = np.cross(y_lvlh, z_lvlh)
+
+        return {'X': x_lvlh, 'Y': y_lvlh, 'Z': z_lvlh}
+
     def _sun_vector_eci_km(self, obs_time: datetime):
         """
-        _sun_vector_eci_km - Returns Sun vector in ECI (GCRS) coordinates, km.
+        _sun_vector_eci_km() - Returns Sun vector in ECI (GCRS) coordinates, km.
+
+        :param obs_time: Time (in UTC).
+        :type t: datetime
+
         """
         t = Time(obs_time.replace(tzinfo=timezone.utc))
         sun_gcrs = get_body('sun', t)
@@ -127,6 +161,8 @@ class SatelliteOrbit:
 
         :param obs_time: Observation time (in UTC).
         :type obs_time: datetime
+        :return: is satellite in eclipse
+        :rtype: bool
         """
 
         sun_eci_km = self._sun_vector_eci_km(obs_time)
@@ -146,6 +182,31 @@ class SatelliteOrbit:
 
         # is satellite inside Earth's shadow cylinder?
         return perpendicular_distance < u.R_earth.to(u.km)
+
+    def sat_solar_beta_angle(self, obs_time: datetime):
+        """
+        sat_solar_beta_angle - return beta angle
+
+        :param obs_time: Observation time (in UTC).
+        :type obs_time: datetime
+        :return: beta angle in degrees
+        :rtype: float
+
+        In orbital mechanics, the beta angle (β) is the angle between a satellite's orbital plane around
+        Earth and the geocentric position of the Sun. The beta angle determines the percentage of time
+        that a satellite in low Earth orbit (LEO) spends in direct sunlight, absorbing solar radiation
+
+        Yearly Variation: The satelite beta angle fluctuates during the year. For example, the ISS valies
+        between roughly -75 and +75 degrees over a 60-day precession period and on an annual cycle.
+        """
+        r_eci, v_eci = self._teme(obs_time)
+
+        sun_eci = self._sun_vector_eci_km(obs_time)
+        s_hat = sun_eci / np.linalg.norm(sun_eci)
+        h = np.cross(r_eci, v_eci)
+        h_hat = h / np.linalg.norm(h)
+        beta = np.arcsin(np.dot(h_hat, s_hat))
+        return np.degrees(beta)
 
     def eci_position_vector(self, obs_time: datetime):
         """
@@ -231,7 +292,91 @@ class SatelliteOrbit:
         """ sat_altitude - Perigee, Apogee, and Inclination """
         return self._sat.radiusearthkm * self._sat.altp, self._sat.radiusearthkm * self._sat.alta, self._sat.inclo
 
-    @property
-    def sat_num(self):
-        """ sat_num """
-        return self._sat.satnum
+    def sat_xvv_attitude_quaternion(self, obs_time):
+        """
+        sat_xvv_attitude_quaternion() - XVV ATTITUDE (X-axis aligned with velocity)
+
+        Construct quaternion for XVV attitude:
+          +X = velocity direction
+          +Z = nadir
+          +Y = completes RH frame
+        """
+        lvlh = self._lvlh(obs_time)
+        R_body = np.vstack([lvlh['X'], lvlh['Y'], lvlh['Z']])
+        return R.from_matrix(R_body).as_quat(scalar_first=True)
+
+    # ------------------------------------------------------------
+    # ISS Specific functions
+    # ------------------------------------------------------------
+
+    def iss_tea_offsets_deg(self, port_config='DEFAULT'):
+        """
+        iss_tea_offsets_deg() - TEA (Torque Equilibrium Attitude) OFFSETS (NASA MCS)
+        TEA values from NASA ISS Motion Control System documentation:
+        Current +XVV TEA: yaw=-4 deg, roll=0.9 deg
+        Pitch varies from -12 to -2 deg depending on visiting vehicles.
+        """
+        if port_config == 'DEFAULT':
+            pitch = -7.0    # midpoint of NASA's -12 to -2 deg range
+        else:
+            pitch = port_config
+
+        tea_deg = {
+            'yaw': -4.0,
+            'pitch': pitch,
+            'roll': 0.9,
+        }
+        return tea_deg
+
+    def iss_apply_tea_to_quaternion(self, q, tea_deg):
+        """
+        iss_apply_tea_to_quaternion() - Apply TEA yaw/pitch/roll offsets to a base attitude quaternion.
+        """
+        r_base = R.from_quat(q, scalar_first=True)
+        r_tea = R.from_euler('ZYX', [tea_deg['yaw'], tea_deg['pitch'], tea_deg['roll']], degrees=True)
+        return (r_tea * r_base).as_quat(scalar_first=True)
+
+    _iss_docking_port_axes_body = {
+        # Body-frame unit vectors for ISS docking ports.
+        # Based on ISS body axes defined in ESA reference frames.
+        # https://www.nasa.gov/wp-content/uploads/2022/06/508318main_iss_ref_guide_nov2010.pdf
+        # Unity (Node 1)
+        # Harmony (Node 2)
+        # Tranquility (Node 3 - except it's not really called Node 3)
+
+        # PORT NAME         [X (Velocity Vector), Y (left, perpendicular to the orbital plane), Z (Zenith or -Nadir)]
+        'N1_QUEST_AIRLOCK': np.array([ 0,-1, 0]),    # Unity (Node 1) Starboard (right)
+        'N1_STARBOARD':     np.array([ 0,-1, 0]),
+        'HARMONY_FORWARD':  np.array([+1, 0, 0]),    # Dragon/Starliner/Space Shuttle berthing
+        'N2_FORWARD':       np.array([+1, 0, 0]),
+        'HARMONY_ZENITH':   np.array([ 0, 0,+1]),    # Dragon/Starliner berthing
+        'N2_ZENITH':        np.array([ 0, 0,+1]),
+        'HARMONY_NADIR':    np.array([ 0, 0,-1]),    # Dragon/HTV/Cygnus berthing
+        'N2_NADIR':         np.array([ 0, 0,-1]),
+        'KIBO':             np.array([ 0,+1, 0]),    # Japanese Experiment Module (JAXA) (left)
+        'N2_PORT':          np.array([ 0,+1, 0]),
+        'COLUMBUS':         np.array([ 0,-1, 0]),    # The Columbus Laboratory Module (ESA) (right)
+        'N2_STARBOARD':     np.array([ 0,-1, 0]),
+        'CUPOLA':           np.array([ 0, 0,-1]),    # Tranquility (Node 3) Nadir port
+        'N3_NADIR':         np.array([ 0, 0,-1]),
+    }
+
+    def iss_docking_ports(self):
+        """ iss_docking_ports """
+        return self._iss_docking_port_axes_body.keys()
+
+    def iss_docking_port_vector_eci(self, port_name, quaternion_wxyz):
+        """
+        docking_port_vector_eci() - DOCKING PORT GEOMETRY (Derived from ISS body axes)
+        Body-frame unit vectors for ISS docking ports.
+        Based on ISS body axes defined in ESA reference frames.
+
+        Parameters:
+            port_name  : ISS port name
+        """
+        try:
+            iss_body_vec = self._iss_docking_port_axes_body[port_name]
+        except KeyError:
+            raise ValueError('Unknown ISS port: %s' % (port_name)) from None
+        r = R.from_quat(quaternion_wxyz, scalar_first=True)
+        return r.apply(iss_body_vec)

@@ -465,9 +465,33 @@ class SatelliteCamera():
         """ sat_lon_lat_alt """
         return self.sat_orbit.sat_lon_lat_alt(self.obs_time)
 
+    def sat_solar_beta_angle(self):
+        """ sat_solar_beta_angle """
+        return self.sat_orbit.sat_solar_beta_angle(self.obs_time)
+
     def sat_in_eclipse(self):
         """ sat_in_eclipse """
         return self.sat_orbit.sat_in_eclipse(self.obs_time)
+
+    def sat_xvv_attitude_quaternion(self):
+        """ sat_xvv_attitude_quaternion """
+        return self.sat_orbit.sat_xvv_attitude_quaternion(self.obs_time)
+
+    def iss_tea_offsets_deg(self, port_config='DEFAULT'):
+        """ iss_tea_offsets_deg """
+        return self.sat_orbit.iss_tea_offsets_deg(port_config)
+
+    def iss_apply_tea_to_quaternion(self, q, tea_deg):
+        """ iss_apply_tea_to_quaternion """
+        return self.sat_orbit.iss_apply_tea_to_quaternion(q, tea_deg)
+
+    def iss_docking_ports(self):
+        """ iss_docking_ports """
+        return self.sat_orbit.iss_docking_ports()
+
+    def iss_docking_port_vector_eci(self, port_name, quaternion_wxyz):
+        """ iss_docking_port_vector_eci """
+        return self.sat_orbit.iss_docking_port_vector_eci(port_name, quaternion_wxyz)
 
     def pixel_to_radec(self, px, py):
         """ pixel_to_radec """
