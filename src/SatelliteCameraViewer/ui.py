@@ -194,6 +194,12 @@ class UserInterface:
 			# could stop timers etc etc
 			print('DEBUG: Hide event')
 
+	def _handle_escape(self, event=None):
+		""" _handle_escape """
+		print('DEBUG: Escape clicked', event)
+		# for now we just stop the acceleration - but will do more later.
+		self.accelerate_button_off()
+
 	def _set_menubar_and_keyboard(self):
 		""" _set_menubar_and_keyboard """
 
@@ -270,6 +276,9 @@ class UserInterface:
 		self.root.bind_all('<'+command+'-q>', self._menu_quit)
 		self.root.bind_all('<'+command+'-Q>', self._menu_quit)
 
+		# We do this becuase we sometimes want to stop things
+		self.root.bind_all('<Escape>', self._handle_escape)
+
 	# TITLE
 
 	#def title_label(self, parent, text):
@@ -335,6 +344,12 @@ class UserInterface:
 	def accelerate_button_set(self, value):
 		""" accelerate_button_set """
 		self._accelerate_state.set(bool(value))
+
+	def accelerate_button_off(self):
+		""" accelerate_button_off """
+		if self._accelerate_state.get():
+			# accelerate is on
+			self._accelerate_button.invoke()
 
 	def do_stars(self, value):
 		""" do_stars """
