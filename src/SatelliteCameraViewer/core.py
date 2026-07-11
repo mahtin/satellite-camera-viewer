@@ -21,7 +21,7 @@ from .PaintConstellation import PaintConstellation
 from .ui import UserInterface
 from .misc import arcseconds_to_radians, ra_fix, mag_map, split_plot_mollweide_line_ra_dec_deg, split_plot_mollweide_line
 from .stars_in_polygon_icrs import stars_in_polygon_icrs
-from .static_tles import static_tles
+from .static_list_satellites import static_list_satellites
 
 #
 # Do this to debug:
@@ -89,7 +89,7 @@ class CoreCode:
 
 		self._timer_id = None
 
-		self._satellite_name = static_tles[0].name
+		self._satellite_name = static_list_satellites[0].name
 
 		# pointing
 		self._pointing = 'vv'
@@ -812,7 +812,7 @@ class CoreCode:
 
 		# RESET satellite selection
 		self.ui.satellite_selection_set(0)
-		self._satellite_name = static_tles[0].name
+		self._satellite_name = static_list_satellites[0].name
 		self.nikon.find_tle(self._satellite_name)
 
 		# RESET satelliite attitude

@@ -1,7 +1,8 @@
 """ NikonD5Camera """
 
 from .SatelliteCamera import SatelliteCamera
-from .static_tles import static_tles
+from .TLEFetch import TLEFetch
+from .static_list_satellites import static_list_satellites
 
 class NikonD5Camera:
 	""" NikonD5Camera """
@@ -51,7 +52,7 @@ class NikonD5Camera:
 			self.find_tle(satellite_name)
 		else:
 			# Define satellite orbit from TLE from a static set
-			self.tle = static_tles[0].as_array
+			self.tle = TLEFetch(static_list_satellites[0].sat_id).tle.as_array
 		self.now()
 		self.choose_attitude('vv')
 
@@ -78,13 +79,13 @@ class NikonD5Camera:
 	def find_tle(self, satellite_name):
 		""" find_tle """
 		ii = 0
-		for t in static_tles:
+		for t in static_list_satellites:
 			if satellite_name == t.name:
 				break
 			ii += 1
-		if ii >= len(static_tles):
+		if ii >= len(static_list_satellites):
 			raise ValueError('%s not in satellites list' % (satellite_name))
-		self.tle = static_tles[ii].as_array
+		self.tle = TLEFetch(static_list_satellites[ii].sat_id).tle.as_array
 
 	def camera_fov_radec_box(self):
 		""" camera_fov_radec_box """

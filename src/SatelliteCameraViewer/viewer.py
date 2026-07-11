@@ -4,7 +4,7 @@ import warnings
 
 from .core import CoreCode
 from .ui import UserInterface
-from .static_tles import static_tles
+from .static_list_satellites import static_list_satellites
 
 # Turn all RuntimeWarnings into exceptions
 warnings.filterwarnings('error', category=RuntimeWarning)
@@ -100,7 +100,7 @@ def viewer(args=None):
 		s_col = 0
 
 		# 1) satellite selection section
-		satellite_names = [v.name for v in static_tles]
+		satellite_names = [v.name for v in static_list_satellites]
 		ui.satellite_selection(satellite_frame, s_row, s_col, satellite_names)
 		s_row += 1
 
