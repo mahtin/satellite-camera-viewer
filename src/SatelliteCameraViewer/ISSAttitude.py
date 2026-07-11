@@ -113,7 +113,7 @@ class ISSAttitude:
 		"""
 		lvlh = cls.lvlh_frame(r_eci, v_eci)
 		R_body = np.vstack([lvlh['X'], lvlh['Y'], lvlh['Z']])
-		return R.from_matrix(R_body).as_quat()
+		return R.from_matrix(R_body).as_quat(scalar_first=True)
 
 	# ------------------------------------------------------------
 	# TEA (Torque Equilibrium Attitude) OFFSETS (NASA MCS)
@@ -138,9 +138,9 @@ class ISSAttitude:
 		"""
 		Apply TEA yaw/pitch/roll offsets to a base attitude quaternion.
 		"""
-		r_base = R.from_quat(q)
+		r_base = R.from_quat(q, scalar_first=True)
 		r_tea = R.from_euler('ZYX', [tea_deg['yaw'], tea_deg['pitch'], tea_deg['roll']], degrees=True)
-		return (r_tea * r_base).as_quat()
+		return (r_tea * r_base).as_quat(scalar_first=True)
 
 	# ------------------------------------------------------------
 	# SUN VECTOR + SOLAR BETA ANGLE
@@ -196,7 +196,7 @@ class ISSAttitude:
 			iss_body_vec = cls._iss_docking_port_axes_body[port_name]
 		except KeyError:
 			raise ValueError('Unknown port: %s' % (port_name)) from None
-		r = R.from_quat(quaternion_xyzw)
+		r = R.from_quat(quaternion_xyzw, scalar_first=True)
 		return r.apply(iss_body_vec)
 
 	@classmethod
@@ -254,12 +254,13 @@ def _main(args=None):
 
 	print('lvlh', end=' ')
 	for k, xyz_lvlh in lvlh.items():
-		print(k, [round(v,2) for v in xyz_lvlh], end=', ')
-	print('q_xvv', [round(v,2) for v in q_xvv], end=', ')
+		print(k, [round(float(v),2) for v in xyz_lvlh], end=', ')
+	print('q_xvv', [round(float(v),2) for v in q_xvv], end=', ')
 	print('tea(ypr)', [tea['yaw'], tea['pitch'], tea['roll']], end=', ')
-	print('q_tea', [round(v,2) for v in q_tea], end=', ')
-	print('port_vec', [round(v,2) for v in port_vec], end=', ')
-	print('beta%', round(beta,2), end=', ')
+	print('q_tea', [round(float(v),2) for v in q_tea], end=', ')
+	print('port_vec', [round(float(v),2) for v in port_vec], end=', ')
+
+	print('beta%', round(float(beta),2), end=', ')
 	if in_eclipse:
 		print('in_eclipse', end='')
 	else:
