@@ -25,7 +25,7 @@ class UserInterface:
 		# self.root.protocol('WM_DELETE_WINDOW', self._on_closing)
 		self._set_icon()
 		# this is the basics of an OS independent menu bar
-		self._set_menubar()
+		self._set_menubar_and_keyboard()
 		# configure UI gloablly first (presently disabled - as it affects the menu bar)
 		# self._root.option_add('*Font', (self.font['family'], self.font['size'] - 2))
 
@@ -167,6 +167,12 @@ class UserInterface:
 		print('DEBUG: Window Minimize clicked', event)
 		self._root.iconify()
 
+	def _window_fullscreen(self, event=None):
+		""" _window_fullscreen """
+		print('DEBUG: Window Fullscreen clicked', event)
+		self._fullscreen = not self._fullscreen
+		self._root.attributes(fullscreen=self._fullscreen)
+
 	def _menu_export(self, event=None):
 		""" _menu_export """
 		print('DEBUG: Export clicked', event)
@@ -188,36 +194,46 @@ class UserInterface:
 			# could stop timers etc etc
 			print('DEBUG: Hide event')
 
-	def _set_menubar(self):
-		""" _set_menubar """
+	def _set_menubar_and_keyboard(self):
+		""" _set_menubar_and_keyboard """
+
+		self._fullscreen = False
 
 		self._menubar = tk.Menu(self.root)
 
 		self.root.option_add('*tearOff', False)
 
+		if self._window_system == 'aqua':
+			# MacOS
+			command = 'Command'
+		else:
+			# Windows and Linux
+			command = 'Control'
+
 		# File menu ...
 		file_menu = tk.Menu(self._menubar, tearoff=False)
-		file_menu.add_command(label='New...', accelerator='Command+N', command=self._menu_new_file)
-		file_menu.add_command(label='Open', accelerator='Command+O', command=self._menu_open_file)
-		file_menu.add_command(label='Save...', accelerator='Command+S', command=self._menu_save_file)
+		file_menu.add_command(label='New...', accelerator=command+'+N', command=self._menu_new_file)
+		file_menu.add_command(label='Open', accelerator=command+'+O', command=self._menu_open_file)
+		file_menu.add_command(label='Save...', accelerator=command+'+S', command=self._menu_save_file)
 		file_menu.add_command(label='Export', command=self._menu_export)
-		file_menu.add_command(label='Close Window', accelerator='Command+W', command=self._window_close)
+		file_menu.add_command(label='Close Window', accelerator=command+'+W', command=self._window_close)
 		file_menu.add_separator()
 		# Quit does not belong on the File menu bar on MacOS ... but does on other OS's
 		if self._window_system != 'aqua':
-			file_menu.add_command(label='Quit', accelerator='Command+Q', command=self._menu_quit)
+			file_menu.add_command(label='Quit', accelerator=command+'+Q', command=self._menu_quit)
 		self._menubar.add_cascade(label='File', menu=file_menu)
 
 		# Help menu ...
 		help_menu = tk.Menu(self._menubar, tearoff=False)
-		help_menu.add_command(label='Help', accelerator='Command+H', command=self._show_help_info)
+		help_menu.add_command(label='Help', accelerator=command+'+H', command=self._show_help_info)
 		help_menu.add_separator()
 		help_menu.add_command(label='About', command=self._show_about_info)
 		self._menubar.add_cascade(label='Help', menu=help_menu)
 
 		# Window menu ...
 		window_menu = tk.Menu(self._menubar, tearoff=False)
-		window_menu.add_command(label='Minimize', accelerator='Command+M', command=self._window_minimize)
+		window_menu.add_command(label='Minimize', accelerator=command+'+M', command=self._window_minimize)
+		window_menu.add_command(label='Fill', accelerator='Control+'+command+'+F', command=self._window_fullscreen)
 		self._menubar.add_cascade(label='Window', menu=window_menu)
 
 		# add the menubar
@@ -234,23 +250,25 @@ class UserInterface:
 			self.root.createcommand('tk::mac::OnHide', lambda: self._show(False))
 			self.root.createcommand('tk::mac::OnShow', lambda: self._show(True))
 
-		self.root.bind_all('<Command-h>', self._show_help_info)
-		self.root.bind_all('<Command-H>', self._show_help_info)
-		self.root.bind_all('<Command-n>', self._menu_new_file)
-		self.root.bind_all('<Command-N>', self._menu_new_file)
-		self.root.bind_all('<Command-o>', self._menu_open_file)
-		self.root.bind_all('<Command-O>', self._menu_open_file)
-		self.root.bind_all('<Command-s>', self._menu_save_file)
-		self.root.bind_all('<Command-S>', self._menu_save_file)
-		self.root.bind_all('<Command-w>', self._window_close)
-		self.root.bind_all('<Command-W>', self._window_close)
+		self.root.bind_all('<'+command+'-h>', self._show_help_info)
+		self.root.bind_all('<'+command+'-H>', self._show_help_info)
+		self.root.bind_all('<'+command+'-n>', self._menu_new_file)
+		self.root.bind_all('<'+command+'-N>', self._menu_new_file)
+		self.root.bind_all('<'+command+'-o>', self._menu_open_file)
+		self.root.bind_all('<'+command+'-O>', self._menu_open_file)
+		self.root.bind_all('<'+command+'-s>', self._menu_save_file)
+		self.root.bind_all('<'+command+'-S>', self._menu_save_file)
+		self.root.bind_all('<'+command+'-w>', self._window_close)
+		self.root.bind_all('<'+command+'-W>', self._window_close)
 
-		self.root.bind_all('<Command-m>', self._window_minimize)
-		self.root.bind_all('<Command-M>', self._window_minimize)
+		self.root.bind_all('<'+command+'-m>', self._window_minimize)
+		self.root.bind_all('<'+command+'-M>', self._window_minimize)
+		self.root.bind_all('<Control-'+command+'-f>', self._window_fullscreen)
+		self.root.bind_all('<Control-'+command+'-F>', self._window_fullscreen)
 
 		# These are added on all OS's as MacOS uses this via main menu item
-		self.root.bind_all('<Command-q>', self._menu_quit)
-		self.root.bind_all('<Command-Q>', self._menu_quit)
+		self.root.bind_all('<'+command+'-q>', self._menu_quit)
+		self.root.bind_all('<'+command+'-Q>', self._menu_quit)
 
 	# TITLE
 
