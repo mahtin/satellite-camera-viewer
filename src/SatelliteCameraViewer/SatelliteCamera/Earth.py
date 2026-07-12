@@ -117,8 +117,6 @@ class Earth:
         if border_step is None:
             border_step = 10
 
-        t = Time(obs_time)
-
         # Satellite vector as [x, y, z]
         sat_eci_km = self._sat_eci_km(obs_time)
 
@@ -141,6 +139,7 @@ class Earth:
         sat_location = sat_eci_km_to_location(sat_eci_km, obs_time)
 
         # find earth from satellite location as [x, y, z]
+        t = Time(obs_time)
         earth_icrs = get_body('earth', t, location=sat_location).transform_to('icrs')
         earth_vec = earth_icrs.cartesian.xyz.value
 

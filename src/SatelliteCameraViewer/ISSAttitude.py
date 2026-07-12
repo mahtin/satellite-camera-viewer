@@ -68,7 +68,7 @@ class ISSAttitude:
 		:rtype: (float, float)
 		"""
 		sat = Satrec.twoline2rv(tle_line1, tle_line2, WGS72)
-		now_utc = datetime.now(timezone.utc)
+		now_utc = datetime.now(timezone.utc).replace(microsecond=0)
 		t = Time(now_utc)
 		# error: nonzero for any dates that produced errors, 0 otherwise.
 		# r_teme_km: position vectors in kilometers.
@@ -161,7 +161,7 @@ class ISSAttitude:
 		Returns Sun vector in ECI (GCRS) coordinates, km.
 		Works across all modern Astropy versions.
 		"""
-		now = Time(datetime.now(timezone.utc))
+		now = Time(datetime.now(timezone.utc).replace(microsecond=0))
 		sun_gcrs = get_sun(now)
 
 		# Use the cartesian representation (always available)

@@ -161,7 +161,7 @@ def _main(args=None):
 
 	location = [1000000.0, 1000000.0, 1000000000.0]
 	location = None
-	now_utc = datetime.now(timezone.utc)
+	now_utc = datetime.now(timezone.utc).replace(microsecond=0)
 	midnight_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
 	for d in range(31):
 		new_date = midnight_utc + timedelta(days=d)

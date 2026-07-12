@@ -151,7 +151,7 @@ class SatelliteCamera():
 
     def now(self):
         """ Observation time - updating to time now """
-        self._obs_time = datetime.now(timezone.utc)
+        self._obs_time = datetime.now(timezone.utc).replace(microsecond=0)
 
     def adjust_by_seconds(self, delta: int):
         """ accelerate time """

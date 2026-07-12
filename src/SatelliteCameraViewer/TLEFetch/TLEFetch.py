@@ -254,7 +254,7 @@ class TLEFetch:
 		except TLEFetchError:
 			# should not happen; but if it does, we return zeros
 			return 0, 0
-		current_time_utc = datetime.now(timezone.utc)
+		current_time_utc = datetime.now(timezone.utc).replace(microsecond=0)
 		epoch_age_timedelta = current_time_utc - tle_epoch_utc
 
 		epoch_age_days = int(epoch_age_timedelta.days)

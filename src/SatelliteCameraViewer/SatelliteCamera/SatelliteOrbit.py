@@ -284,8 +284,8 @@ class SatelliteOrbit:
 
     def sat_epoch_age(self):
         """ sat_epoch_age """
-        tle_epoch_utc = sat_epoch_datetime(self._sat).replace(tzinfo=timezone.utc)
-        current_time_utc = datetime.now(timezone.utc)
+        tle_epoch_utc = sat_epoch_datetime(self._sat).replace(microsecond=0, tzinfo=timezone.utc)
+        current_time_utc = datetime.now(timezone.utc).replace(microsecond=0)
         return current_time_utc - tle_epoch_utc
 
     def sat_altitude_inclination(self):
