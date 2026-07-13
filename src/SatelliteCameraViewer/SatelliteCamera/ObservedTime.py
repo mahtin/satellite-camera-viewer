@@ -5,7 +5,7 @@ ObservedTime model
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from astropy.time import Time
 
 #
