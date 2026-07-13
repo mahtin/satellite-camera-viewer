@@ -4,7 +4,6 @@ CameraFOV.py
 Field-of-view box (RA/Dec polygon)
 """
 
-from datetime import datetime
 import numpy as np
 
 from scipy.spatial import ConvexHull
@@ -26,7 +25,7 @@ class CameraFOV:
     """ CameraFOV """
 
     @classmethod
-    def camera_fov_radec_box(cls, camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime):
+    def camera_fov_radec_box(cls, camera: CameraIntrinsics, attitude: CameraAttitude, observed_time):
         """
         Compute RA/Dec for the four corners of the camera sensor.
         Returns a dict with RA/Dec for each corner and a SkyCoord polygon.
@@ -44,7 +43,7 @@ class CameraFOV:
         results = {}
 
         for name, (px, py) in corners.items():
-            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
             results[name] = {"ra_deg": ra_deg, "dec_deg": dec_deg}
             ra_list.append(ra_deg)
             dec_list.append(dec_deg)
@@ -117,7 +116,7 @@ class CameraFOV:
         return FallbackPoly()
 
     @classmethod
-    def camera_fov_solid_angle(cls, camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime):
+    def camera_fov_solid_angle(cls, camera: CameraIntrinsics, attitude: CameraAttitude, observed_time):
         """
         Compute the solid angle of the camera FOV in steradians
         using a robust 3D spherical polygon method.
@@ -134,7 +133,7 @@ class CameraFOV:
         # Convert each corner to a 3D GCRS unit vector
         verts = []
         for px, py in corners:
-            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
             sc = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame="gcrs")
             verts.append(sc.cartesian.xyz.value)
 
@@ -151,7 +150,7 @@ class CameraFOV:
     # =========================
 
     @classmethod
-    def camera_fov_angular_width_height(cls, camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime):
+    def camera_fov_angular_width_height(cls, camera: CameraIntrinsics, attitude: CameraAttitude, observed_time):
         """
         Compute:
         - Angular width and height of the camera FOV
@@ -163,27 +162,27 @@ class CameraFOV:
         cy = (camera.ny - 1) / 2.0
 
         # Center RA/Dec
-        # ra_c_deg, dec_c_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+        # ra_c_deg, dec_c_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
         # center = SkyCoord(ra=ra_c_deg * u.deg, dec=dec_c_deg * u.deg, frame="gcrs")
 
         # Horizontal FOV: center vs midpoints of left/right edges
-        ra_l_deg, dec_l_deg = camera.pixel_to_radec(0, cy, attitude, obs_time)
-        ra_r_deg, dec_r_deg = camera.pixel_to_radec(camera.nx - 1, cy, attitude, obs_time)
+        ra_l_deg, dec_l_deg = camera.pixel_to_radec(0, cy, attitude, observed_time)
+        ra_r_deg, dec_r_deg = camera.pixel_to_radec(camera.nx - 1, cy, attitude, observed_time)
         left = SkyCoord(ra=ra_l_deg * u.deg, dec=dec_l_deg * u.deg, frame="gcrs")
         right = SkyCoord(ra=ra_r_deg * u.deg, dec=dec_r_deg * u.deg, frame="gcrs")
 
         width = left.separation(right)  # Angle object
 
         # Vertical FOV: center vs midpoints of top/bottom edges
-        ra_t_deg, dec_t_deg = camera.pixel_to_radec(cx, 0, attitude, obs_time)
-        ra_b_deg, dec_b_deg = camera.pixel_to_radec(cx, camera.ny - 1, attitude, obs_time)
+        ra_t_deg, dec_t_deg = camera.pixel_to_radec(cx, 0, attitude, observed_time)
+        ra_b_deg, dec_b_deg = camera.pixel_to_radec(cx, camera.ny - 1, attitude, observed_time)
         top = SkyCoord(ra=ra_t_deg * u.deg, dec=dec_t_deg * u.deg, frame="gcrs")
         bottom = SkyCoord(ra=ra_b_deg * u.deg, dec=dec_b_deg * u.deg, frame="gcrs")
 
         height = top.separation(bottom)
 
         # Use the existing FOV box for a spherical polygon area
-        # box = cls.camera_fov_radec_box(camera, attitude, obs_time)
+        # box = cls.camera_fov_radec_box(camera, attitude, observed_time)
         # poly = box["polygon"]  # SkyCoord of 4 corners
 
         return (
@@ -197,7 +196,7 @@ class CameraFOV:
     # =========================
 
     @classmethod
-    def camera_fov_convex_hull(cls, camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime, border_step: int = 100):
+    def camera_fov_convex_hull(cls, camera: CameraIntrinsics, attitude: CameraAttitude, observed_time, border_step: int = 100):
         """
         Sample the border of the sensor and compute a convex hull on the sphere.
         Returns:
@@ -210,13 +209,13 @@ class CameraFOV:
         # Top and bottom edges
         for px in range(0, camera.nx, border_step):
             for py in [0, camera.ny - 1]:
-                ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+                ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
                 border_points.append((ra_deg, dec_deg))
 
         # Left and right edges
         for py in range(0, camera.ny, border_step):
             for px in [0, camera.nx - 1]:
-                ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+                ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
                 border_points.append((ra_deg, dec_deg))
 
         border_coords = SkyCoord(
@@ -280,7 +279,7 @@ class CameraFOV:
         return np.all(dots >= 0, axis=1)
 
     @classmethod
-    def camera_fov_healpix_mask(cls, camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime, nside=64):
+    def camera_fov_healpix_mask(cls, camera: CameraIntrinsics, attitude: CameraAttitude, observed_time, nside=64):
         """
         Return HEALPix pixel indices inside the camera FOV.
         Uses 3D spherical polygon for robustness.
@@ -300,7 +299,7 @@ class CameraFOV:
         # Convert corners to 3D GCRS unit vectors
         verts_xyz = []
         for px, py in corners:
-            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
             sc = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame="gcrs")
             verts_xyz.append(sc.cartesian.xyz.value)
 
@@ -315,7 +314,7 @@ class CameraFOV:
         return mask, pix
 
     @classmethod
-    def camera_fov_border_vectors(cls, camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime, border_step=50):
+    def camera_fov_border_vectors(cls, camera: CameraIntrinsics, attitude: CameraAttitude, observed_time, border_step=50):
         """
         Sample the full border of the camera sensor and return
         a list of 3D GCRS unit vectors representing the FOV boundary.
@@ -351,7 +350,7 @@ class CameraFOV:
         ra_list = []
         dec_list = []
         for px, py in border_pixels:
-            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, obs_time)
+            ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
             ra_list.append(ra_deg)
             dec_list.append(dec_deg)
 

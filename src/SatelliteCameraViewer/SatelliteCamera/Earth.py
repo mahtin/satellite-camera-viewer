@@ -4,7 +4,6 @@ Earth.py
 # Earth model
 """
 
-from datetime import datetime
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from astropy.time import Time
@@ -32,49 +31,49 @@ class Earth:
         """
         self._sat_orbit = sat_orbit
 
-    def _sat_eci_km(self, obs_time:datetime):
+    def _sat_eci_km(self, observed_time):
         """ _sat_eci_km """
-        return self._sat_orbit.eci_position_vector(obs_time)
+        return self._sat_orbit.eci_position_vector(observed_time)
 
-    def earth_center_vector(self, obs_time:datetime):
+    def earth_center_vector(self, observed_time):
         """
         earth_center_vector - returns: unit vector pointing from satellite → earth center
 
-        :param obs_time: Time (in UTC)
-        :type datetime:
+        :param observed_time: Time (in UTC)
+        :type ObservedTime:
 
         :return: Vector as [x, y, z].
         :rtype: list[float]
         """
-        sat_eci_km = self._sat_eci_km(obs_time)
+        sat_eci_km = self._sat_eci_km(observed_time)
         v_eci = -np.array(sat_eci_km, dtype=float)
         return v_eci / np.linalg.norm(v_eci)
 
-    def earth_center_vector_icrs(self, obs_time:datetime):
+    def earth_center_vector_icrs(self, observed_time):
         """ earth_center_vector_icrs """
-        v_eci = self.earth_center_vector(obs_time)
+        v_eci = self.earth_center_vector(observed_time)
         return SkyCoord(x=v_eci[0], y=v_eci[1], z=v_eci[2], representation_type='cartesian', frame='icrs')
 
-    def earth_center_radec_simple(self, obs_time:datetime):
+    def earth_center_radec_simple(self, observed_time):
         """
         earth_center_radec_simple - caculate ra/dec for of earth center from the satellite
         """
-        return  self.earth_center_radec(None, obs_time)
+        return  self.earth_center_radec(None, observed_time)
 
-    def earth_center_radec(self, attitude:CameraAttitude, obs_time:datetime):
+    def earth_center_radec(self, attitude:CameraAttitude, observed_time):
         """
         earth_center_radec -  caculate ra/dec for of earth center in the camera frame from the satellite
 
         :param attitude: The camera attitude.
         :type CameraAttitude:
-        :param obs_time: Time (in UTC)
-        :type datetime:
+        :param observed_time: Time (in UTC)
+        :type ObservedTime:
 
 
         :return: ra/dec for of earth center in the camera frame from the satellite
         :rtype: tuple(float, float)
         """
-        v_eci = self.earth_center_vector(obs_time)
+        v_eci = self.earth_center_vector(observed_time)
 
         if attitude is not None:
             quat_cam_to_eci = attitude.quat_cam_to_eci
@@ -94,13 +93,13 @@ class Earth:
         dec_deg = np.degrees(np.arcsin(v_eci[2]))
         return ra_deg, dec_deg
 
-    def earth_angular_radius(self, obs_time:datetime):
+    def earth_angular_radius(self, observed_time):
         """ earth_angular_radius """
-        sat_eci_km = self._sat_eci_km(obs_time)
+        sat_eci_km = self._sat_eci_km(observed_time)
         sat_dist = np.linalg.norm(np.asarray(sat_eci_km, dtype=float))  # km as float
         return np.degrees(np.arcsin(u.R_earth.to(u.km) / sat_dist))
 
-    def camera_fov_intercept_earth(self, camera:CameraIntrinsics, attitude:CameraAttitude, obs_time:datetime, border_step:int=10):
+    def camera_fov_intercept_earth(self, camera:CameraIntrinsics, attitude:CameraAttitude, observed_time, border_step:int=10):
         """
         camera_fov_intercept_earth
 
@@ -108,8 +107,8 @@ class Earth:
         :type CameraIntrinsics:
         :param attitude: The camera attitude.
         :type CameraAttitude:
-        :param obs_time: The time (in UTC).
-        :type datetime:
+        :param observed_time: The time (in UTC).
+        :type ObservedTime:
         :param border_step: Accuracy of edge lines (8 should be ok).
         :type int:
         """
@@ -118,29 +117,21 @@ class Earth:
             border_step = 10
 
         # Satellite vector as [x, y, z]
-        sat_eci_km = self._sat_eci_km(obs_time)
+        sat_eci_km = self._sat_eci_km(observed_time)
 
-        def sat_eci_km_to_location(sat_eci_km, obs_time):
+        def sat_eci_km_to_location(sat_eci_km, observed_time):
             """ sat_eci_km_to_location """
-            sat_gcrs = SkyCoord(
-                          CartesianRepresentation(
-                              x=sat_eci_km[0] * u.km,
-                              y=sat_eci_km[1] * u.km,
-                              z=sat_eci_km[2] * u.km
-                          ),
-                          frame=GCRS(obstime=obs_time)
-                       )
-            sat_itrs = sat_gcrs.transform_to(ITRS(obstime=obs_time))
+            sat_gcrs = SkyCoord(CartesianRepresentation( x=sat_eci_km[0] * u.km, y=sat_eci_km[1] * u.km, z=sat_eci_km[2] * u.km), frame=GCRS(obstime=observed_time.t))
+            sat_itrs = sat_gcrs.transform_to(ITRS(obstime=observed_time.t))
             sat_location = EarthLocation.from_geocentric(sat_itrs.x.to(u.m), sat_itrs.y.to(u.m), sat_itrs.z.to(u.m))
             # sat_icrs = sat_gcrs.transform_to('icrs')
             # sat_location = EarthLocation.from_geocentric(sat_icrs.x.to(u.m), sat_icrs.y.to(u.m), sat_icrs.z.to(u.m))
             return sat_location
 
-        sat_location = sat_eci_km_to_location(sat_eci_km, obs_time)
+        sat_location = sat_eci_km_to_location(sat_eci_km, observed_time)
 
         # find earth from satellite location as [x, y, z]
-        t = Time(obs_time)
-        earth_icrs = get_body('earth', t, location=sat_location).transform_to('icrs')
+        earth_icrs = get_body('earth', observed_time.t, location=sat_location).transform_to('icrs')
         earth_vec = earth_icrs.cartesian.xyz.value
 
         # the camera pointing
@@ -164,12 +155,12 @@ class Earth:
 
         print('Earth is in camera FOV')
 
-        fov_cam = CameraFOV.camera_fov_border_vectors(camera, attitude, obs_time, border_step=border_step)
+        fov_cam = CameraFOV.camera_fov_border_vectors(camera, attitude, observed_time, border_step=border_step)
         # fov_cam is a list of SkyCoord objects
         fov_cam_vecs = np.array([[v.cartesian.x.value, v.cartesian.y.value, v.cartesian.z.value] for v in fov_cam])
         fov_icrs = rot_eci.apply(fov_cam_vecs)
-        sat_icrs = self._sat_orbit.icrs(obs_time)
-        earth_disc_icrs = self._compute_earth_disc_polygon(sat_icrs, obs_time, nsteps=border_step*4)
+        sat_icrs = self._sat_orbit.icrs(observed_time)
+        earth_disc_icrs = self._compute_earth_disc_polygon(sat_icrs, observed_time, nsteps=border_step*4)
 
         def vectors_to_radec(vectors):
             """
@@ -219,7 +210,7 @@ class Earth:
                 radec_deg.append((ra_deg, dec_deg))
                 continue
                 #try:
-                #    px, py = camera.radec_to_pixel(ra_deg, dec_deg, attitude, obs_time)
+                #    px, py = camera.radec_to_pixel(ra_deg, dec_deg, attitude, observed_time)
                 #    print('%s [%5.1f,%5.1f] [%5d,%5d]' % (point, ra_deg, dec_deg, px, py))
                 #except CameraIntrinsicsError as e:
                 #    print('%s [%5.1f,%5.1f] %s' % (point, ra_deg, dec_deg, str(e)))
@@ -232,7 +223,7 @@ class Earth:
         #print('Earth.camera_fov_intercept_earth(): pixels=', pixels)
         #return pixels
 
-    def _compute_earth_disc_polygon(self, sat_icrs:SkyCoord, obs_time:datetime, nsteps:int=200):
+    def _compute_earth_disc_polygon(self, sat_icrs:SkyCoord, observed_time, nsteps:int=200):
         """
         Compute the apparent Earth disc (limb) as seen from a satellite.
 
@@ -241,7 +232,7 @@ class Earth:
         """
 
         # Satellite position in ITRS (ECEF)
-        sat_itrs = sat_icrs.transform_to(ITRS(obstime=obs_time))
+        sat_itrs = sat_icrs.transform_to(ITRS(obstime=observed_time.t))
 
         # Satellite distance from Earth's center (km)
         sat_pos = np.array([
@@ -255,10 +246,9 @@ class Earth:
         theta_E = np.arcsin(u.R_earth.to(u.km) / sat_dist)
 
         # Direction to Earth's center in ICRS
-        earth_icrs = SkyCoord(0*u.deg, 0*u.deg, distance=1*u.AU,
-                              frame='gcrs', obstime=obs_time).transform_to('icrs')
+        earth_icrs = SkyCoord(0*u.deg, 0*u.deg, distance=1*u.AU, frame='gcrs', obstime=observed_time.t).transform_to('icrs')
         # Actually get Earth center properly:
-        earth_icrs = SkyCoord(0*u.deg, 0*u.deg, frame=GCRS(obstime=obs_time)).transform_to('icrs')
+        earth_icrs = SkyCoord(0*u.deg, 0*u.deg, frame=GCRS(obstime=observed_time.t)).transform_to('icrs')
 
         # Vector from satellite to Earth center
         earth_vec = earth_icrs.cartesian.xyz.value - sat_icrs.cartesian.xyz.value

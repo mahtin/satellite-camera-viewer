@@ -1,7 +1,6 @@
 """ ecliptic """
 
 import math
-from datetime import datetime
 import numpy as np
 from astropy.coordinates import SkyCoord, get_body, EarthLocation
 from astropy.time import Time
@@ -30,46 +29,45 @@ def ecliptic(nsteps:int=180):
 	#return np.array([ra_rad, dec_rad]).T
 	return np.array([ra_rad, dec_rad])
 
-def body(which:str, obs_time:datetime, location=None):
+def body(which:str, observed_time, location=None):
 	"""
 	body - return the position (in RA/DEC) for a specific solar system body (Sun and Moon being the use cases).
 
 	:param which: Which body (sun, moon, etc).
 	:type which: str
-	:param obs_time: Time of observation.
-	:type obs_time: datetime`
+	:param observed_time: Time of observation.
+	:type observed_time: ObservedTime`
 	:param location: Location of observer on the Earth in x,y,z coords.
 	:type location: tuple[float, float, float]
 	:return: The RA/DEC of the body
 	:rtype: tuple(float, float)
 	"""
-	t = Time(obs_time)
 	if location is not None:
 		# Location on Earth, initialized from geocentric coordinates.
 		location = EarthLocation.from_geocentric(location[0], location[1], location[2], unit='km')
 	# Get sun or moon or planets  position in GCRS frame
-	body_gcrs = get_body(which, t, location=location)
+	body_gcrs = get_body(which, observed_time.t, location=location)
 	# Transform to ICRS (Equatorial) and extract RA/Dec in degrees
 	return float(body_gcrs.ra.rad), float(body_gcrs.dec.rad)
 
-def sun(obs_time:datetime, location=None):
+def sun(observed_time, location=None):
 	"""
 	sun - return the position (in RA/DEC) for the sun. Using `body()` would be preferred.
 
-	:param obs_time: Time of observation.
-	:type obs_time: datetime`
+	:param observed_time: Time of observation.
+	:type observed_time: ObservedTime`
 	:return: The RA/DEC of the sun
 	:rtype: tuple(float, float)
 	"""
 	# now handled by body('sun')
-	return body('sun', obs_time, location=location)
+	return body('sun', observed_time, location=location)
 
-def planets(obs_time:datetime, location=None):
+def planets(observed_time, location=None):
 	"""
 	planets - return the position (in RA/DEC) for the planets.
 
-	:param obs_time: Time of observation.
-	:type obs_time: datetime`
+	:param observed_time: Time of observation.
+	:type observed_time: ObservedTime`
 	:return: The RA/DEC of the planets
 	:rtype: list(tuple(float, float))
 	"""
@@ -95,7 +93,7 @@ def planets(obs_time:datetime, location=None):
 	mags = []
 	for p in _planets:
 		try:
-			ra, dec =  body(p[0], obs_time, location=location)
+			ra, dec =  body(p[0], observed_time, location=location)
 		except KeyError:
 			# some planets are supported
 			continue
@@ -106,13 +104,12 @@ def planets(obs_time:datetime, location=None):
 		mags.append(mag)
 	return names, ra_rad, dec_rad, mags
 
-def earth_vector(obs_time:datetime, location=None):
+def earth_vector(observed_time, location=None):
 	""" earth_vector """
-	t = Time(obs_time)
 	if location:
 		# Location on Earth, initialized from geocentric coordinates.
 		location = EarthLocation.from_geocentric(location[0], location[1], location[2], unit='km')
-	earth_icrs = get_body('earth', t, location=location).transform_to("icrs")
+	earth_icrs = get_body('earth', observed_time.t, location=location).transform_to("icrs")
 	earth_vec = earth_icrs.cartesian.xyz.value
 	return earth_vec
 
@@ -138,26 +135,25 @@ def galactic_plane(nsteps:int=180):
 	return np.array([ra_rad, dec_rad])
 
 # https://github.com/astropy/astroplan/blob/main/astroplan/moon.py
-def moon_illumination(obs_time:datetime):
+def moon_illumination(observed_time):
 	"""
 	moon_illumination - Calculate fraction of the moon illuminated.
 
-	:param obs_time: Time of observation.
-	:type obs_time: datetime`
+	:param observed_time: Time of observation.
+	:type observed_time: ObservedTime`
 	:return: Phase angle of the moon [radians].
 	:rtype: float
 	"""
-	t = Time(obs_time)
-	the_sun = get_body('sun', t)
-	the_moon = get_body('moon', t)
-	elongation = the_sun.separation(the_moon)
-	i = np.arctan2(the_sun.distance*np.sin(elongation), the_moon.distance - the_sun.distance*np.cos(elongation))
+	sun_gcrs = get_body('sun', observed_time.t)
+	moon_gcrs = get_body('moon', observed_time.t)
+	elongation = sun_gcrs.separation(moon_gcrs)
+	i = np.arctan2(sun.distance*np.sin(elongation), moon_gcrs.distance - sun_gcrs.distance*np.cos(elongation))
 	k = (1 + np.cos(i))/2.0
 	return k.value
 
 def _main(args=None):
 	""" _main """
-	from datetime import timezone, timedelta  # pylint: disable=C0415
+	from datetime import datetime, timezone, timedelta  # pylint: disable=C0415
 
 	location = [1000000.0, 1000000.0, 1000000000.0]
 	location = None

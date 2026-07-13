@@ -92,12 +92,12 @@ class SatelliteOrbit:
             self._sat = None
             raise ValueError('TLEs have invalid format') from None
 
-    def _teme(self, obs_time:datetime):
+    def _teme(self, observed_time):
         """
         _teme() - TEME (True Equator, Mean Equinox) - an Earth-centered inertial (ECI) coordinate frame
 
-        :param obs_time: Time (in UTC).
-        :type t: datetime
+        :param observed_time: Observed Time (in UTC).
+        :type t: ObservedTime
         :return: r_teme_km, v_teme_km_s
         :rtype: tuple
         """
@@ -105,7 +105,7 @@ class SatelliteOrbit:
         # r_teme_km: position vectors in kilometers.
         # v_teme_km_s: velocity vectors in kilometers per second.
         # The positional vectors returned by SGP4 are in TEME (True Equator Mean Equinox)
-        t = Time(obs_time.replace(tzinfo=timezone.utc))
+        t = observed_time.t
         error, r_teme_km, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
         if error != 0:
             raise RuntimeError('SGP4 error value/code: %d: "%s"' % (error, SGP4_ERRORS[error])) from None
@@ -113,12 +113,12 @@ class SatelliteOrbit:
         # but for rigor you'd convert TEME -> ECI (e.g., ITRF/GCRS).
         return r_teme_km, v_teme_km_s
 
-    def _lvlh(self, obs_time: datetime):
+    def _lvlh(self, observed_time):
         """
         _lvlh() - LVLH (Local Vertical, Local Horizontal) - a rotating, spacecraft-centered coordinate system
 
-        :param obs_time: Time (in UTC).
-        :type t: datetime
+        :param observed_time: Observed Time (in UTC).
+        :type observed_time: ObservedTime
 
         :return: Returns LVLH frame unit vectors from time (and hence ECI position and velocity).
             Based on ESA ISS Reference Frame Definition:
@@ -127,7 +127,7 @@ class SatelliteOrbit:
             X_LVLH = Y × Z (velocity direction)
         :rtype: dict
         """
-        r_eci, v_eci = self._teme(obs_time)
+        r_eci, v_eci = self._teme(observed_time)
         r = np.array(r_eci)
         v = np.array(v_eci)
 
@@ -138,16 +138,15 @@ class SatelliteOrbit:
 
         return {'X': x_lvlh, 'Y': y_lvlh, 'Z': z_lvlh}
 
-    def _sun_vector_eci_km(self, obs_time: datetime):
+    def _sun_vector_eci_km(self, observed_time):
         """
         _sun_vector_eci_km() - Returns Sun vector in ECI (GCRS) coordinates, km.
 
-        :param obs_time: Time (in UTC).
-        :type t: datetime
+        :param observed_time: Observed Time (in UTC).
+        :type observed_time: ObservedTime
 
         """
-        t = Time(obs_time.replace(tzinfo=timezone.utc))
-        sun_gcrs = get_body('sun', t)
+        sun_gcrs = get_body('sun', observed_time.t)
 
         x = sun_gcrs.cartesian.x.to(u.km).value
         y = sun_gcrs.cartesian.y.to(u.km).value
@@ -155,21 +154,21 @@ class SatelliteOrbit:
 
         return np.array([x, y, z])
 
-    def sat_in_eclipse(self, obs_time: datetime):
+    def sat_in_eclipse(self, observed_time):
         """
         in_eclipse - Returns True if saetellite is in Earth's umbra (full shadow).
 
-        :param obs_time: Observation time (in UTC).
-        :type obs_time: datetime
+        :param observed_time: Observation time (in UTC).
+        :type observed_time: ObservedTime
         :return: is satellite in eclipse
         :rtype: bool
         """
 
-        sun_eci_km = self._sun_vector_eci_km(obs_time)
+        sun_eci_km = self._sun_vector_eci_km(observed_time)
         # Unit vector from Earth to Sun
         sun_vec = sun_eci_km / np.linalg.norm(sun_eci_km)
 
-        sat_eci_km = self.eci_position_vector(obs_time)
+        sat_eci_km = self.eci_position_vector(observed_time)
         # Projection of satellite position onto Sun direction
         projection_scalar = np.dot(sat_eci_km, sun_vec)
 
@@ -183,12 +182,12 @@ class SatelliteOrbit:
         # is satellite inside Earth's shadow cylinder?
         return perpendicular_distance < u.R_earth.to(u.km)
 
-    def sat_solar_beta_angle(self, obs_time: datetime):
+    def sat_solar_beta_angle(self, observed_time):
         """
         sat_solar_beta_angle - return beta angle
 
-        :param obs_time: Observation time (in UTC).
-        :type obs_time: datetime
+        :param observed_time: Observation time (in UTC).
+        :type observed_time: ObservedTime
         :return: beta angle in degrees
         :rtype: float
 
@@ -199,43 +198,43 @@ class SatelliteOrbit:
         Yearly Variation: The satelite beta angle fluctuates during the year. For example, the ISS valies
         between roughly -75 and +75 degrees over a 60-day precession period and on an annual cycle.
         """
-        r_eci, v_eci = self._teme(obs_time)
+        r_eci, v_eci = self._teme(observed_time)
 
-        sun_eci = self._sun_vector_eci_km(obs_time)
+        sun_eci = self._sun_vector_eci_km(observed_time)
         s_hat = sun_eci / np.linalg.norm(sun_eci)
         h = np.cross(r_eci, v_eci)
         h_hat = h / np.linalg.norm(h)
         beta = np.arcsin(np.dot(h_hat, s_hat))
         return np.degrees(beta)
 
-    def eci_position_vector(self, obs_time: datetime):
+    def eci_position_vector(self, observed_time):
         """
-        Returns ECI (Earth-Centered Inertial) position (km) at UTC time obs_time.
+        Returns ECI (Earth-Centered Inertial) position (km) at UTC time observed_time.
         """
-        r_teme_km, _ = self._teme(obs_time)
+        r_teme_km, _ = self._teme(observed_time)
         return np.array(r_teme_km)
 
-    def eci_velocity_vector(self, obs_time: datetime):
+    def eci_velocity_vector(self, observed_time):
         """
-        Returns ECI (Earth-Centered Inertial) velocity (km/s) at UTC time obs_time.
+        Returns ECI (Earth-Centered Inertial) velocity (km/s) at UTC time observed_time.
         """
-        _, v_teme_km_s = self._teme(obs_time)
+        _, v_teme_km_s = self._teme(observed_time)
         return np.array(v_teme_km_s)
 
-    def icrs(self, obs_time: datetime):
+    def icrs(self, observed_time):
         """ icrs - convert satellite and time into a ICRS value """
         # ICRS is International Celestial Reference System (ICRS)
-        r_teme_km, _ = self._teme(obs_time)
-        sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=obs_time)).transform_to("icrs")
+        r_teme_km, _ = self._teme(observed_time)
+        sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=observed_time.t)).transform_to("icrs")
         return sat_icrs
 
-    def sat_lon_lat_alt(self, obs_time):
+    def sat_lon_lat_alt(self, observed_time):
         """
         sat_lon_lat_alt - Return satellite geodetic lat, lon, alt.
 
         Parameters
         ----------
-        obs_time : astropy Time
+        observed_time : astropy Time
             Observation time.
 
         Returns
@@ -245,19 +244,13 @@ class SatelliteOrbit:
         alt_km : float
         """
 
-        sat_eci_km = self.eci_position_vector(obs_time)
+        sat_eci_km = self.eci_position_vector(observed_time)
 
         # 1. Wrap ECI vector in a GCRS SkyCoord using CartesianRepresentation
-        sat_gcrs = SkyCoord(
-            x=sat_eci_km[0] * u.km,
-            y=sat_eci_km[1] * u.km,
-            z=sat_eci_km[2] * u.km,
-            frame=GCRS(obstime=obs_time),
-            representation_type='cartesian'
-        )
+        sat_gcrs = SkyCoord(x=sat_eci_km[0] * u.km, y=sat_eci_km[1] * u.km, z=sat_eci_km[2] * u.km, frame=GCRS(obstime=observed_time.t), representation_type='cartesian')
 
         # 2. Convert to Earth-fixed International Terrestrial Reference System (ITRS)
-        sat_itrs = sat_gcrs.transform_to(ITRS(obstime=obs_time))
+        sat_itrs = sat_gcrs.transform_to(ITRS(obstime=observed_time.t))
 
         # 3. Convert to geodetic lat/lon/alt
         sat_loc = EarthLocation.from_geocentric(sat_itrs.x, sat_itrs.y, sat_itrs.z)
@@ -292,7 +285,7 @@ class SatelliteOrbit:
         """ sat_altitude - Perigee, Apogee, and Inclination """
         return self._sat.radiusearthkm * self._sat.altp, self._sat.radiusearthkm * self._sat.alta, self._sat.inclo
 
-    def sat_xvv_attitude_quaternion(self, obs_time):
+    def sat_xvv_attitude_quaternion(self, observed_time):
         """
         sat_xvv_attitude_quaternion() - XVV ATTITUDE (X-axis aligned with velocity)
 
@@ -301,7 +294,7 @@ class SatelliteOrbit:
           +Z = nadir
           +Y = completes RH frame
         """
-        lvlh = self._lvlh(obs_time)
+        lvlh = self._lvlh(observed_time)
         R_body = np.vstack([lvlh['X'], lvlh['Y'], lvlh['Z']])
         return R.from_matrix(R_body).as_quat(scalar_first=True)
 

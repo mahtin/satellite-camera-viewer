@@ -1,6 +1,6 @@
 """ SatelliteCamera """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from .BrownConradyCoeffs import BrownConradyCoeffs as cBCC
 from .CameraIntrinsics import CameraIntrinsics as cCI, CameraIntrinsicsError
@@ -10,6 +10,7 @@ from .CameraAttitude import Quaternion as cQ
 from .CameraFOV import CameraFOV as cCF
 from .SatelliteOrbit import SatelliteOrbit as cSO
 from .Earth import Earth as cE, EarthError
+from .ObservedTime import ObservedTime as oT
 
 class SatelliteCameraError(Exception):
     """ SatelliteCameraError """
@@ -26,6 +27,7 @@ class SatelliteCamera():
     CameraFOV = cCF
     SatelliteOrbit = cSO
     Earth = cE
+    ObservedTime = oT
 
     # Based on the Raspberry Pi High Quality (HQ) camera
     # 12.3-megapixel Sony IMX477
@@ -52,13 +54,14 @@ class SatelliteCamera():
         else:
             self._sensor_to_lens_mm = sensor_to_lens_mm
         self._rebuild_camera()
-        self._obs_time = None
-        self.now()
         self._sat_orbit = None
         self._sat_quat_body_to_eci = None
         self._sat_attitude = None
         self._cam_attitude = None
         self._reset_attitude()
+
+        # seems like a legit value
+        self.now()
 
     def reload(self,
             focal_length_mm: float = None,         # focal length (mm)
@@ -145,27 +148,23 @@ class SatelliteCamera():
     def __str__(self) -> str:
         return str(self._camera)
 
-    def datetime(self, year, month, day, hour, minute, second):
-        """ Observation time - fixed """
-        self._obs_time = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
-
     def now(self):
         """ Observation time - updating to time now """
-        self._obs_time = datetime.now(timezone.utc).replace(microsecond=0)
+        self.observed_time = self.ObservedTime()                # defaults to 'now'
 
     def adjust_by_seconds(self, delta: int):
         """ accelerate time """
-        self._obs_time += timedelta(seconds=delta)
+        self.observed_time.timedelta(seconds=delta)
 
     @property
-    def obs_time(self):
-        """ obs_time """
-        return self._obs_time
+    def observed_time(self):
+        """ observed_time """
+        return self._observed_time
 
-    @obs_time.setter
-    def obs_time(self, value=None):
-        """ obs_time """
-        self._obs_time = value
+    @observed_time.setter
+    def observed_time(self, value=None):
+        """ observed_time """
+        self._observed_time = value
 
     @property
     def camera(self):
@@ -407,8 +406,8 @@ class SatelliteCamera():
         if pointing == 'vv':
             r_teme_km = self.eci_position_vector
             v_teme_km_s = self.eci_velocity_vector
-            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
-            v_gcrs_km_s = self.CameraAttitude.teme_to_gcrs_vector(v_teme_km_s, self.obs_time)  # same converter works
+            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.observed_time)
+            v_gcrs_km_s = self.CameraAttitude.teme_to_gcrs_vector(v_teme_km_s, self.observed_time)  # same converter works
             self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_velocity_pointing(r_gcrs_km, v_gcrs_km_s)
             return
@@ -416,7 +415,7 @@ class SatelliteCamera():
         # Nadir-pointing camera (even with camera y/p/r defined above)
         if pointing == 'nadir':
             r_teme_km = self.eci_position_vector
-            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
+            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.observed_time)
             self._sat_attitude = None
             self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_nadir_pointing(r_gcrs_km)
             return
@@ -427,9 +426,9 @@ class SatelliteCamera():
                 raise ValueError('%s: invalid pointing value' % (pointing)) from None
             # Point camera at ground location (lat,lon)
             r_teme_km = self.eci_position_vector
-            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.obs_time)
+            r_gcrs_km = self.CameraAttitude.teme_to_gcrs_vector(r_teme_km, self.observed_time)
             self._sat_attitude = None
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_ground(lat_deg=earth_lat_deg, lon_deg=earth_lon_deg, obs_time=self.obs_time, r_sat_gcrs_km=r_gcrs_km)
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_ground(lat_deg=earth_lat_deg, lon_deg=earth_lon_deg, observed_time=self.observed_time, r_sat_gcrs_km=r_gcrs_km)
             return
 
         # Point camera at star (ra,dec) - if defined, just do it (even with camera y/p/r defined above)
@@ -438,7 +437,7 @@ class SatelliteCamera():
                 raise ValueError('%s: invalid pointing value' % (pointing)) from None
             # Point camera at ra/dec
             self._sat_attitude = None
-            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_radec(ra_deg=star_ra_deg, dec_deg=star_dec_deg, obs_time=self.obs_time)
+            self.sat_quat_body_to_eci = self.CameraAttitude.quaternion_pointing_radec(ra_deg=star_ra_deg, dec_deg=star_dec_deg, observed_time=self.observed_time)
             return
 
         # Default null quaternion (even with camera y/p/r defined above)
@@ -452,30 +451,30 @@ class SatelliteCamera():
     @property
     def eci_position_vector(self):
         """ eci_position_vector """
-        return self.sat_orbit.eci_position_vector(self.obs_time)
+        return self.sat_orbit.eci_position_vector(self.observed_time)
 
     @property
     def eci_velocity_vector(self):
         """ eci_velocity_vector """
         if self.sat_orbit is None:
             return None
-        return self.sat_orbit.eci_velocity_vector(self.obs_time)
+        return self.sat_orbit.eci_velocity_vector(self.observed_time)
 
     def sat_lon_lat_alt(self):
         """ sat_lon_lat_alt """
-        return self.sat_orbit.sat_lon_lat_alt(self.obs_time)
+        return self.sat_orbit.sat_lon_lat_alt(self.observed_time)
 
     def sat_solar_beta_angle(self):
         """ sat_solar_beta_angle """
-        return self.sat_orbit.sat_solar_beta_angle(self.obs_time)
+        return self.sat_orbit.sat_solar_beta_angle(self.observed_time)
 
     def sat_in_eclipse(self):
         """ sat_in_eclipse """
-        return self.sat_orbit.sat_in_eclipse(self.obs_time)
+        return self.sat_orbit.sat_in_eclipse(self.observed_time)
 
     def sat_xvv_attitude_quaternion(self):
         """ sat_xvv_attitude_quaternion """
-        return self.sat_orbit.sat_xvv_attitude_quaternion(self.obs_time)
+        return self.sat_orbit.sat_xvv_attitude_quaternion(self.observed_time)
 
     def iss_tea_offsets_deg(self, port_config='DEFAULT'):
         """ iss_tea_offsets_deg """
@@ -495,71 +494,71 @@ class SatelliteCamera():
 
     def pixel_to_radec(self, px, py):
         """ pixel_to_radec """
-        return self.camera.pixel_to_radec(px, py, self.attitude, self.obs_time)
+        return self.camera.pixel_to_radec(px, py, self.attitude, self.observed_time)
 
     def sensor_to_radec(self, nsteps):
         """ sensor_to_radec """
-        return self.camera.sensor_to_radec(self.attitude, self.obs_time, nsteps=nsteps)
+        return self.camera.sensor_to_radec(self.attitude, self.observed_time, nsteps=nsteps)
 
     def pixel_to_radec_and_vector(self, px, py):
         """ pixel_to_radec_and_vector """
-        return self.camera.pixel_to_radec_and_vector(px, py, self.attitude, self.obs_time, sat_orbit=self.sat_orbit)
+        return self.camera.pixel_to_radec_and_vector(px, py, self.attitude, self.observed_time, sat_orbit=self.sat_orbit)
 
     def radec_to_pixel(self, ra_deg, dec_deg):
         """ radec_to_pixel """
         try:
-            return self.camera.radec_to_pixel(ra_deg, dec_deg, self.attitude, self.obs_time)
+            return self.camera.radec_to_pixel(ra_deg, dec_deg, self.attitude, self.observed_time)
         except CameraIntrinsicsError as e:
             raise SatelliteCameraError(str(e)) from None
 
     def camera_fov_radec_box(self):
         """ camera_fov_radec_box """
-        return self.CameraFOV.camera_fov_radec_box(self.camera, self.attitude, self.obs_time)
+        return self.CameraFOV.camera_fov_radec_box(self.camera, self.attitude, self.observed_time)
 
     def camera_fov_solid_angle(self):
         """ camera_fov_solid_angle """
-        return self.CameraFOV.camera_fov_solid_angle(self.camera, self.attitude, self.obs_time)
+        return self.CameraFOV.camera_fov_solid_angle(self.camera, self.attitude, self.observed_time)
 
     def camera_fov_angular_width_height(self):
         """ camera_fov_angular_width_height """
-        return self.CameraFOV.camera_fov_angular_width_height(self.camera, self.attitude, self.obs_time)
+        return self.CameraFOV.camera_fov_angular_width_height(self.camera, self.attitude, self.observed_time)
 
     def camera_fov_convex_hull(self, border_step:int):
         """ camera_fov_convex_hull """
-        return self.CameraFOV.camera_fov_convex_hull(self.camera, self.attitude, self.obs_time, border_step=border_step)
+        return self.CameraFOV.camera_fov_convex_hull(self.camera, self.attitude, self.observed_time, border_step=border_step)
 
     def camera_fov_border_vectors(self, border_step:int):
         """ camera_fov_border_vectors """
-        return self.CameraFOV.camera_fov_border_vectors(self.camera, self.attitude, self.obs_time, border_step=border_step)
+        return self.CameraFOV.camera_fov_border_vectors(self.camera, self.attitude, self.observed_time, border_step=border_step)
 
     def camera_fov_healpix_mask(self, nside:int):
         """ camera_fov_healpix_mask """
-        return self.CameraFOV.camera_fov_healpix_mask(self.camera, self.attitude, self.obs_time, nside=nside)
+        return self.CameraFOV.camera_fov_healpix_mask(self.camera, self.attitude, self.observed_time, nside=nside)
 
     def earth_center_vector(self):
         """ earth_center_vector """
-        return self._earth.earth_center_vector(self.obs_time)
+        return self._earth.earth_center_vector(self.observed_time)
 
     def earth_center_vector_icrs(self):
         """ earth_center_vector_icrs """
-        return self._earth.earth_center_vector_icrs(self.obs_time)
+        return self._earth.earth_center_vector_icrs(self.observed_time)
 
     def earth_center_radec_simple(self):
         """ earth_center_radec_simple """
-        return self._earth.earth_center_radec_simple(self.obs_time)
+        return self._earth.earth_center_radec_simple(self.observed_time)
 
     def earth_center_radec(self):
         """ earth_center_radec """
-        return self._earth.earth_center_radec(self.attitude, self.obs_time)
+        return self._earth.earth_center_radec(self.attitude, self.observed_time)
 
     def earth_angular_radius(self):
         """ earth_angular_radius """
-        return self._earth.earth_angular_radius(self.obs_time)
+        return self._earth.earth_angular_radius(self.observed_time)
 
     def camera_fov_intercept_earth(self, border_step:int=None):
         """ camera_fov_intercept_earth """
         try:
-            return self._earth.camera_fov_intercept_earth(self.camera, self.attitude, self.obs_time, border_step=border_step)
+            return self._earth.camera_fov_intercept_earth(self.camera, self.attitude, self.observed_time, border_step=border_step)
 
         except EarthError as e:
             raise SatelliteCameraError(str(e)) from None

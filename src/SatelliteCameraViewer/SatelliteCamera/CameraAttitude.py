@@ -217,18 +217,13 @@ class CameraAttitude:
     # =========================
 
     @classmethod
-    def quaternion_pointing_radec(cls, ra_deg, dec_deg, obs_time):
+    def quaternion_pointing_radec(cls, ra_deg, dec_deg, observed_time):
         """
         Compute camera->ECI quaternion that points +Z_cam at a given RA/Dec target.
         """
 
         # Target direction in GCRS
-        sc = SkyCoord(
-            ra=ra_deg * u.deg,
-            dec=dec_deg * u.deg,
-            frame="gcrs",
-            obstime=Time(obs_time)
-        )
+        sc = SkyCoord(ra=ra_deg * u.deg, dec=dec_deg * u.deg, frame="gcrs", obstime=observed_time.t)
 
         # +Z_cam = target direction
         z_cam = sc.cartesian.xyz.value
@@ -261,7 +256,7 @@ class CameraAttitude:
     # =========================
 
     @classmethod
-    def quaternion_pointing_ground(cls, lat_deg, lon_deg, obs_time, r_sat_gcrs_km):
+    def quaternion_pointing_ground(cls, lat_deg, lon_deg, observed_time, r_sat_gcrs_km):
         """
         Compute camera->ECI quaternion that points +Z_cam at a ground location.
         lat_deg, lon_deg: ground target in degrees
@@ -276,7 +271,7 @@ class CameraAttitude:
         )
 
         # Convert ground point to GCRS
-        ground_gcrs = ground.get_gcrs(Time(obs_time))
+        ground_gcrs = ground.get_gcrs(observed_time.t)
         r_ground_km = ground_gcrs.cartesian.xyz.to(u.km).value
 
         # Direction from satellite to ground
@@ -301,15 +296,12 @@ class CameraAttitude:
         return R.from_matrix(R_cam_to_eci).as_quat(scalar_first=True)
 
     @classmethod
-    def teme_to_gcrs_vector(cls, r_teme_km, obs_time):
+    def teme_to_gcrs_vector(cls, r_teme_km, observed_time):
         """
         Convert a TEME position vector to GCRS (ECI) using Astropy.
         r_teme_km: (3,) km vector
         Returns: (3,) km vector in GCRS
         """
-        teme = TEME(
-            CartesianRepresentation(r_teme_km * u.km),
-            obstime=Time(obs_time)
-        )
-        gcrs = teme.transform_to(GCRS(obstime=Time(obs_time)))
+        teme = TEME(CartesianRepresentation(r_teme_km * u.km), obstime=observed_time.t)
+        gcrs = teme.transform_to(GCRS(obstime=observed_time.t))
         return gcrs.cartesian.xyz.to(u.km).value

@@ -5,7 +5,6 @@ CameraIntrinsics.py
 """
 
 import math
-from datetime import datetime
 from dataclasses import dataclass
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -149,7 +148,7 @@ class CameraIntrinsics:
     # Pixel -> RA/Dec
     # =========================
 
-    def pixel_to_radec(self, px: float, py: float, attitude: CameraAttitude, obs_time: datetime):
+    def pixel_to_radec(self, px: float, py: float, attitude: CameraAttitude, observed_time):
         """
         Convert a pixel coordinate to RA/Dec using:
         - Correct camera geometry
@@ -168,13 +167,7 @@ class CameraIntrinsics:
         # 4. Convert ECI direction vector -> RA/Dec using SkyCoord
         #    (SkyCoord handles quadrant, wrap, and pole behavior correctly)
         x, y, z = v_eci
-        sc = SkyCoord(
-            x=x, y=y, z=z,
-            representation_type="cartesian",
-            frame="gcrs",
-            obstime=Time(obs_time)
-        )
-
+        sc = SkyCoord(x=x, y=y, z=z, representation_type="cartesian", frame="gcrs", obstime=observed_time.t)
         ra_deg = sc.spherical.lon.deg % 360.0
         dec_deg = sc.spherical.lat.deg
         return ra_deg, dec_deg
@@ -183,7 +176,7 @@ class CameraIntrinsics:
     # Pixels (from the box) -> RA/Dec
     # =========================
 
-    def sensor_to_radec(self, attitude: CameraAttitude, obs_time: datetime, nsteps=3):
+    def sensor_to_radec(self, attitude: CameraAttitude, observed_time, nsteps=3):
         """ sensor_to_radec """
         pixels = {}
         for py in range(0, self.ny+1, int(self.ny/nsteps)):
@@ -192,7 +185,7 @@ class CameraIntrinsics:
                     px = self.nx-1
                 if py >= self.ny:
                     py = self.ny-1
-                ra_deg, dec_deg = self.pixel_to_radec(px, py, attitude, obs_time)
+                ra_deg, dec_deg = self.pixel_to_radec(px, py, attitude, observed_time)
                 pixels[(px,py)] = (ra_deg, dec_deg)
         return pixels
 
@@ -200,26 +193,26 @@ class CameraIntrinsics:
     # Pixel -> RA/Dec
     # =========================
 
-    def pixel_to_radec_and_vector(self, px: float, py: float, attitude: CameraAttitude, obs_time: datetime, sat_orbit: SatelliteOrbit = None):
+    def pixel_to_radec_and_vector(self, px: float, py: float, attitude: CameraAttitude, observed_time, sat_orbit: SatelliteOrbit = None):
         """
         Convert a pixel coordinate to RA/Dec and return satellite vector
         """
 
         # 3. If satellite orbit is provided, convert TEME -> GCRS
         if sat_orbit is not None:
-            r_teme_km = sat_orbit.eci_position_vector(obs_time)
-            r_gcrs_km = CameraAttitude.teme_to_gcrs_vector(r_teme_km, obs_time)
+            r_teme_km = sat_orbit.eci_position_vector(observed_time)
+            r_gcrs_km = CameraAttitude.teme_to_gcrs_vector(r_teme_km, observed_time)
         else:
             r_gcrs_km = None
 
-        ra_deg, dec_deg = self.pixel_to_radec(px, py, attitude, obs_time)
+        ra_deg, dec_deg = self.pixel_to_radec(px, py, attitude, observed_time)
         return ra_deg, dec_deg, r_gcrs_km
 
     # =========================
     # RA/Dec -> Pixel
     # =========================
 
-    def radec_to_pixel(self, ra_deg:float, dec_deg:float, attitude: CameraAttitude, obs_time: datetime):
+    def radec_to_pixel(self, ra_deg:float, dec_deg:float, attitude: CameraAttitude, observed_time):
         """
         Convert an RA/Dec (ICRS) direction into pixel coordinates (px, py)
         using the camera's orientation quaternion (w, x, y, z).
@@ -229,8 +222,8 @@ class CameraIntrinsics:
 
         # 1. Convert RA/Dec to ICRS SkyCoord
         target_icrs = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame="icrs")
-        # 2. Convert to GCRS at obs_time (same as pixel_to_radec)
-        target_gcrs = target_icrs.transform_to(GCRS(obstime=obs_time))
+        # 2. Convert to GCRS at observed_time (same as pixel_to_radec)
+        target_gcrs = target_icrs.transform_to(GCRS(obstime=observed_time.t))
         # 4. Convert target direction into a 3D unit vector (GCRS)
         t_vec = np.array([
             target_gcrs.cartesian.x.value,

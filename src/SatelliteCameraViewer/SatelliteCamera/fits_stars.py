@@ -4,7 +4,6 @@ fits_stars.py
 Star catalog from FITS
 """
 
-from datetime import datetime
 from astropy.io import fits
 from astropy.coordinates import SkyCoord, GCRS
 from astropy.time import Time
@@ -27,12 +26,12 @@ def load_star_catalog_from_fits(fits_path: str, ra_col: str = "RA", dec_col: str
     # Use ICRS as there's no time represented yet - convert later
     return SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
 
-def today_stars(stars_icrs, obs_time: datetime):
+def today_stars(stars_icrs, observed_time):
     """ today_stars """
-    stars_gcrs = stars_icrs.transform_to(GCRS(obstime=Time(obs_time)))
+    stars_gcrs = stars_icrs.transform_to(GCRS(obstime=observed_time.t))
     return stars_gcrs
 
-def match_stars_in_image(camera: CameraIntrinsics, attitude: CameraAttitude, obs_time: datetime, star_catalog: SkyCoord, px_grid_step: int = 200):
+def match_stars_in_image(camera: CameraIntrinsics, attitude: CameraAttitude, observed_time, star_catalog: SkyCoord, px_grid_step: int = 200):
     """
     Very rough scaffold:
     - Sample a grid of pixels across the image
@@ -48,7 +47,7 @@ def match_stars_in_image(camera: CameraIntrinsics, attitude: CameraAttitude, obs
     for px in range(0, camera.nx, px_grid_step):
         for py in range(0, camera.ny, px_grid_step):
             ra_deg, dec_deg, _ = camera.pixel_to_radec(
-                px, py, camera, attitude, obs_time, sat_orbit=None
+                px, py, camera, attitude, observed_time, sat_orbit=None
             )
             coords_image.append((ra_deg, dec_deg))
             px_list.append(px)

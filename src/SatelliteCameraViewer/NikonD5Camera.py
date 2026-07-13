@@ -8,9 +8,6 @@ class NikonD5Camera:
 	""" NikonD5Camera """
 
 	def __init__(self, satellite_name=None, focal_length:float=50.0):
-		self._obs_time = None
-		self._attitude = None
-
 		# Example distortion (small or none actually)
 		self._bcc = SatelliteCamera.BrownConradyCoeffs(k1=0.0, k2=0.0, p1=0.0, p2=0.0, k3=0.0)
 
@@ -29,7 +26,6 @@ class NikonD5Camera:
 		# map SatelliteCamera() into this class (yes - there's a more pythonic way to do this)
 
 		self.now                        = self._sc.now
-		self.datetime                   = self._sc.datetime
 
 		self.adjust_by_seconds          = self._sc.adjust_by_seconds
 		self.choose_attitude            = self._sc.choose_attitude
@@ -57,9 +53,9 @@ class NikonD5Camera:
 		self.choose_attitude('vv')
 
 	@property
-	def obs_time(self):
-		""" obs_time """
-		return self._sc.obs_time
+	def observed_time(self):
+		""" observed_time """
+		return self._sc.observed_time
 
 	@property
 	def camera(self):

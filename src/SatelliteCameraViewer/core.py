@@ -383,7 +383,7 @@ class CoreCode:
 		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()
 
 		s = ''
-		s += '[%5.1f,%5.1f] %5.1f Km | %s\n' % (sat_lon_deg, sat_lat_deg, sat_alt_km, self.nikon.obs_time.strftime('%Y-%m-%d %H:%M:%S %Z'))
+		s += '[%5.1f,%5.1f] %5.1f Km | %s\n' % (sat_lon_deg, sat_lat_deg, sat_alt_km, self.nikon.observed_time)
 		s += '%s\n' % (str(self.nikon.camera))
 		s += '[%5.1f,%5.1f] @ %5.1f Km radius | %.1f deg width by %.1f deg height |' % (earth_ra_deg, earth_dec_deg, earth_radius_deg, angular_width, angular_height)
 		s += ' %.1f%% of whole sky' % (100.0*solid_angle_steradians/(4*math.pi))
@@ -682,7 +682,7 @@ class CoreCode:
 	def do_planets_etc(self, value):
 		""" do_planets_etc """
 		self._switch_planets_etc = value
-		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.obs_time, self.nikon.camera.eci_position_vector)
+		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.observed_time, self.nikon.camera.eci_position_vector)
 		self.draw()
 
 	def do_constellation_boundaries(self, value):
@@ -888,7 +888,7 @@ class CoreCode:
 		# and deal with time interval and timers
 		if self._switch_accelerate_time is True:
 			# accelerate - i.e. jump time ahead quickly - TODO this value should be based on orbital params
-			seconds = (60 - self.nikon.obs_time.second) + 120
+			seconds = (60 - self.nikon.observed_time.datetime.second) + 120
 			# seconds += 24*60*60
 			self.nikon.adjust_by_seconds(seconds)
 			# hence step is half a second
@@ -902,7 +902,7 @@ class CoreCode:
 		# now repaint/update sky
 		self.update_starfield_and_more()
 		self._constellation_boundaries.change(self._switch_constellation_boundaries)
-		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.obs_time, self.nikon.camera.eci_position_vector)
+		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.observed_time, self.nikon.camera.eci_position_vector)
 		self.draw()
 
 		# and finally, setup to trigger outselves at the next timer time

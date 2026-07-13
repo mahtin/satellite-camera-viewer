@@ -20,21 +20,21 @@ class PaintSunMoonPlanets:
 		self._fontdict = fontdict
 		self._sun = None
 
-	def change(self, value, obs_time=None, eci_position_vector=None):
+	def change(self, value, observed_time=None, eci_position_vector=None):
 		""" change """
 		if value:
-			self._enable(obs_time, eci_position_vector)
+			self._enable(observed_time, eci_position_vector)
 		else:
 			self._disable()
 
-	def _enable(self, obs_time, eci_position_vector):
+	def _enable(self, observed_time, eci_position_vector):
 		""" _enable """
-		sun_ra_rad, sun_dec_rad = body('sun', obs_time, eci_position_vector)
+		sun_ra_rad, sun_dec_rad = body('sun', observed_time, eci_position_vector)
 		sun_ra_rad = ra_fix([sun_ra_rad])[0]
 		# sun diameter is 0.533 degrees
-		moon_ra_rad, moon_dec_rad = body('moon', obs_time, eci_position_vector)
+		moon_ra_rad, moon_dec_rad = body('moon', observed_time, eci_position_vector)
 		moon_ra_rad = ra_fix([moon_ra_rad])[0]
-		planets_names, planets_ra_rad, planets_dec_rad, planets_mags = planets(obs_time, eci_position_vector)
+		planets_names, planets_ra_rad, planets_dec_rad, planets_mags = planets(observed_time, eci_position_vector)
 		planets_ra_rad = ra_fix(planets_ra_rad)
 		planets_size_pixels = mag_map(planets_mags)
 		if self._sun is not None:
