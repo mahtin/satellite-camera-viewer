@@ -200,7 +200,7 @@ class TLEFetch:
 	def get(self):
 		""" get """
 		if self._debug:
-			print('TLEFetch: GET', self._sat_id, file=sys.stderr)
+			print('TLEFetch: GET', self._sat_id, file=sys.stderr, end=' ')
 		# try local first...
 		filename = self._local_filename()
 		if filename.exists() and filename.stat().st_size > 0:
@@ -220,6 +220,10 @@ class TLEFetch:
 					# we don't want to hit the server too often
 					return self._j
 
+		# we are here becuase the local file exists; but is old.
+		# save away that value - just in case the network is failing.
+		locally_acceptable_json = self._j
+
 		# clearly worth network checking again ...
 		self._j = None
 		self._tle = None
@@ -230,17 +234,24 @@ class TLEFetch:
 				retry_count -= 1
 			if self._j is None:
 				raise TLEFetchError('Timeout on connection after %d times' % (self._RETRY_COUNT)) from None
+			# sanity check the response
+			if self.sat_id != self.satelliteId:
+				# we didn't read what we expected to!
+				raise TLEFetchError('satelliteId mismatch on network fetch') from None
+			# save away the network result
+			try:
+				self._file_write()
+			except TLEFetchError as e:
+				raise TLEFetchError(e) from None
 		except TLEFetchError as e:
-			raise TLEFetchError(e) from None
-
-		if self.sat_id != self.satelliteId:
-			# we didn't read what we expected to!
-			raise TLEFetchError('satelliteId mismatch on network fetch') from None
-
-		try:
-			self._file_write()
-		except TLEFetchError as e:
-			raise TLEFetchError(e) from None
+			# at this point we need to decide if a stale TLE is better than throwing an error
+			if locally_acceptable_json is None:
+				# we've got nothing! :(
+				raise TLEFetchError(e) from None
+			# use the last read value
+			if self._debug:
+				print('TLEFetch: USE_LOCAL', self._sat_id, file=sys.stderr)
+			self._j = locally_acceptable_json
 
 		return self._j
 
@@ -311,7 +322,7 @@ class TLEFetch:
 
 		except PermissionError:
 			if self._debug:
-				print('TLEFetch: PERMISSION ERROR', self._sat_id, file=sys.stderr)
+				print('TLEFetch: PERMISSION_ERROR', self._sat_id, file=sys.stderr)
 			# just means we already have that date saved-away - not an issue
 			pass
 		except Exception as e:
@@ -438,17 +449,20 @@ def _main(args=None):
 	source = 'CelesTrak'
 
 	satellites = {
-		25544:	'iss',
-		36411:	'goes_15',
-		58584:	'arktika_m2',
-		49260:	'landsat_9',
-		48274:	'css',
-		20580:	'hst',
-		28485:	'swift_telescope',
-		69792:	'link_rescue',
+		25544:	'ISS',
+		36411:	'GOES 15',
+		58584:	'Arktika-M 2',
+		49260:	'Landsat 9',
+		48274:	'CSS',
+		20580:	'HST',
+		28485:	'Swift',
+		69792:	'LINK',
+		64537:	'Otter Pup 2',
+		64539:	'ElaraSat',
 	}
 
 	for sat_id, variable_name in satellites.items():
+		variable_name = variable_name.replace('-', '_').replace(' ', '_').lower()
 		try:
 			tf = TLEFetch(sat_id, source=source, debug=debug)
 			# j = tf.get()
@@ -469,6 +483,9 @@ def _main(args=None):
 		print('\t' + "'" + tle.line2 + "',")
 		print(']')
 		print('')
+
+	if debug:
+		print('', file=sys.stderr)
 
 if __name__ == '__main__':
 	_main(args=sys.argv[1:])
