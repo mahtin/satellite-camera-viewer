@@ -36,6 +36,12 @@ class CoreCode:
 	:type root: UserInterface
 	"""
 
+	_TIMER_SLEEP_ACCELERATE = 500			# when running in accelerate mode - only sleep for a short while
+	_TIMER_SLEEP_NORMAL = 5000			# normal mode is a redo every five seconds - but this should be orbit based
+
+	_TIME_JUMP_ACCELERATE = 24*60*60		# accelerate means jump ahead by 1 hour
+	_TIME_JUMP_ACCELERATE = 2 * 60			# accelerate means jump ahead by 2 mins
+
 	# https://matplotlib.org/stable/gallery/color/named_colors.html#css-colors
 	_COLORS = {
 		'fig-facecolor': '#ebebeb',
@@ -888,16 +894,15 @@ class CoreCode:
 		# and deal with time interval and timers
 		if self._switch_accelerate_time is True:
 			# accelerate - i.e. jump time ahead quickly - TODO this value should be based on orbital params
-			seconds = (60 - self.nikon.observed_time.datetime.second) + 120
-			# seconds += 24*60*60
+			seconds = (60 - self.nikon.observed_time.datetime.second) + self._TIME_JUMP_ACCELERATE
 			self.nikon.adjust_by_seconds(seconds)
-			# hence step is half a second
-			timer_step = 500
+			# hence sleep is half a second
+			sleep_length = self._TIMER_SLEEP_ACCELERATE
 		else:
 			# realtime
 			self.nikon.now()
-			# hence step is five seconds
-			timer_step = 5 * 1000
+			# hence sleep is five seconds
+			sleep_length = self._TIMER_SLEEP_NORMAL
 
 		# now repaint/update sky
 		self.update_starfield_and_more()
@@ -906,4 +911,4 @@ class CoreCode:
 		self.draw()
 
 		# and finally, setup to trigger outselves at the next timer time
-		self._timer_id = self._ui.root.after(timer_step, self.timer_went_off)
+		self._timer_id = self._ui.root.after(sleep_length, self.timer_went_off)
