@@ -31,6 +31,12 @@ class PaintStarsConstellationsBSC5:
 		return self._bsc5.stars
 
 	@property
+	def vector(self):
+		""" vector """
+		self._prime()
+		return self._bsc5.vector
+
+	@property
 	def skycoords(self):
 		""" skycoords """
 		self._prime()
