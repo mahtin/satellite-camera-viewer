@@ -32,10 +32,10 @@ class CameraFOV:
         """
 
         corners = {
-            "top_left":    (0, 0),
-            "top_right":   (camera.nx - 1, 0),
-            "bottom_right":(camera.nx - 1, camera.ny - 1),
-            "bottom_left": (0, camera.ny - 1),
+            'top_left':    (0, 0),
+            'top_right':   (camera.nx - 1, 0),
+            'bottom_right':(camera.nx - 1, camera.ny - 1),
+            'bottom_left': (0, camera.ny - 1),
         }
 
         ra_list = []
@@ -44,7 +44,7 @@ class CameraFOV:
 
         for name, (px, py) in corners.items():
             ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
-            results[name] = {"ra_deg": ra_deg, "dec_deg": dec_deg}
+            results[name] = {'ra_deg': ra_deg, 'dec_deg': dec_deg}
             ra_list.append(ra_deg)
             dec_list.append(dec_deg)
 
@@ -52,10 +52,10 @@ class CameraFOV:
         polygon = SkyCoord(
             ra=np.array(ra_list) * u.deg,
             dec=np.array(dec_list) * u.deg,
-            frame="gcrs"
+            frame='gcrs'
         )
 
-        results["polygon"] = polygon
+        results['polygon'] = polygon
         return results
 
     @classmethod
@@ -67,7 +67,7 @@ class CameraFOV:
         """
 
         # Try modern API (spherical_geometry 1.6.1 in theory)
-        if hasattr(sgeom.SphericalPolygon, "from_xyz"):
+        if hasattr(sgeom.SphericalPolygon, 'from_xyz'):
             return sgeom.SphericalPolygon.from_xyz(verts_xyz)
 
         # -------------------------------
@@ -134,7 +134,7 @@ class CameraFOV:
         verts = []
         for px, py in corners:
             ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
-            sc = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame="gcrs")
+            sc = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame='gcrs')
             verts.append(sc.cartesian.xyz.value)
 
         verts = np.array(verts)
@@ -163,27 +163,27 @@ class CameraFOV:
 
         # Center RA/Dec
         # ra_c_deg, dec_c_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
-        # center = SkyCoord(ra=ra_c_deg * u.deg, dec=dec_c_deg * u.deg, frame="gcrs")
+        # center = SkyCoord(ra=ra_c_deg * u.deg, dec=dec_c_deg * u.deg, frame='gcrs')
 
         # Horizontal FOV: center vs midpoints of left/right edges
         ra_l_deg, dec_l_deg = camera.pixel_to_radec(0, cy, attitude, observed_time)
         ra_r_deg, dec_r_deg = camera.pixel_to_radec(camera.nx - 1, cy, attitude, observed_time)
-        left = SkyCoord(ra=ra_l_deg * u.deg, dec=dec_l_deg * u.deg, frame="gcrs")
-        right = SkyCoord(ra=ra_r_deg * u.deg, dec=dec_r_deg * u.deg, frame="gcrs")
+        left = SkyCoord(ra=ra_l_deg * u.deg, dec=dec_l_deg * u.deg, frame='gcrs')
+        right = SkyCoord(ra=ra_r_deg * u.deg, dec=dec_r_deg * u.deg, frame='gcrs')
 
         width = left.separation(right)  # Angle object
 
         # Vertical FOV: center vs midpoints of top/bottom edges
         ra_t_deg, dec_t_deg = camera.pixel_to_radec(cx, 0, attitude, observed_time)
         ra_b_deg, dec_b_deg = camera.pixel_to_radec(cx, camera.ny - 1, attitude, observed_time)
-        top = SkyCoord(ra=ra_t_deg * u.deg, dec=dec_t_deg * u.deg, frame="gcrs")
-        bottom = SkyCoord(ra=ra_b_deg * u.deg, dec=dec_b_deg * u.deg, frame="gcrs")
+        top = SkyCoord(ra=ra_t_deg * u.deg, dec=dec_t_deg * u.deg, frame='gcrs')
+        bottom = SkyCoord(ra=ra_b_deg * u.deg, dec=dec_b_deg * u.deg, frame='gcrs')
 
         height = top.separation(bottom)
 
         # Use the existing FOV box for a spherical polygon area
         # box = cls.camera_fov_radec_box(camera, attitude, observed_time)
-        # poly = box["polygon"]  # SkyCoord of 4 corners
+        # poly = box['polygon']  # SkyCoord of 4 corners
 
         return (
             width,               # astropy Angle
@@ -221,7 +221,7 @@ class CameraFOV:
         border_coords = SkyCoord(
             ra=[p[0] for p in border_points] * u.deg,
             dec=[p[1] for p in border_points] * u.deg,
-            frame="gcrs",
+            frame='gcrs',
         )
 
         # Convert to 3D unit vectors for convex hull
@@ -240,7 +240,7 @@ class CameraFOV:
         hull_coords = SkyCoord(
             ra=hull_ra * u.rad,
             dec=hull_dec * u.rad,
-            frame="gcrs",
+            frame='gcrs',
         )
 
         return hull_coords, hull
@@ -300,7 +300,7 @@ class CameraFOV:
         verts_xyz = []
         for px, py in corners:
             ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
-            sc = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame="gcrs")
+            sc = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame='gcrs')
             verts_xyz.append(sc.cartesian.xyz.value)
 
         verts_xyz = np.array(verts_xyz)
@@ -357,7 +357,7 @@ class CameraFOV:
         polygon = SkyCoord(
             ra=np.array(ra_list) * u.deg,
             dec=np.array(dec_list) * u.deg,
-            frame="gcrs"
+            frame='gcrs'
         )
 
         return polygon
