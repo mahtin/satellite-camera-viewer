@@ -109,7 +109,7 @@ def earth_vector(observed_time, location=None):
 	if location:
 		# Location on Earth, initialized from geocentric coordinates.
 		location = EarthLocation.from_geocentric(location[0], location[1], location[2], unit='km')
-	earth_icrs = get_body('earth', observed_time.t, location=location).transform_to("icrs")
+	earth_icrs = get_body('earth', observed_time.t, location=location).transform_to('icrs')
 	earth_vec = earth_icrs.cartesian.xyz.value
 	return earth_vec
 

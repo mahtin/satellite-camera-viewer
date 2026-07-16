@@ -12,7 +12,7 @@ import astropy.units as u
 from .CameraIntrinsics import CameraIntrinsics
 from .CameraAttitude import CameraAttitude
 
-def load_star_catalog_from_fits(fits_path: str, ra_col: str = "RA", dec_col: str = "DEC"):
+def load_star_catalog_from_fits(fits_path: str, ra_col: str = 'RA', dec_col: str = 'DEC'):
     """
     Load a simple star catalog from a FITS table.
     Assumes columns named RA/DEC (or user-specified) in degrees.
@@ -24,7 +24,7 @@ def load_star_catalog_from_fits(fits_path: str, ra_col: str = "RA", dec_col: str
         dec = data[dec_col]
 
     # Use ICRS as there's no time represented yet - convert later
-    return SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
+    return SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame='icrs')
 
 def today_stars(stars_icrs, observed_time):
     """ today_stars """
@@ -56,7 +56,7 @@ def match_stars_in_image(camera: CameraIntrinsics, attitude: CameraAttitude, obs
     coords_image = SkyCoord(
         ra=[c[0] for c in coords_image] * u.deg,
         dec=[c[1] for c in coords_image] * u.deg,
-        frame="icrs",
+        frame='icrs',
     )
 
     # For each image direction, find nearest star in catalog
@@ -67,11 +67,11 @@ def match_stars_in_image(camera: CameraIntrinsics, attitude: CameraAttitude, obs
     for i in range(len(coords_image)):
         matches.append(
             {
-                "px": px_list[i],
-                "py": py_list[i],
-                "image_coord": coords_image[i],
-                "star_coord": star_catalog[idx[i]],
-                "separation_arcsec": sep2d[i].arcsec,
+                'px': px_list[i],
+                'py': py_list[i],
+                'image_coord': coords_image[i],
+                'star_coord': star_catalog[idx[i]],
+                'separation_arcsec': sep2d[i].arcsec,
             }
         )
 

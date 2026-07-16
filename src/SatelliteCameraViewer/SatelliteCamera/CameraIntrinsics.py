@@ -167,7 +167,7 @@ class CameraIntrinsics:
         # 4. Convert ECI direction vector -> RA/Dec using SkyCoord
         #    (SkyCoord handles quadrant, wrap, and pole behavior correctly)
         x, y, z = v_eci
-        sc = SkyCoord(x=x, y=y, z=z, representation_type="cartesian", frame="gcrs", obstime=observed_time.t)
+        sc = SkyCoord(x=x, y=y, z=z, representation_type='cartesian', frame='gcrs', obstime=observed_time.t)
         ra_deg = sc.spherical.lon.deg % 360.0
         dec_deg = sc.spherical.lat.deg
         return ra_deg, dec_deg
@@ -221,7 +221,7 @@ class CameraIntrinsics:
         """
 
         # 1. Convert RA/Dec to ICRS SkyCoord
-        target_icrs = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame="icrs")
+        target_icrs = SkyCoord(ra=ra_deg*u.deg, dec=dec_deg*u.deg, frame='icrs')
         # 2. Convert to GCRS at observed_time (same as pixel_to_radec)
         target_gcrs = target_icrs.transform_to(GCRS(obstime=observed_time.t))
         # 4. Convert target direction into a 3D unit vector (GCRS)
@@ -239,7 +239,7 @@ class CameraIntrinsics:
         # 6. Reject stars behind the camera
         if v_cam[2] <= 0:
             ## print('radec_to_pixel() [%.1f,%.1f] %-30s %s' % (ra_deg, dec_deg, attitude.quat_cam_to_eci, v_cam))
-            raise CameraIntrinsicsError("Direction is behind the camera") from None
+            raise CameraIntrinsicsError('Direction is behind the camera') from None
 
         # 7. Pinhole projection onto sensor plane (use self._effective_focal_length_mm)
         scale = self._effective_focal_length_mm / v_cam[2]
@@ -253,5 +253,5 @@ class CameraIntrinsics:
 
         # 9. Check bounds
         if px < 0 or px >= self.nx or py < 0 or py >= self.ny:
-            raise CameraIntrinsicsError("Direction is outside the camera field of view") from None
+            raise CameraIntrinsicsError('Direction is outside the camera field of view') from None
         return int(px), int(py)

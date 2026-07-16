@@ -403,7 +403,7 @@ class Cubesat:
         self._actors['access']    = [self._plotter.add_mesh(a,                     color='lightgray', smooth_shading=True, specular=0.9, roughness=0.5, metallic=0.9) for a in self.parts['access']]
         self._actors['antennas']  = [self._plotter.add_mesh(a,                     color='yellow',    smooth_shading=True,                                          ) for a in self.parts['antennas']]
         self._actors['rails']     = [self._plotter.add_mesh(r,                     color='gray',      smooth_shading=True, specular=0.5, roughness=0.0, metallic=0.0) for r in self.parts['rails']]
-        self._actors["mli"]       = [self._plotter.add_mesh(m,                     color='gold',      smooth_shading=True, specular=0.8, roughness=0.1, metallic=0.9) for m in self.parts["mli"]]
+        self._actors['mli']       = [self._plotter.add_mesh(m,                     color='gold',      smooth_shading=True, specular=0.8, roughness=0.1, metallic=0.9) for m in self.parts['mli']]
 
         # special case meshes...
         self._add_mesh_bus2()
@@ -430,14 +430,14 @@ class Cubesat:
         # texture solar panels - Generate texture once
         solar_img = self._make_solar_texture()
         solar_tex = self._pil_to_pv_texture(solar_img)
-        self._actors["panels"] = []
-        for p in self.parts["panels"]:
+        self._actors['panels'] = []
+        for p in self.parts['panels']:
             actor = self._plotter.add_mesh(p, texture=solar_tex, smooth_shading=True, specular=0.6, roughness=0.2)
-            self._actors["panels"].append(actor)
+            self._actors['panels'].append(actor)
 
     def _make_solar_texture(self, cells_x=6, cells_y=12, size=512, cell_color=(10, 20, 60), line_color=(180, 180, 200), line_thickness=2):
-        """Generate a procedural solar-cell grid texture as a PIL image."""
-        img = Image.new("RGB", (size, size), cell_color)
+        """ Generate a procedural solar-cell grid texture as a PIL image """
+        img = Image.new('RGB', (size, size), cell_color)
         draw = ImageDraw.Draw(img)
 
         # Draw vertical grid lines
@@ -451,7 +451,7 @@ class Cubesat:
             draw.rectangle([0, y - line_thickness//2, size, y + line_thickness//2], fill=line_color)
 
         # Optional: slight vignette for realism
-        vignette = Image.new("L", (size, size))
+        vignette = Image.new('L', (size, size))
         for y in range(size):
             for x in range(size):
                 dx = (x - size/2) / (size/2)
@@ -459,7 +459,7 @@ class Cubesat:
                 d = math.sqrt(dx*dx + dy*dy)
                 vignette.putpixel((x, y), int(255 * min(1, d)))
 
-        img = Image.blend(im1=img, im2=Image.new("RGB", (size, size), (0, 0, 0)), alpha=0.15)
+        img = Image.blend(im1=img, im2=Image.new('RGB', (size, size), (0, 0, 0)), alpha=0.15)
         return img
 
     def _pil_to_pv_texture(self, pil_img):

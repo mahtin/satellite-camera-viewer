@@ -225,7 +225,7 @@ class SatelliteOrbit:
         """ icrs - convert satellite and time into a ICRS value """
         # ICRS is International Celestial Reference System (ICRS)
         r_teme_km, _ = self._teme(observed_time)
-        sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=observed_time.t)).transform_to("icrs")
+        sat_icrs = SkyCoord(x=r_teme_km[0]*u.km, y=r_teme_km[1]*u.km, z=r_teme_km[2]*u.km, frame=TEME(obstime=observed_time.t)).transform_to('icrs')
         return sat_icrs
 
     def sat_lon_lat_alt(self, observed_time):

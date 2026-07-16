@@ -20,7 +20,7 @@ class CatalogError(Exception):
 class Catalog():
     """ Catalog() """
 
-    # Yeah, yeah, yeah, this "known key" isn't optimal - but it's fit for purpose here.
+    # Yeah, yeah, yeah, this known key isn't optimal - but it's fit for purpose here.
     # We are only protecting from corupt file systems - which isn't really a thing anymore.
     _NOT_REALLY_A_SECRET_KEY = b'c351e1e1-4e9b-45f8-bf74-b08f5f13e9a9'
 

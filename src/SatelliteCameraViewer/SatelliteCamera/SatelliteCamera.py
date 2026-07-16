@@ -345,7 +345,7 @@ class SatelliteCamera():
 
         # Inertial Pointing:
         #  A non-tumbling satellite keeps its antennas or cameras pointed at the same spot in space (inertial space).
-        #  As it follows the curve of the Earth, its "down" side will gradually point towards the side, then up, then
+        #  As it follows the curve of the Earth, its 'down' side will gradually point towards the side, then up, then
         #  towards the other side over one orbit.
         # Earth-Pointing Need:
         #  To keep one side constantly aimed at the Earth (nadir pointing), a satellite must actively rotate at the

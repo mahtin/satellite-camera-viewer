@@ -6,7 +6,7 @@ import gzip
 from .star import Star
 from .catalog import Catalog
 
-# class name should be "Catalog" following by the name of the catalog - this is used elsewhere
+# class name should be 'Catalog' following by the name of the catalog - this is used elsewhere
 
 class CatalogSAO(Catalog):
     """ CatalogSAO()

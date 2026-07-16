@@ -71,7 +71,7 @@ class UserInterface:
 	@property
 	def font(self):
 		""" font """
-		return tk.font.nametofont("TkDefaultFont").actual()
+		return tk.font.nametofont('TkDefaultFont').actual()
 
 	@property
 	def core(self):

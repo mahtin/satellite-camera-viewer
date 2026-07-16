@@ -13,17 +13,17 @@
 # import requests
 # from bs4 import BeautifulSoup
 # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
-# url = "https://en.wikipedia.org/wiki/IAU_designated_constellations"
+# url = 'https://en.wikipedia.org/wiki/IAU_designated_constellations'
 # response = requests.get(url, headers=headers)
 # response.raise_for_status()
-# soup = BeautifulSoup(response.text, "html.parser")
-# table = soup.find("div", {"id": "bodyContent"}).find_next("table")
+# soup = BeautifulSoup(response.text, 'html.parser')
+# table = soup.find('div', {'id': 'bodyContent'}).find_next('table')
 # # Extract headers
-# headers = [th.get_text(strip=True) for th in table.find_all("th")]
+# headers = [th.get_text(strip=True) for th in table.find_all('th')]
 # print(headers)
 # # Extract rows
-# for row in table.find_all("tr")[1:]:
-#     cols = [td.get_text(strip=True) for td in row.find_all("td")]
+# for row in table.find_all('tr')[1:]:
+#     cols = [td.get_text(strip=True) for td in row.find_all('td')]
 #     print(cols)
 
 import re

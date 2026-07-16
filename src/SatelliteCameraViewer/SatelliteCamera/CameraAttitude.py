@@ -42,7 +42,7 @@ class Quaternion:
         return 'Quaternion[%f,%f,%f,%f]' % (self.qx, self.qy, self.qz, self.qw)
 
     def __array__(self, dtype=None):
-        """Allows np.array(instance) to work."""
+        """ Allows np.array(instance) to work """
         return np.array(self.wxyz, dtype=dtype)
 
     @property
@@ -99,14 +99,14 @@ class CameraAttitude:
             # Aerospace sequence: yaw (Z), pitch (Y), roll (X)
             R_sat = R.from_euler('ZYX', [self.sat_attitude.yaw_deg, self.sat_attitude.pitch_deg, self.sat_attitude.roll_deg], degrees=True)
         else:
-            raise ValueError("Must provide either satellite quaternion or yaw/pitch/roll") from None
+            raise ValueError('Must provide either satellite quaternion or yaw/pitch/roll') from None
 
         # allow default camera attitude (of 0,0,0) with respect to the satellite
         if self.cam_attitude is None:
             self.cam_attitude = Attitude()
 
         # 2. Camera mounting rotation (body -> camera)
-        R_cam = R.from_euler("ZYX", [self.cam_attitude.yaw_deg, self.cam_attitude.pitch_deg, self.cam_attitude.roll_deg], degrees=True)
+        R_cam = R.from_euler('ZYX', [self.cam_attitude.yaw_deg, self.cam_attitude.pitch_deg, self.cam_attitude.roll_deg], degrees=True)
 
         # 3. Final camera->ECI rotation
         # camera->ECI = body->ECI degree camera->body
@@ -223,7 +223,7 @@ class CameraAttitude:
         """
 
         # Target direction in GCRS
-        sc = SkyCoord(ra=ra_deg * u.deg, dec=dec_deg * u.deg, frame="gcrs", obstime=observed_time.t)
+        sc = SkyCoord(ra=ra_deg * u.deg, dec=dec_deg * u.deg, frame='gcrs', obstime=observed_time.t)
 
         # +Z_cam = target direction
         z_cam = sc.cartesian.xyz.value

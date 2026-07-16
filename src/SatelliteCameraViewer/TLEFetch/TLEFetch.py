@@ -38,9 +38,9 @@ import requests
 # Date example... ~/.cache/tle-fetch/69792/69792.2026-07-05T05:54:20.tle.json
 # Quick access... ~/.cache/tle-fetch/69792/69792.latest--tle--values.tle.json
 #
-# The dated file is "touch'ed" to adjust it's times to match the epoch. Hence ls -lt works (as does ls -l because of ISO date in name)
+# The dated file is touch'ed to adjust it's times to match the epoch. Hence ls -lt works (as does ls -l because of ISO date in name)
 #
-# No dependancies are used in this code. You're welcome to wrap this with "sgp4.api" for "Satrec" processing, or another library.
+# No dependancies are used in this code. You're welcome to wrap this with 'sgp4.api' for Satrec processing, or another library.
 #
 
 @dataclass

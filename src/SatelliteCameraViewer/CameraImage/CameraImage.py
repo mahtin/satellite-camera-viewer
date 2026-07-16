@@ -18,7 +18,7 @@ class CameraImage:
 		self._width = width
 		self._height = height
 		self._pil_img = Image.new('RGB', (self._width, self._height), color=(127, 127, 127))
-		self._draw = ImageDraw.Draw(self._pil_img, "RGB")
+		self._draw = ImageDraw.Draw(self._pil_img, 'RGB')
 
 	def paint(self, where):
 		"""
@@ -34,7 +34,7 @@ class CameraImage:
 		"""
 		save - write image to a temporary file in /tmp/ folder.
 		"""
-		self._pil_img.save('/tmp/camera.png', "PNG")
+		self._pil_img.save('/tmp/camera.png', 'PNG')
 
 	def line(self, xy1, xy2, color=(0,0,0), width=1):
 		"""
