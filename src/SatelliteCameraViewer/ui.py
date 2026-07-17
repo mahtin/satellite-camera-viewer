@@ -432,15 +432,15 @@ class UserInterface:
 		""" do_mag """
 		self.core.do_mag(float(value))
 
-	def star_mag_buttons(self, parent, row, col, mags):
+	def star_mag_buttons(self, parent, row, col, star_magnitudes):
 		""" star_mag_buttons """
 		lf = self.labelframe(parent, 'Star Magnitude')
 		lf.grid(row=row, column=col)
-		m_default = mags[2]
+		m_default = 5.0
 		self._star_mag_buttons_variable = tk.DoubleVar(value=m_default)
-		for m in mags:
+		for m,v in star_magnitudes.items():
 			# radiobutton
-			b = ttk.Radiobutton(lf, text='%.1f' % m, variable=self._star_mag_buttons_variable, value=m, command=lambda value=m: self.do_mag(value))
+			b = ttk.Radiobutton(lf, text='%.1f (%d stars)' % (m,v), variable=self._star_mag_buttons_variable, value=m, command=lambda value=m: self.do_mag(value))
 			b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
 			self._star_mag_buttons[m] = b
 			row += 1

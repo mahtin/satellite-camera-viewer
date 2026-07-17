@@ -77,7 +77,13 @@ def viewer(args=None):
 	def setup_star_magnitude(parent):
 		""" setup_star_magnitude """
 		mag_frame = ui.frame(parent, padx=0, borderwidth=0, sticky='nw')
-		star_magnitudes = [1.0, 3.0, 5.0, 7.0, 9.0]
+		# The BSC5 catalog is best used with the following steps:
+		#   MAG  COUNT      %
+		#   1.0     15   0.2%
+		#   5.0   1630  17.9%
+		#   6.0   5080  55.8%
+		#   8.0   9096 100.0%
+		star_magnitudes = {1.0: 15, 5.0: 1630, 6.0: 5080, 8.0: 9096}
 		m_row = 0
 		m_col = 0
 		ui.star_mag_buttons(mag_frame, m_row, m_col, star_magnitudes)
