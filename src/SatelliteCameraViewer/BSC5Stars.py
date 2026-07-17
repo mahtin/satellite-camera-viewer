@@ -14,6 +14,11 @@ class BSC5Stars:
 	BSC5Stars - a wrapper for The Yale Bright Star Catalog, 5th Edition (BSC5).
 	:param max_mag: Maximum star magnitude to process.
 	:type max_mag: float
+
+	The Bright Star Catalog, 5th Revised Edition (BSC5) lists all objects down to a limiting apparent visual magnitude of 6.5.
+	This cutoff corresponds to the limit of naked-eye visibility under clear, dark skies.
+	https://en.wikipedia.org/wiki/Bright_Star_Catalogue
+	In reality there are stars down to a magnitude of 8.0 in the catalog.
 	"""
 
 	def __init__(self, max_mag=4.0):
@@ -180,13 +185,20 @@ class BSC5Stars:
 
 def _main(args=None):
 	""" _main """
-	b = BSC5Stars(max_mag=3)
+	b = BSC5Stars(max_mag=3.0)
 	for s in [b.stars, b.skycoords, b.vector]:
 		print('[')
 		for ii in range(5):
 			print('\t'+str(s[ii]).replace('\n', ' ')+',')
 		print(']')
 		print('')
+
+	b.max_mag = 9.0
+	t = len(b)
+	print('%6s %6s %6s' % ('MAG', 'COUNT', '%'))
+	for max_mag_int in range(-20,90,5):
+		b.max_mag = max_mag_int/10.0
+		print('%6.1f %6d %5.1f%%' % (b.max_mag, len(b.get_stars()[0]), (len(b)/t)*100.0))
 
 	#[
 	#	Star(number=2491, name='9Alp',  constellation='CMa', ra=1.7677930939085398, dec=-0.29175117701809655, mag=-1.46),

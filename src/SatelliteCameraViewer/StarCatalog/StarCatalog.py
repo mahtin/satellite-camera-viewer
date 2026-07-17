@@ -112,12 +112,12 @@ class StarCatalog():
 
         return self._catalog.__repr__()
 
-    def select_max_mag(self, mag):
+    def select_max_mag(self, max_mag):
         """ select_max_mag() """
 
         found_stars = []
         for star in self._catalog():
-            if star.mag and star.mag <= mag:
+            if star.mag and star.mag <= max_mag:
                 found_stars.append(star)
         return sorted(found_stars, key=lambda v: (v.ra, v.dec))
 
@@ -135,8 +135,8 @@ class StarCatalog():
                     found_stars.append(star)
         return sorted(found_stars, key=lambda v: (v.ra, v.dec))
 
-    def segment(self, ra_center, dec_center, ra_width, dec_width, max_mag=None):
-        """ segment() """
+    def select_by_segment(self, ra_center, dec_center, ra_width, dec_width, max_mag=None):
+        """ select_by_segment() """
 
         ra_center, dec_center = math.radians(ra_center), math.radians(dec_center)
         ra_width, dec_width = math.radians(ra_width), math.radians(dec_width)
