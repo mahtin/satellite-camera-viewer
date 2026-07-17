@@ -101,7 +101,11 @@ class NikonD5Camera:
 		hull_coords, _ = self._sc.camera_fov_convex_hull(border_step=100)
 		return [[v.ra.degree for v in hull_coords], [v.dec.degree for v in hull_coords]]
 
-	def camera_fov_border_vectors(self, border_step:int):
-		""" camera_fov_border_vectors """
+	def camera_fov_border_vectors_radec_deg(self, border_step:int):
+		""" camera_fov_border_vectors_radec_deg """
 		polygon = self._sc.camera_fov_border_vectors(border_step=border_step)
 		return [(float(v.ra.value), float(v.dec.value)) for v in polygon]
+
+	def camera_fov_border_vectors(self, border_step:int):
+		""" camera_fov_border_vectors """
+		return self._sc.camera_fov_border_vectors(border_step=border_step)

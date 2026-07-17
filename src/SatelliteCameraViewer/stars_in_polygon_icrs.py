@@ -2,65 +2,74 @@
 stars_in_polygon_icrs - Spherical point-in-polygon test.
 """
 
+from multiprocessing import Pool
 import numpy as np
-from astropy.coordinates import SkyCoord
-import astropy.units as u
 
-def stars_in_polygon_icrs(stars: list[SkyCoord], poly_ra_dec: list[tuple[float,float]]):
+def stars_in_polygon_icrs(stars_vec, poly_vec, multiprocessing_method=False):
     """
     stars_in_polygon_icrs() - Spherical point-in-polygon test.
-
-    :param stars: An array of stars (in ICRS) to search.
-    :type stars: list[SkyCoord]
-    :param poly_ra_dec: Nx2 array of polygon vertices (ra, dec) in degrees (ICRS).
-    :type poly_ra_dec: list[tuple[float,float]]
-
-    :return: A boolean mask of stars inside the polygon.
-    :rtype: A list of bool values
-
     """
+    if multiprocessing_method:
+        # multiprocesssing
+        inside_mask = _stars_in_polygon_icrs_multiprocesssing(stars_vec, poly_vec)
+    else:
+        # single thread
+        inside_mask = _stars_in_polygon_icrs_fast(stars_vec, poly_vec)
+    return inside_mask
 
-    # Convert stars to unit vectors
-    x = stars.icrs.cartesian.x.value
-    y = stars.icrs.cartesian.y.value
-    z = stars.icrs.cartesian.z.value
-    star_vecs = np.vstack([x, y, z]).T
+#
+# Fork isn't considered safe in modern Python and hence we know that spawn is used.
+# Hence the arg creation for this function.
+# On a Python spawn only the _worker() function is imported and run, plus the imports above - so keep them simple!
+#
+# HOWEVER: The multiprocessing version runs way slower than the non-multiprocessing version because of overhead.
+#
+def _worker(args):
+    """ _worker """
+    stars_vec_chunk, poly_vec = args
+    return _stars_in_polygon_icrs_fast(stars_vec_chunk, poly_vec)
 
-    # Convert polygon vertices to unit vectors
-    poly = SkyCoord(ra=[p[0] for p in poly_ra_dec]*u.deg,
-                    dec=[p[1] for p in poly_ra_dec]*u.deg,
-                    frame="icrs")
-    px = poly.cartesian.x.value
-    py = poly.cartesian.y.value
-    pz = poly.cartesian.z.value
-    poly_vecs = np.vstack([px, py, pz]).T
+def _stars_in_polygon_icrs_multiprocesssing(stars_vec, poly_vec, n_proc=4):
+    """ _stars_in_polygon_icrs_multiprocessing """
+    stars_vec_chunk = np.array_split(stars_vec, n_proc)
+    args = [(chunk, poly_vec) for chunk in stars_vec_chunk]
+    with Pool() as p:
+        results = p.map(_worker, args)
+    inside_mask = np.concatenate(results)
+    return inside_mask
+
+#
+# fast version fully using numpy methodology (needs stars and poly in specific numpy format)
+#
+def _stars_in_polygon_icrs_fast(stars_vec, poly_vecs):
+    """ _stars_in_polygon_icrs_fast """
 
     # Close polygon
     poly_vecs = np.vstack([poly_vecs, poly_vecs[0]])
 
-    # Compute spherical winding number for each star
-    inside = np.zeros(len(stars), dtype=bool)
+    # Build edges
+    A = poly_vecs[:-1]          # shape (M, 3)
+    B = poly_vecs[1:]           # shape (M, 3)
 
-    for i, s in enumerate(star_vecs):
-        total_angle = 0.0
-        for j in range(len(poly_vecs)-1):
-            a = poly_vecs[j]
-            b = poly_vecs[j+1]
+    # For each star, compute vectors to each polygon vertex
+    # stars_vec[:,None,:] -> shape (N,1,3)
+    # A[None,:,:]         -> shape (1,M,3)
+    VA = A[None,:,:] - stars_vec[:,None,:]   # shape (N,M,3)
+    VB = B[None,:,:] - stars_vec[:,None,:]
 
-            # Compute angle between edges as seen from star
-            va = a - s
-            vb = b - s
-            va /= np.linalg.norm(va)
-            vb /= np.linalg.norm(vb)
+    # Normalize
+    VA /= np.linalg.norm(VA, axis=2, keepdims=True)
+    VB /= np.linalg.norm(VB, axis=2, keepdims=True)
 
-            dot = np.clip(np.dot(va, vb), -1.0, 1.0)
-            angle = np.arccos(dot)
+    # Dot products -> angles
+    dots = np.sum(VA * VB, axis=2)
+    dots = np.clip(dots, -1.0, 1.0)
+    angles = np.arccos(dots)                 # shape (N,M)
 
-            # Signed angle using triple product
-            sign = np.sign(np.dot(s, np.cross(a, b)))
-            total_angle += sign * angle
+    # Signed angle using triple product
+    cross_ab = np.cross(A, B)                # shape (M,3)
+    signs = np.sign(np.dot(stars_vec, cross_ab.T))  # shape (N,M)
 
-        # Inside if winding number ≈ ±2π
-        inside[i] = np.abs(total_angle) > np.pi
+    total = np.sum(signs * angles, axis=1)
 
-    return inside
+    return np.abs(total) > np.pi

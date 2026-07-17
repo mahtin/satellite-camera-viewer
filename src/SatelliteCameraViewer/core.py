@@ -1,6 +1,7 @@
 """ core """
 
 import math
+from datetime import datetime
 
 import numpy as np
 from matplotlib.figure import Figure
@@ -8,6 +9,7 @@ from matplotlib.collections import PathCollection
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import cartopy.crs as ccrs
 from astropy.coordinates import SkyCoord
+import astropy.units as u
 
 from .SatelliteCamera import SatelliteCameraError
 from .Constellations import ConstellationDatabase
@@ -346,14 +348,16 @@ class CoreCode:
 	def do_match(self):
 		""" do_match """
 		# Star chart
-		p = self.plot_matched_closest_star()
-		if p:
-			self.items_plotted_add(p)
+		if False:
+			p = self.plot_matched_closest_star()
+			if p:
+				self.items_plotted_add(p)
 		# Camera
 		p = self.camera_image_matched_stars()
 		if p:
 			self.items_plotted_add(p)
 
+		return
 		# Earth intercept (maybe)
 		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
 		earth_radius_deg = self.nikon.earth_angular_radius()
@@ -550,7 +554,7 @@ class CoreCode:
 
 	def plot_border_vectors(self):
 		""" plot_border_vectors """
-		border_vectors = self.nikon.camera_fov_border_vectors(border_step=25)
+		border_vectors = self.nikon.camera_fov_border_vectors_radec_deg(border_step=25)
 
 		plots = []
 		for ra_rad, dec_rad in split_plot_mollweide_line_ra_dec_deg(border_vectors):
@@ -561,9 +565,17 @@ class CoreCode:
 
 	def _match_stars_in_polygon(self):
 		""" match_stars_in_polygon """
-		border_vectors = self.nikon.camera_fov_border_vectors(border_step=10)
 		# look for stars ...
-		inside_mask = stars_in_polygon_icrs(self._scbsc5.skycoords, border_vectors)
+		polygon_gcrs = self.nikon.camera_fov_border_vectors(border_step=10)
+		c = SkyCoord(ra=polygon_gcrs.ra.value*u.deg, dec=polygon_gcrs.dec.value*u.deg, frame='icrs')
+		xyz = c.cartesian.xyz.value
+		border_vectors = xyz.T   # shape (N,3)
+
+		start_t = datetime.now()
+		inside_mask = stars_in_polygon_icrs(self._scbsc5.vector, border_vectors)
+		elapsed_t = datetime.now() - start_t
+		print('stars_in_polygon_icrs: time:', self._mag, len(border_vectors), len(self._scbsc5.vector), len(self._scbsc5.skycoords), len(self._scbsc5._bsc5), (elapsed_t.seconds*1000.0 + elapsed_t.microseconds/1000.0), 'msec')
+
 		found_stars = self._scbsc5.skycoords[inside_mask]
 		return found_stars, inside_mask
 
