@@ -376,7 +376,7 @@ class TLEFetch:
 				root_os_error = e
 			if self._debug:
 				print('TLEFetch: HTTP Error', self._sat_id, 'code=', root_os_error, file=sys.stderr)
-			raise TLEFetchError('HTTP Error %s: %s' % (root_os_error, self._url)) from None
+			raise TLEFetchError('HTTP %s-ERROR %s' % (root_os_error, self._url)) from None
 		except requests.exceptions.HTTPError as e:
 			# this would be something like a 404 (Not Found) or 406 (Not Acceptable) response
 			if self._debug:
@@ -472,7 +472,7 @@ def _main(args=None):
 			continue
 		if debug:
 			epoch_age_days, epoch_age_hours = tf.epoch_age()
-			print('# age: %s %s %s %s' % (
+			print('# age: %02d %s %02d %s' % (
 				epoch_age_days, 'days' if epoch_age_days > 1 else 'day',
 				epoch_age_hours, 'hours' if epoch_age_hours > 1 else 'hour',
 			), end='\t')
