@@ -416,12 +416,27 @@ class TLEFetch:
 
 	def _tle_to_sat_id(self, line1):
 		""" _tle_to_sat_id """
-		return int(line1[2:7].strip())
+		# Comment from sgp4 library ...
+		# Some TLE files now use a new “Alpha-5” convention that expands the range of satellite numbers
+		# by using an initial letter; for example, “E8493” means satellite 148493.
+		# This code supports the Alpha-5 convention and should return the correct integer.
+		if line1[2:3].isnumeric():
+			# deal with classic all numericformat
+			return int(line1[2:7].strip())
+		# deal with Alpha-5 format
+		n = ord(line1[2:3]) - ord('A') + 10
+		n -= int(c > 'I')
+		n -= int(c > 'O')
+		return n * 10000 + int(line1[3:7].strip())
+
+	def _tle_to_epoch(self, line1):
+		""" _tle_to_epoch """
+		return line1[18:32].strip()
 
 	def _tle_to_datetime(self, line1):
 		""" _tle_to_datetime """
 		# Extract the epoch substring from TLE line 1 (columns 19-32)
-		epoch_str = line1[18:32].strip()
+		epoch_str = self._tle_to_epoch(line1)
 		year_two_digit = int(epoch_str[:2])
 		day_fraction = float(epoch_str[2:])
 		# Calculate full 4-digit year (e.g., 2026)
