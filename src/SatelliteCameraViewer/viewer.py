@@ -16,14 +16,19 @@ def viewer(args=None):
 	:param args: Any CLI args
 	:type args: list[str] | None
 
-	This code only exits when the window is close and/or via ^C.
+	This code only exits when the main window (or app) is closed and/or via ^C.
 
 	"""
 
 	# start UI first
 	ui = UserInterface(title='Satellite Camera Viewer')
 	# start core and pass it the UI
-	core = CoreCode(ui=ui)
+	_ = CoreCode(ui=ui)
+	# now core knows ui and ui knows core ... we continue just referencing ui from this point onwards
+	# ui = core.ui & core = ui.core ... QED
+
+	list_of_cameras = ui.core.my_camera.camera.CameraSensors.keys()
+	ui.create_camera_menu(list_of_cameras)
 
 	# all the frames ...
 	top_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, anchor='n')
@@ -38,7 +43,7 @@ def viewer(args=None):
 	sat_frame = ui.labelframe(bottom_frame, 'Satellite', col=3, padx=1, pady=1, borderwidth=1)
 
 	# start the graphing for the starfield!
-	core.plot_in_tk(starfield_graph_frame, 'starfield')
+	ui.core.plot_in_tk(starfield_graph_frame, 'starfield')
 
 	row = 0
 	col = 0
@@ -133,8 +138,8 @@ def viewer(args=None):
 	ui.reset_everything_button(adjustments_frame, row, col)
 	row += 1
 
-	nx = core.my_camera.camera.nx
-	ny = core.my_camera.camera.ny
+	nx = ui.core.my_camera.camera.nx
+	ny = ui.core.my_camera.camera.ny
 	h = 200
 	w = int(h * nx/ny)
 
@@ -143,10 +148,10 @@ def viewer(args=None):
 	row = 0
 	photo_label = ui.photo_label(photo_frame, row, col, width=w, height=h)
 	photo_label.grid(row=0, column=0, padx=2, pady=2, sticky='ne')
-	core.camera_image_register(label=photo_label, nx=nx, ny=ny, w=w, h=h)
+	ui.core.camera_image_register(label=photo_label, nx=nx, ny=ny, w=w, h=h)
 
 	# place for an earth map ...
-	core.plot_in_tk(earth_frame, 'earth')
+	ui.core.plot_in_tk(earth_frame, 'earth')
 
 	# key values for cubesat display
 	u = 1
@@ -164,7 +169,7 @@ def viewer(args=None):
 	# build the viewer for the cubesat 3D model
 	# cubesat_viewer = CubesatViewer(image_canvas=sat_label, cubesat=cubesat_model, width=w, height=h)
 
-	core.cubesat_viewer_register(u=u, label=sat_label, w=w, h=h)
+	ui.core.cubesat_viewer_register(u=u, label=sat_label, w=w, h=h)
 
 	col = 0
 	row = 0
@@ -179,27 +184,9 @@ def viewer(args=None):
 	# misc box
 	ui.misc_text_box(info_frame, row, col)
 
-	# prime everything by runing timer expiry code
-	core.timer_went_off()
+	# prime everything the first time by runing timer expiry code once (which triggers it constant running)
+	ui.core.timer_went_off()
 
-	## Bring to front after a small delay to allow for app init
-	#def center_and_delayed_bring_to_front_and_make_focus(ui):
-	#	""" center_and_delayed_bring_to_front_and_make_focus """
-	#	# center app window on screen
-	#	ui.root.update_idletasks()
-	#	app_width = ui.root.winfo_reqwidth()
-	#	app_height = ui.root.winfo_reqheight()
-	#	x = (ui.root.winfo_screenwidth() / 2) - (app_width / 2)
-	#	y = (ui.root.winfo_screenheight() / 2) - (app_height / 2)
-	#	ui.root.geometry('%dx%d+%d+%d' % (app_width, app_height, x, y))
-	#	# now make sure app is fully in focus
-	#	ui.root.deiconify()			# Bring back if minimized
-	#	ui.root.lift()				# Bring to top of Z-order
-	#	ui.root.attributes('-topmost', True)	# Set always on top
-	#	ui.root.focus_force()
-	#	ui.root.attributes('-topmost', False)	# Optional: set to False to allow other apps over it
-
-	#_ = ui.root.after(1, lambda ui=ui: center_and_delayed_bring_to_front_and_make_focus(ui))
-
+	# the main loop - never to return (unless we exit)
 	ui.mainloop()
 	# not reached

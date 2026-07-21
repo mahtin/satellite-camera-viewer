@@ -95,9 +95,9 @@ class CoreCode:
 		"""
 		if ui is None:
 			raise ValueError('CoreCode() needs ui value') from None
-		self._ui = ui
-		# register ourselves with the UI
-		self._ui.core = self
+		self.ui = ui
+		# register ourselves with the UI - that way ui knows core and core knows ui
+		self.ui.core = self
 
 		self._timer_id = None
 
@@ -140,7 +140,7 @@ class CoreCode:
 			self._COLORS['planets'],
 			self._COLORS['sky-galactic'],
 			self._COLORS['sky-ecliptic'],
-			fontdict={'fontsize':self._ui.font['size']+2}
+			fontdict={'fontsize':self.ui.font['size']+2}
 		)
 		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
 		self._scbsc5 = PaintStarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._DEFAULT_CONSTELLATIONS, mag=self._mag)
@@ -153,11 +153,6 @@ class CoreCode:
 		# earth plot
 		self._create_earth_subplot()
 		self._paint_earth_axis()
-
-	@property
-	def ui(self):
-		""" ui """
-		return self._ui
 
 	def plot_in_tk(self, parent, which, row=0, col=0, padx=0, pady=0, sticky='nsew'):
 		""" plot_in_tk """
@@ -208,7 +203,7 @@ class CoreCode:
 	def _paint_starfield_axis(self):
 		""" _paint_starfield_axis - x and y axis (which is really ra and dec). """
 		# match font to rest of user interface (and hence system)
-		font_size = self._ui.font['size']
+		font_size = self.ui.font['size']
 		# grid lines
 		self._starfield_ax.grid(color=self._COLORS['sky-grid'], alpha=0.5)
 		# x axis (ra)
@@ -728,7 +723,6 @@ class CoreCode:
 	def do_focal_length(self, focal_length):
 		""" do_focal_length """
 		self.my_camera.camera.reload(focal_length_mm=float(focal_length))
-
 		# refresh everything
 		self.update_starfield_and_more()
 		self.draw()
@@ -861,6 +855,16 @@ class CoreCode:
 		# RESET timer interval
 		self.timer_reset()
 
+	def do_camera_select(self, camera_name):
+		""" do_camera_select """
+		print('DEBUG: do_camera_select(): %s' % (camera_name))
+		self.my_camera.camera.reload(camera_name)
+		# need to resize the camera view area to match new camera sensor
+		self._ci.resize(self.my_camera.camera.nx, self.my_camera.camera.ny)
+		# refresh everything
+		self.update_starfield_and_more()
+		self.draw()
+
 	def _match_against_bsc5(self):
 		""" _match_against_bsc5 """
 
@@ -897,7 +901,7 @@ class CoreCode:
 	def timer_reset(self):
 		""" timer_reset """
 		if self._timer_id is not None:
-			self._ui.root.after_cancel(self._timer_id)
+			self.ui.root.after_cancel(self._timer_id)
 			self._timer_id = None
 		# reprime
 		self.timer_went_off()
@@ -926,4 +930,4 @@ class CoreCode:
 		self.draw()
 
 		# and finally, setup to trigger outselves at the next timer time
-		self._timer_id = self._ui.root.after(sleep_length, self.timer_went_off)
+		self._timer_id = self.ui.root.after(sleep_length, self.timer_went_off)

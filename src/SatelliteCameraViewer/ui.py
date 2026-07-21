@@ -279,6 +279,20 @@ class UserInterface:
 		# We do this becuase we sometimes want to stop things
 		self.root.bind_all('<Escape>', self._handle_escape)
 
+	# CAMERA MENU
+
+	def create_camera_menu(self, list_of_cameras):
+		""" create__camera_select """
+		# Camera selection menu ...
+		camera_menu = tk.Menu(self._menubar, tearoff=False)
+		for camera_name in list_of_cameras:
+			camera_menu.add_command(label=camera_name, command=lambda camera_name=camera_name: self._camera_select(camera_name))
+		self._menubar.insert_cascade(1, label='Camera', menu=camera_menu)
+
+	def _camera_select(self, camera_name:str):
+		""" _camera_select """
+		self.core.do_camera_select(camera_name)
+
 	# TITLE
 
 	#def title_label(self, parent, text):
