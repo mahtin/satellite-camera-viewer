@@ -133,8 +133,8 @@ def viewer(args=None):
 	ui.reset_everything_button(adjustments_frame, row, col)
 	row += 1
 
-	nx = core.nikon.camera.nx
-	ny = core.nikon.camera.ny
+	nx = core.my_camera.camera.nx
+	ny = core.my_camera.camera.ny
 	h = 200
 	w = int(h * nx/ny)
 

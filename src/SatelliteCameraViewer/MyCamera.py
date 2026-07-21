@@ -1,30 +1,17 @@
-""" NikonD5Camera """
+""" MyCamera """
 
 from .SatelliteCamera import SatelliteCamera
 from .TLEFetch import TLEFetch
 from .static_list_satellites import static_list_satellites
 
-class NikonD5Camera:
-	""" NikonD5Camera """
+class MyCamera:
+	""" MyCamera """
 
-	def __init__(self, satellite_name=None, focal_length:float=50.0):
-		# Example distortion (small or none actually)
-		self._bcc = SatelliteCamera.BrownConradyCoeffs(k1=0.0, k2=0.0, p1=0.0, p2=0.0, k3=0.0)
-
-		# The Nikon D5 features a 20.8-megapixel full-frame (FX-format) CMOS sensor, measuring approximately 35.9 x 23.9 mm.
-		# This high-performance sensor is designed for professional photography,
-		# offering a maximum resolution of 5568 x 3712 pixels and a native ISO range up to 102,400
-
-		# Define camera
-		self._sc = SatelliteCamera(
-			focal_length_mm=focal_length,
-			sensor_size_x_mm = 35.9, sensor_size_y_mm = 23.9,
-			nx=5568, ny=3712,
-			bcc=self._bcc
-		)
+	def __init__(self, satellite_name=None, camera_name:str=None, focal_length:float=None):
+		# Define camera on satellite
+		self._sc = SatelliteCamera(camera_name, focal_length_mm=focal_length)
 
 		# map SatelliteCamera() into this class (yes - there's a more pythonic way to do this)
-
 		self.now                        = self._sc.now
 
 		self.adjust_by_seconds          = self._sc.adjust_by_seconds

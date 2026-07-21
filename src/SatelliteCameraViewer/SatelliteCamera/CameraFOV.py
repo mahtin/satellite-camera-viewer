@@ -33,9 +33,9 @@ class CameraFOV:
 
         corners = {
             'top_left':    (0, 0),
-            'top_right':   (camera.nx - 1, 0),
-            'bottom_right':(camera.nx - 1, camera.ny - 1),
-            'bottom_left': (0, camera.ny - 1),
+            'top_right':   (camera.camera_sensor.nx - 1, 0),
+            'bottom_right':(camera.camera_sensor.nx - 1, camera.camera_sensor.ny - 1),
+            'bottom_left': (0, camera.camera_sensor.ny - 1),
         }
 
         ra_list = []
@@ -125,9 +125,9 @@ class CameraFOV:
         # Corner pixels
         corners = [
             (0, 0),
-            (camera.nx - 1, 0),
-            (camera.nx - 1, camera.ny - 1),
-            (0, camera.ny - 1),
+            (camera.camera_sensor.nx - 1, 0),
+            (camera.camera_sensor.nx - 1, camera.camera_sensor.ny - 1),
+            (0, camera.camera_sensor.ny - 1),
         ]
 
         # Convert each corner to a 3D GCRS unit vector
@@ -158,8 +158,8 @@ class CameraFOV:
         """
 
         # Center pixel
-        cx = (camera.nx - 1) / 2.0
-        cy = (camera.ny - 1) / 2.0
+        cx = (camera.camera_sensor.nx - 1) / 2.0
+        cy = (camera.camera_sensor.ny - 1) / 2.0
 
         # Center RA/Dec
         # ra_c_deg, dec_c_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
@@ -167,7 +167,7 @@ class CameraFOV:
 
         # Horizontal FOV: center vs midpoints of left/right edges
         ra_l_deg, dec_l_deg = camera.pixel_to_radec(0, cy, attitude, observed_time)
-        ra_r_deg, dec_r_deg = camera.pixel_to_radec(camera.nx - 1, cy, attitude, observed_time)
+        ra_r_deg, dec_r_deg = camera.pixel_to_radec(camera.camera_sensor.nx - 1, cy, attitude, observed_time)
         left = SkyCoord(ra=ra_l_deg * u.deg, dec=dec_l_deg * u.deg, frame='gcrs')
         right = SkyCoord(ra=ra_r_deg * u.deg, dec=dec_r_deg * u.deg, frame='gcrs')
 
@@ -175,7 +175,7 @@ class CameraFOV:
 
         # Vertical FOV: center vs midpoints of top/bottom edges
         ra_t_deg, dec_t_deg = camera.pixel_to_radec(cx, 0, attitude, observed_time)
-        ra_b_deg, dec_b_deg = camera.pixel_to_radec(cx, camera.ny - 1, attitude, observed_time)
+        ra_b_deg, dec_b_deg = camera.pixel_to_radec(cx, camera.camera_sensor.ny - 1, attitude, observed_time)
         top = SkyCoord(ra=ra_t_deg * u.deg, dec=dec_t_deg * u.deg, frame='gcrs')
         bottom = SkyCoord(ra=ra_b_deg * u.deg, dec=dec_b_deg * u.deg, frame='gcrs')
 
@@ -207,14 +207,14 @@ class CameraFOV:
         border_points = []
 
         # Top and bottom edges
-        for px in range(0, camera.nx, border_step):
-            for py in [0, camera.ny - 1]:
+        for px in range(0, camera.camera_sensor.nx, border_step):
+            for py in [0, camera.camera_sensor.ny - 1]:
                 ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
                 border_points.append((ra_deg, dec_deg))
 
         # Left and right edges
-        for py in range(0, camera.ny, border_step):
-            for px in [0, camera.nx - 1]:
+        for py in range(0, camera.camera_sensor.ny, border_step):
+            for px in [0, camera.camera_sensor.nx - 1]:
                 ra_deg, dec_deg = camera.pixel_to_radec(px, py, attitude, observed_time)
                 border_points.append((ra_deg, dec_deg))
 
@@ -291,9 +291,9 @@ class CameraFOV:
         # Corner pixels of the sensor
         corners = [
             (0, 0),
-            (camera.nx - 1, 0),
-            (camera.nx - 1, camera.ny - 1),
-            (0, camera.ny - 1),
+            (camera.camera_sensor.nx - 1, 0),
+            (camera.camera_sensor.nx - 1, camera.camera_sensor.ny - 1),
+            (0, camera.camera_sensor.ny - 1),
         ]
 
         # Convert corners to 3D GCRS unit vectors
@@ -323,10 +323,10 @@ class CameraFOV:
         """
 
         # Build pixel coordinates along the border
-        xs_top    = np.linspace(0.0, camera.nx - 1.0, border_step)
-        xs_bottom = np.linspace(0.0, camera.nx - 1.0, border_step)
-        ys_left   = np.linspace(0.0, camera.ny - 1.0, border_step)
-        ys_right  = np.linspace(0.0, camera.ny - 1.0, border_step)
+        xs_top    = np.linspace(0.0, camera.camera_sensor.nx - 1.0, border_step)
+        xs_bottom = np.linspace(0.0, camera.camera_sensor.nx - 1.0, border_step)
+        ys_left   = np.linspace(0.0, camera.camera_sensor.ny - 1.0, border_step)
+        ys_right  = np.linspace(0.0, camera.camera_sensor.ny - 1.0, border_step)
 
         border_pixels = []
 
@@ -336,11 +336,11 @@ class CameraFOV:
 
         # Right edge (except last point)
         for y in ys_right[0:-1]:
-            border_pixels.append((camera.nx - 1.0, y))
+            border_pixels.append((camera.camera_sensor.nx - 1.0, y))
 
         # Bottom edge (except last point)
         for x in xs_bottom[:0:-1]:
-            border_pixels.append((x, camera.ny - 1.0))
+            border_pixels.append((x, camera.camera_sensor.ny - 1.0))
 
         # Left edge (all point - hence closing the polygon)
         for y in ys_left[::-1]:

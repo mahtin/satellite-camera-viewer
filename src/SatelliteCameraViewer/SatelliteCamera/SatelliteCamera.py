@@ -4,9 +4,8 @@ from datetime import datetime, timezone
 
 from .BrownConradyCoeffs import BrownConradyCoeffs as cBCC
 from .CameraIntrinsics import CameraIntrinsics as cCI, CameraIntrinsicsError
-from .CameraAttitude import CameraAttitude as cCA
-from .CameraAttitude import Attitude as cA
-from .CameraAttitude import Quaternion as cQ
+from .CameraAttitude import CameraAttitude as cCA, Attitude as cA, Quaternion as cQ
+from .CameraSensors import CameraSensor as cS, CameraSensors as cSs
 from .CameraFOV import CameraFOV as cCF
 from .SatelliteOrbit import SatelliteOrbit as cSO
 from .Earth import Earth as cE, EarthError
@@ -24,36 +23,34 @@ class SatelliteCamera():
     CameraAttitude = cCA
     Attitude = cA
     Quaternion = cQ
+    CameraSensor = cS
+    CameraSensors = cSs
     CameraFOV = cCF
     SatelliteOrbit = cSO
     Earth = cE
     ObservedTime = oT
 
-    # Based on the Raspberry Pi High Quality (HQ) camera
-    # 12.3-megapixel Sony IMX477
-    # https://www.sony-semicon.com/files/62/pdf/p-13_IMX477-AACK_Flyer.pdf
-    def __init__(self,
-            focal_length_mm: float = 12.0,         # focal length (mm)
-            sensor_size_x_mm: float = 6.287,       # sensor width (mm)
-            sensor_size_y_mm: float = 4.712,       # sensor height (mm)
-            nx: int = 4056,                        # pixels in x
-            ny: int = 3040,                        # pixels in y
-            cx: float = None,                      # principal point x (pixels)
-            cy: float = None,                      # principal point y (pixels)
-            bcc: BrownConradyCoeffs = None,        # Brown Conrady Coeffs
-            sensor_to_lens_mm: float = None        # distance from sensor to lens principal plane
-        ):
+    def __init__(self, camera_name:str=None, focal_length_mm:float=None):
         """ SatelliteCamera """
-        self._focal_length_mm = focal_length_mm
-        self._sensor_size = [sensor_size_x_mm, sensor_size_y_mm]
-        self._n = [nx, ny]
-        self._c = [cx, cy]
-        self._bcc = bcc
-        if sensor_to_lens_mm is None:
-            self._sensor_to_lens_mm = self._focal_length_mm
+
+        if camera_name is None:
+            # nasty hack to make default camera the first one defined ('cause Python works this way)
+            camera_name = next(iter(self.CameraSensors))
+        try:
+            self.camera_sensor = self.CameraSensors[camera_name]
+        except IndexError:
+            raise ValueError('%s: not found' % (camera_name)
+
+        self._camera = self.CameraIntrinsics(self.camera_sensor, focal_length_mm=focal_length_mm)
+
+        self._sensor_size = [self.camera_sensor.sensor_size_x_mm, self.camera_sensor.sensor_size_y_mm]
+        self._n = [self.camera_sensor.nx, self.camera_sensor.ny]
+        self._c = [self.camera_sensor.cx, self.camera_sensor.cy]
+        self._bcc = self.camera_sensor.bcc
+        if self.camera_sensor.sensor_to_lens_mm is None:
+            self._sensor_to_lens_mm = self.camera_sensor.focal_length_mm
         else:
-            self._sensor_to_lens_mm = sensor_to_lens_mm
-        self._rebuild_camera()
+            self._sensor_to_lens_mm = self.camera_sensor.sensor_to_lens_mm
         self._sat_orbit = None
         self._sat_quat_body_to_eci = None
         self._sat_attitude = None
@@ -63,50 +60,14 @@ class SatelliteCamera():
         # seems like a legit value
         self.now()
 
-    def reload(self,
-            focal_length_mm: float = None,         # focal length (mm)
-            sensor_size_x_mm: float = None,        # sensor width (mm)
-            sensor_size_y_mm: float = None,        # sensor height (mm)
-            nx: int = None,                        # pixels in x
-            ny: int = None,                        # pixels in y
-            cx: float = None,                      # principal point x (pixels)
-            cy: float = None,                      # principal point y (pixels)
-            bcc: BrownConradyCoeffs = None,        # Brown Conrady Coeffs
-            sensor_to_lens_mm: float = None        # distance from sensor to lens principal plane
-        ):
+    def reload(self, camera_name:str=None, focal_length_mm:float=None):
         """ reload """
-        if focal_length_mm is not None:
-            self._focal_length_mm = focal_length_mm
-        if sensor_size_x_mm is not None:
-            self._sensor_size[0] = sensor_size_x_mm
-        if sensor_size_y_mm is not None:
-            self._sensor_size[1] = sensor_size_y_mm
-        if nx is not None:
-            self._n[0] = nx
-        if ny is not None:
-            self._n[1] = ny
-        if cx is not None:
-            self._c[0] = cx
-        if cy is not None:
-            self._c[1] = cy
-        if bcc is not None:
-            self._bcc = bcc
-        if sensor_to_lens_mm is None:
-            self._sensor_to_lens_mm = self._focal_length_mm
-        else:
-            self._sensor_to_lens_mm = sensor_to_lens_mm
-        self._rebuild_camera()
-
-    def _rebuild_camera(self):
-        """ _rebuild_camera """
-        self._camera = self.CameraIntrinsics(
-            focal_length_mm=self._focal_length_mm,
-            sensor_size_x_mm=self._sensor_size[0], sensor_size_y_mm=self._sensor_size[1],
-            nx=self._n[0], ny=self._n[1],
-            cx=self._c[0], cy=self._c[1],
-            bcc=self._bcc,
-            sensor_to_lens_mm=self._sensor_to_lens_mm
-        )
+        if camera_name is not None:
+            self._camera = self.CameraIntrinsics(camera_name, focal_length_mm=focal_length_mm)
+            return
+        if focal_length_mm is None:
+            raise ValueError('focal_length_mm cannot be empty') from None
+        self.camera_sensor.focal_length_mm = float(focal_length_mm)
 
     def _rebuild_sat_orbit(self):
         """ _rebuild_sat_orbit """
@@ -146,7 +107,7 @@ class SatelliteCamera():
         self._rebuild_attitude()
 
     def __str__(self) -> str:
-        return str(self._camera)
+        return str(self.camera)
 
     def now(self):
         """ Observation time - updating to time now """
@@ -174,114 +135,49 @@ class SatelliteCamera():
     @property
     def focal_length_mm(self):
         """ focal_length_mm """
-        return self._focal_length_mm
+        return self.camera_sensor.focal_length_mm
 
     @focal_length_mm.setter
     def focal_length_mm(self, value=None):
         """ focal_length_mm """
         if value is None:
             raise ValueError('focal_length_mm cannot be empty') from None
-        self._focal_length_mm = value
-        # rebuild camera
-        self._rebuild_camera()
+        self.camera_sensor.focal_length_mm = float(value)
 
     @property
     def sensor_size_x_mm(self):
         """ sensor_size_x_mm """
-        return self._sensor_size[0]
-
-    @sensor_size_x_mm.setter
-    def sensor_size_x_mm(self, value=None):
-        """ sensor_size_x_mm """
-        if value is None:
-            raise ValueError('sensor_size_x_mm cannot be empty') from None
-        self._sensor_size[0] = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.sensor_size_x_mm
 
     @property
     def sensor_size_y_mm(self):
         """ sensor_size_y_mm """
-        return self._sensor_size[1]
-
-    @sensor_size_y_mm.setter
-    def sensor_size_y_mm(self, value=None):
-        """ sensor_size_y_mm """
-        if value is None:
-            raise ValueError('sensor_size_y_mm cannot be empty') from None
-        self._sensor_size[1] = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.sensor_size_y_mm
 
     @property
     def nx(self):
         """ nx """
-        return self._n[0]
-
-    @nx.setter
-    def nx(self, value=None):
-        """ nx """
-        if value is None:
-            raise ValueError('nx cannot be empty') from None
-        self._n[0] = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.nx
 
     @property
     def ny(self):
         """ ny """
-        return self._n[1]
-
-    @ny.setter
-    def ny(self, value=None):
-        """ ny """
-        if value is None:
-            raise ValueError('ny cannot be empty') from None
-        self._n[1] = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.ny
 
     @property
     def cx(self):
         """ cx """
-        return self._c[0]
-
-    @cx.setter
-    def cx(self, value=None):
-        """ cx """
-        if value is None:
-            raise ValueError('cx cannot be empty') from None
-        self._c[0] = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.cx
 
     @property
     def cy(self):
         """ cy """
-        return self._c[1]
-
-    @cy.setter
-    def cy(self, value=None):
-        """ cy """
-        if value is None:
-            raise ValueError('cy cannot be empty') from None
-        self._c[1] = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.cy
 
     @property
     def bcc(self):
         """ bcc """
-        return self._bcc
-
-    @bcc.setter
-    def bcc(self, value=None):
-        """ bcc """
-        if value is None:
-            raise ValueError('bcc cannot be empty') from None
-        self._bcc = value
-        # rebuild camera
-        self._rebuild_camera()
+        return self.camera_sensor.bcc
 
     @property
     def tle(self):

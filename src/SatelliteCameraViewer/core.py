@@ -13,7 +13,7 @@ import astropy.units as u
 
 from .SatelliteCamera import SatelliteCameraError
 from .Constellations import ConstellationDatabase
-from .NikonD5Camera import NikonD5Camera
+from .MyCamera import MyCamera
 from .DoCameraImage import DoCameraImage
 from .DoCubesatViewer import DoCubesatViewer
 from .PaintStarsConstellationsBSC5 import PaintStarsConstellationsBSC5
@@ -75,11 +75,15 @@ class CoreCode:
 	}
 
 	# Orion and Sagittarius because they are not next to each other
-	_CONSTELLATIONS = [
+	_DEFAULT_CONSTELLATIONS = [
 		'Ori',
 		'Sgr'
 	]
+	# Camera stuff
+	_DEFAULT_CAMERA_NAME = 'Nikon D5'
+	_DEFAULT_FOCAL_LENGTH = 50
 
+	# debug etc
 	_verbose = False
 
 	def __init__(self, ui:UserInterface=None):
@@ -105,8 +109,10 @@ class CoreCode:
 		# stars
 		self._mag = 5.0
 
-		# camera
-		self._nikon = NikonD5Camera(satellite_name=self._satellite_name)
+		# camera (note that defaults are the same in the lower level functions)
+		camera_name = self._DEFAULT_CAMERA_NAME
+		focal_length = self._DEFAULT_FOCAL_LENGTH
+		self.my_camera = MyCamera(satellite_name=self._satellite_name, camera_name=camera_name, focal_length=focal_length)
 
 		# switches
 		self._switch_accelerate_time = False
@@ -137,7 +143,7 @@ class CoreCode:
 			fontdict={'fontsize':self._ui.font['size']+2}
 		)
 		self._constellation_boundaries = PaintConstellation(self._starfield_ax, color=self._COLORS['constellations-boundaries'])
-		self._scbsc5 = PaintStarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._CONSTELLATIONS, mag=self._mag)
+		self._scbsc5 = PaintStarsConstellationsBSC5(self._starfield_ax, self._COLORS['stars'], self._COLORS['constellations'], self._DEFAULT_CONSTELLATIONS, mag=self._mag)
 
 	def _setup_plot(self):
 		""" _setup_plot """
@@ -152,11 +158,6 @@ class CoreCode:
 	def ui(self):
 		""" ui """
 		return self._ui
-
-	@property
-	def nikon(self):
-		""" nikon - return NikonD5 class. """
-		return self._nikon
 
 	def plot_in_tk(self, parent, which, row=0, col=0, padx=0, pady=0, sticky='nsew'):
 		""" plot_in_tk """
@@ -303,10 +304,10 @@ class CoreCode:
 
 		if self._switch_earth_vector:
 			# TODO - this is debug only at present
-			v1 = self.nikon.earth_center_vector()
-			v2 = self.nikon.earth_center_vector_icrs()
-			earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
-			cam_earth_ra_deg, cam_earth_dec_deg = self.nikon.earth_center_radec()
+			v1 = self.my_camera.earth_center_vector()
+			v2 = self.my_camera.earth_center_vector_icrs()
+			earth_ra_deg, earth_dec_deg = self.my_camera.earth_center_radec_simple()
+			cam_earth_ra_deg, cam_earth_dec_deg = self.my_camera.earth_center_radec()
 			print('Earth: vector = [%6.3f, %6.3f, %6.3f] %s' % (v1[0], v1[1], v1[2], str(v2).replace('\n',' ')), end='')
 			print(' ra,dec = [%6.2f,%6.2f] [%6.2f,%6.2f]' % (earth_ra_deg, earth_dec_deg, cam_earth_ra_deg, cam_earth_dec_deg))
 
@@ -318,7 +319,7 @@ class CoreCode:
 		# adjust camera/satellite attitude
 		if self._pointing == 'vv':
 			# follow satellite path (it's velocity vector)
-			self.nikon.camera.choose_attitude(
+			self.my_camera.camera.choose_attitude(
 				self._pointing,
 				# XYZ for satellite == set by vv (velocity vector)
 				# XYZ for camera == roll, pitch, yaw
@@ -328,7 +329,7 @@ class CoreCode:
 				cam_roll_deg=self.ui.rpy_values_deg['yaw'],
 			)
 		else:
-			self.nikon.camera.choose_attitude(
+			self.my_camera.camera.choose_attitude(
 				self._pointing,
 				# XYZ for satellite == roll, pitch, yaw
 				sat_yaw_deg=self.ui.rpy_values_deg['roll'],
@@ -341,9 +342,9 @@ class CoreCode:
 			)
 
 		# other forms of pointing - yet to be coded
-		#self.nikon.camera.choose_attitude('star', star_ra_deg=100, star_dec_deg=70)
-		#self.nikon.camera.choose_attitude('nadir')
-		#self.nikon.camera.choose_attitude('ground', earth_lat_deg=36.974117, earth_lon_deg=-122.030792)
+		#self.my_camera.camera.choose_attitude('star', star_ra_deg=100, star_dec_deg=70)
+		#self.my_camera.camera.choose_attitude('nadir')
+		#self.my_camera.camera.choose_attitude('ground', earth_lat_deg=36.974117, earth_lon_deg=-122.030792)
 
 	def do_match(self):
 		""" do_match """
@@ -359,8 +360,8 @@ class CoreCode:
 
 		return
 		# Earth intercept (maybe)
-		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
-		earth_radius_deg = self.nikon.earth_angular_radius()
+		earth_ra_deg, earth_dec_deg = self.my_camera.earth_center_radec_simple()
+		earth_radius_deg = self.my_camera.earth_angular_radius()
 		earth_ra_rad = math.radians(float(earth_ra_deg))
 		earth_dec_rad = math.radians(float(earth_dec_deg))
 		earth_ra_rad = ra_fix([earth_ra_rad])[0]
@@ -369,10 +370,10 @@ class CoreCode:
 		p = self._starfield_ax.scatter([earth_ra_rad], [earth_dec_rad], facecolors='none', edgecolors=self._COLORS['earth'], alpha=1.0, s=s)
 		self.items_plotted_add(p)
 		try:
-			earth_points_deg = self.nikon.camera_fov_intercept_earth(border_step=10)
+			earth_points_deg = self.my_camera.camera_fov_intercept_earth(border_step=10)
 			print('camera_fov_intercept_earth():', 'len(earth_points_deg) =', len(earth_points_deg))
 			_ = self.plot_earth_outline(earth_points_deg)
-			# pixels = self.nikon.camera_fov_intercept_earth()
+			# pixels = self.my_camera.camera_fov_intercept_earth()
 			# print('camera_fov_intercept_earth():', 'pixels =', pixels)
 		except SatelliteCameraError:
 			pass
@@ -380,21 +381,21 @@ class CoreCode:
 	def do_info(self):
 		""" do_info """
 		# Lat, long & altitude of satellite
-		sat_lon_deg, sat_lat_deg, sat_alt_km = self.nikon.sat_lon_lat_alt()
+		sat_lon_deg, sat_lat_deg, sat_alt_km = self.my_camera.sat_lon_lat_alt()
 		self.plot_earthtrack_dot(sat_lon_deg, sat_lat_deg)
 
-		earth_ra_deg, earth_dec_deg = self.nikon.earth_center_radec_simple()
-		earth_radius_deg = self.nikon.earth_angular_radius()
+		earth_ra_deg, earth_dec_deg = self.my_camera.earth_center_radec_simple()
+		earth_radius_deg = self.my_camera.earth_angular_radius()
 		
 		# Shadow ?
-		shadow = self.nikon.sat_in_eclipse()
+		shadow = self.my_camera.sat_in_eclipse()
 
 		# build return string - showing camera info
-		angular_width, angular_height, solid_angle_steradians = self.nikon.camera_fov_angular_width_height()
+		angular_width, angular_height, solid_angle_steradians = self.my_camera.camera_fov_angular_width_height()
 
 		s = ''
-		s += '[%5.1f,%5.1f] %5.1f Km | %s\n' % (sat_lon_deg, sat_lat_deg, sat_alt_km, self.nikon.observed_time)
-		s += '%s\n' % (str(self.nikon.camera))
+		s += '[%5.1f,%5.1f] %5.1f Km | %s\n' % (sat_lon_deg, sat_lat_deg, sat_alt_km, self.my_camera.observed_time)
+		s += '%s\n' % (str(self.my_camera.camera))
 		s += '[%5.1f,%5.1f] @ %5.1f Km radius | %.1f deg width by %.1f deg height |' % (earth_ra_deg, earth_dec_deg, earth_radius_deg, angular_width, angular_height)
 		s += ' %.1f%% of whole sky' % (100.0*solid_angle_steradians/(4*math.pi))
 		if shadow:
@@ -456,7 +457,7 @@ class CoreCode:
 
 	def plot_starfield_centerline_data(self):
 		""" plot_starfield_centerline_data """
-		ra_deg, dec_deg = self.nikon.pixel_to_radec(self.nikon.camera.nx/2, self.nikon.camera.ny/2)
+		ra_deg, dec_deg = self.my_camera.pixel_to_radec(self.my_camera.camera.nx/2, self.my_camera.camera.ny/2)
 		ra_rad = math.radians(ra_deg)
 		dec_rad = np.array([math.radians(dec_deg)])
 		ra_rad = ra_fix(np.array([ra_rad]))
@@ -504,7 +505,7 @@ class CoreCode:
 
 	def plot_corners(self):
 		""" plot_corners """
-		box, _ = self.nikon.camera_fov_radec_box()
+		box, _ = self.my_camera.camera_fov_radec_box()
 		corners = [
 			box['top_left'],
 			box['top_right'],
@@ -521,7 +522,7 @@ class CoreCode:
 
 	def plot_polygons(self):
 		""" plot_polygons """
-		_, polygon = self.nikon.camera_fov_radec_box()
+		_, polygon = self.my_camera.camera_fov_radec_box()
 		ra_rad = [math.radians(float(v)) for v in polygon[0]]
 		dec_rad = [math.radians(float(v)) for v in polygon[1]]
 		ra_rad = ra_fix(ra_rad)
@@ -530,7 +531,7 @@ class CoreCode:
 
 	def plot_hull(self):
 		""" plot_hull """
-		hull_coords, _ = self.nikon.camera_fov_convex_hull()
+		hull_coords, _ = self.my_camera.camera_fov_convex_hull()
 		ra_rad = [math.radians(float(v)) for v in hull_coords[0]]
 		dec_rad = [math.radians(float(v)) for v in hull_coords[1]]
 		ra_rad = ra_fix(ra_rad)
@@ -540,7 +541,7 @@ class CoreCode:
 
 	def plot_pixels(self, nsteps=3):
 		""" plot_pixels """
-		pixels = self.nikon.sensor_to_radec(nsteps=nsteps)
+		pixels = self.my_camera.sensor_to_radec(nsteps=nsteps)
 		ra_rad = [math.radians(v[0]) for v in pixels.values()]
 		dec_rad = [math.radians(v[1]) for v in pixels.values()]
 		ra_rad = ra_fix(ra_rad)
@@ -554,7 +555,7 @@ class CoreCode:
 
 	def plot_border_vectors(self):
 		""" plot_border_vectors """
-		border_vectors = self.nikon.camera_fov_border_vectors_radec_deg(border_step=25)
+		border_vectors = self.my_camera.camera_fov_border_vectors_radec_deg(border_step=25)
 
 		plots = []
 		for ra_rad, dec_rad in split_plot_mollweide_line_ra_dec_deg(border_vectors):
@@ -566,15 +567,12 @@ class CoreCode:
 	def _match_stars_in_polygon(self):
 		""" match_stars_in_polygon """
 		# look for stars ...
-		polygon_gcrs = self.nikon.camera_fov_border_vectors(border_step=10)
+		polygon_gcrs = self.my_camera.camera_fov_border_vectors(border_step=10)
 		c = SkyCoord(ra=polygon_gcrs.ra.value*u.deg, dec=polygon_gcrs.dec.value*u.deg, frame='icrs')
 		xyz = c.cartesian.xyz.value
 		border_vectors = xyz.T   # shape (N,3)
 
-		start_t = datetime.now()
 		inside_mask = stars_in_polygon_icrs(self._scbsc5.vector, border_vectors)
-		elapsed_t = datetime.now() - start_t
-		print('stars_in_polygon_icrs: time:', self._mag, len(border_vectors), len(self._scbsc5.vector), len(self._scbsc5.skycoords), len(self._scbsc5._bsc5), (elapsed_t.seconds*1000.0 + elapsed_t.microseconds/1000.0), 'msec')
 
 		found_stars = self._scbsc5.skycoords[inside_mask]
 		return found_stars, inside_mask
@@ -588,6 +586,7 @@ class CoreCode:
 			self._ci.stars()
 			return None
 
+		start_t = datetime.now()
 		# all the stars (will be masked before use)
 		stars_ra_rad, stars_dec_rad, stars_mag = self._scbsc5.get_stars()
 		stars_ra_rad = stars_ra_rad[inside_mask]
@@ -603,7 +602,7 @@ class CoreCode:
 				ra_deg = star.ra.degree
 				dec_deg = star.dec.degree
 				try:
-					px, py = self.nikon.radec_to_pixel(ra_deg, dec_deg)
+					px, py = self.my_camera.radec_to_pixel(ra_deg, dec_deg)
 				except SatelliteCameraError:
 					# outside the view of the camera - should not happen if polygon is accurate
 					continue
@@ -611,6 +610,13 @@ class CoreCode:
 			if len(found_stars) != len(xy_list):
 				print('build_xy_list():', len(found_stars), '!=', len(xy_list))
 			return xy_list
+
+		xy_list = build_xy_list(found_stars)
+		elapsed_t = datetime.now() - start_t
+		print('camera_image_matched_stars(): time:', self._mag, len(found_stars), (elapsed_t.seconds*1000.0 + elapsed_t.microseconds/1000.0), 'msec')
+
+		self._ci.stars(xy_list=xy_list, mag_list=stars_mag)
+		#self._ci.outline()
 
 		def build_mag_bucket_list(stars_mag):
 			""" build_mag_bucket_list """
@@ -622,9 +628,6 @@ class CoreCode:
 					bucket[int(mag)] = 1
 			s = sorted(['%d:%d' % (k, v) for k,v in bucket.items()])
 			return '[' + ', '.join(s) + ']'
-
-		self._ci.stars(xy_list=build_xy_list(found_stars), mag_list=stars_mag)
-		#self._ci.outline()
 
 		s = 'Camera image has %d stars' % len(found_stars)
 		s += '\nMagnitude: ' + build_mag_bucket_list(stars_mag)
@@ -700,7 +703,7 @@ class CoreCode:
 	def do_planets_etc(self, value):
 		""" do_planets_etc """
 		self._switch_planets_etc = value
-		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.observed_time, self.nikon.camera.eci_position_vector)
+		self._sun_moon_planets.change(self._switch_planets_etc, self.my_camera.observed_time, self.my_camera.camera.eci_position_vector)
 		self.draw()
 
 	def do_constellation_boundaries(self, value):
@@ -724,7 +727,7 @@ class CoreCode:
 
 	def do_focal_length(self, focal_length):
 		""" do_focal_length """
-		self.nikon.camera.reload(focal_length_mm=float(focal_length))
+		self.my_camera.camera.reload(focal_length_mm=float(focal_length))
 
 		# refresh everything
 		self.update_starfield_and_more()
@@ -753,7 +756,7 @@ class CoreCode:
 	def do_satellite_selection(self, val):
 		""" do_satellite_selection """
 		self._satellite_name = val
-		self.nikon.find_tle(self._satellite_name)
+		self.my_camera.find_tle(self._satellite_name)
 		# remove satellite track
 		self.plot_starfield_centerline_clear()
 		self.plot_earthtrack_dot_clear()
@@ -784,9 +787,9 @@ class CoreCode:
 	def do_reset(self):
 		""" do_reset """
 		# RESET focus
-		focal_length = 50
+		focal_length = self._DEFAULT_FOCAL_LENGTH
 		self.ui.focal_length_buttons_set(focal_length=focal_length)
-		self.nikon.camera.reload(focal_length_mm=float(focal_length))
+		self.my_camera.camera.reload(focal_length_mm=float(focal_length))
 
 		# RESET star magnitude
 		self._mag = 5.0
@@ -831,7 +834,7 @@ class CoreCode:
 		# RESET satellite selection
 		self.ui.satellite_selection_set(0)
 		self._satellite_name = static_list_satellites[0].name
-		self.nikon.find_tle(self._satellite_name)
+		self.my_camera.find_tle(self._satellite_name)
 
 		# RESET satelliite attitude
 		self._pointing = 'vv'
@@ -862,9 +865,9 @@ class CoreCode:
 		""" _match_against_bsc5 """
 
 		# see if we actually match any stars within the view from the camera?
-		center_pixel_x = self.nikon.camera.nx/2
-		center_pixel_y = self.nikon.camera.ny/2
-		ra_deg, dec_deg = self.nikon.pixel_to_radec(center_pixel_x, center_pixel_y)
+		center_pixel_x = self.my_camera.camera.nx/2
+		center_pixel_y = self.my_camera.camera.ny/2
+		ra_deg, dec_deg = self.my_camera.pixel_to_radec(center_pixel_x, center_pixel_y)
 
 		# center
 		# create a (for now) array of length one to test against
@@ -906,20 +909,20 @@ class CoreCode:
 		# and deal with time interval and timers
 		if self._switch_accelerate_time is True:
 			# accelerate - i.e. jump time ahead quickly - TODO this value should be based on orbital params
-			seconds = (60 - self.nikon.observed_time.datetime.second) + self._TIME_JUMP_ACCELERATE
-			self.nikon.adjust_by_seconds(seconds)
+			seconds = (60 - self.my_camera.observed_time.datetime.second) + self._TIME_JUMP_ACCELERATE
+			self.my_camera.adjust_by_seconds(seconds)
 			# hence sleep is half a second
 			sleep_length = self._TIMER_SLEEP_ACCELERATE
 		else:
 			# realtime
-			self.nikon.now()
+			self.my_camera.now()
 			# hence sleep is five seconds
 			sleep_length = self._TIMER_SLEEP_NORMAL
 
 		# now repaint/update sky
 		self.update_starfield_and_more()
 		self._constellation_boundaries.change(self._switch_constellation_boundaries)
-		self._sun_moon_planets.change(self._switch_planets_etc, self.nikon.observed_time, self.nikon.camera.eci_position_vector)
+		self._sun_moon_planets.change(self._switch_planets_etc, self.my_camera.observed_time, self.my_camera.camera.eci_position_vector)
 		self.draw()
 
 		# and finally, setup to trigger outselves at the next timer time
