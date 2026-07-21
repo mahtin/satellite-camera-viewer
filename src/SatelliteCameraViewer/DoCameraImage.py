@@ -26,6 +26,13 @@ class DoCameraImage:
 		""" reset """
 		self.stars()
 
+	def resize(self, nx:int=400, ny:int=300):
+		""" resize """
+		# actually do it - simply rescale the view and clear all the displayed info
+		self.scale_x = float(self.nx)/float(self.w)
+		self.scale_y = float(self.ny)/float(self.h)
+		self.stars()
+
 	def stars(self, xy_list=None, mag_list=None):
 		""" stars """
 		if self._label is None or self._ci is None:
