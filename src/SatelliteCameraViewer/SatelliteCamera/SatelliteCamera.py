@@ -34,12 +34,12 @@ class SatelliteCamera():
         """ SatelliteCamera """
 
         if camera_name is None:
-            # nasty hack to make default camera the first one defined ('cause Python works this way)
+            # nasty hack to make default camera the first one defined ('cause Python dict()'s work this way)
             camera_name = next(iter(self.CameraSensors))
         try:
             self.camera_sensor = self.CameraSensors[camera_name]
         except IndexError:
-            raise ValueError('%s: not found' % (camera_name)
+            raise ValueError('%s: not found' % (camera_name))
 
         self._camera = self.CameraIntrinsics(self.camera_sensor, focal_length_mm=focal_length_mm)
 
@@ -63,7 +63,11 @@ class SatelliteCamera():
     def reload(self, camera_name:str=None, focal_length_mm:float=None):
         """ reload """
         if camera_name is not None:
-            self._camera = self.CameraIntrinsics(camera_name, focal_length_mm=focal_length_mm)
+            try:
+                self.camera_sensor = self.CameraSensors[camera_name]
+            except IndexError:
+                raise ValueError('%s: not found' % (camera_name))
+            self._camera = self.CameraIntrinsics(self.camera_sensor, focal_length_mm=focal_length_mm)
             return
         if focal_length_mm is None:
             raise ValueError('focal_length_mm cannot be empty') from None
