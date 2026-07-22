@@ -187,6 +187,11 @@ class SatelliteCamera():
         return self.camera_sensor.bcc
 
     @property
+    def equivilant_focal_length(self):
+        """ equivilant_focal_length """
+        return self.camera_sensor.equivilant_focal_length
+
+    @property
     def tle(self):
         """ tle """
         return self._tle

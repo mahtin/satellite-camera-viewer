@@ -98,6 +98,15 @@ class CameraSensor:
 			raise ValueError('focal_length_mm cannot be empty')
 		self._focal_recaculate()
 
+	@property
+	def equivilant_focal_length(self) -> float:
+		""" equivilant_focal_length """
+		# consider a 50mm lens for a full frame camera as the norm - what's the normal focal length for this camera sensor?
+		# https://noamkroll.com/crop-factor-cheat-sheet-full-frame-focal-length-equivalents-in-super-35mm-micro-four-thirds-and-super-16mm/
+		d_full_frame = math.sqrt(36.0**2 + 24.0**2)
+		d_this = math.sqrt(self.sensor_size_x_mm**2 + self.sensor_size_y_mm**2)
+		return round(50.0 * (d_this/d_full_frame))
+
 	def pixel_to_sensor_mm(self, px: float, py: float, use_distortion=False):
 		"""
 		Convert pixel coordinates to sensor-plane coordinates (mm),
@@ -212,6 +221,16 @@ TestCamera1024x1024 = CameraSensor(
 	sensor_size_y_mm = 10.0,
 	nx = 1024,
 	ny = 1024,
+)
+
+# test camera
+Hasselblad907XCFV100C = CameraSensor(
+	name = 'Hasselblad 907X & CFV 100C',
+	focal_length_mm = 65,
+	sensor_size_x_mm = 43.8,
+	sensor_size_y_mm = 32.9,
+	nx = 11652,
+	ny = 8738,
 )
 
 def _main(args=None):

@@ -863,6 +863,8 @@ class CoreCode:
 		self.update_starfield_and_more()
 		self.draw()
 
+		print('do_camera_select(): equiv focal length = %d' % (self.my_camera.camera.equivilant_focal_length))
+
 	def _match_against_bsc5(self):
 		""" _match_against_bsc5 """
 
