@@ -27,8 +27,8 @@ def viewer(args=None):
 	# now core knows ui and ui knows core ... we continue just referencing ui from this point onwards
 	# ui = core.ui & core = ui.core ... QED
 
-	list_of_cameras = ui.core.my_camera.camera.CameraSensors.keys()
-	ui.create_camera_menu(list_of_cameras)
+	camera_sensors = ui.core.my_camera.camera.CameraSensors.values()
+	ui.create_camera_menu(camera_sensors)
 
 	# all the frames ...
 	top_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, anchor='n')

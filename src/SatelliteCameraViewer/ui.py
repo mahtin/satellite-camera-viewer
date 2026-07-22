@@ -281,12 +281,13 @@ class UserInterface:
 
 	# CAMERA MENU
 
-	def create_camera_menu(self, list_of_cameras):
+	def create_camera_menu(self, camera_sensors):
 		""" create__camera_select """
 		# Camera selection menu ...
 		camera_menu = tk.Menu(self._menubar, tearoff=False)
-		for camera_name in list_of_cameras:
-			camera_menu.add_command(label=camera_name, command=lambda camera_name=camera_name: self._camera_select(camera_name))
+		for camera_sensor in camera_sensors:
+			label = '%s (%dx%d pixels)' % (camera_sensor.name, camera_sensor.nx, camera_sensor.ny)
+			camera_menu.add_command(label=label, command=lambda camera_name=camera_sensor.name: self._camera_select(camera_name))
 		self._menubar.insert_cascade(1, label='Camera', menu=camera_menu)
 
 	def _camera_select(self, camera_name:str):

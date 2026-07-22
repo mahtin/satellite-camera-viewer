@@ -199,8 +199,8 @@ AppleIPadProRearWide = CameraSensor(
 	name = 'iPad Pro Rear Wide',
 	focal_length_mm = 3.0,
 	effective_focal_length_mm = 28.0,
-	sensor_size_x_mm = 4.8,
-	sensor_size_y_mm = 3.6,
+	sensor_size_x_mm = 5.76,
+	sensor_size_y_mm = 4.29,
 	nx = 4000,
 	ny = 3000,
 )
@@ -208,8 +208,8 @@ AppleIPadProRearWide = CameraSensor(
 # test camera
 TestCamera1024x1024 = CameraSensor(
 	focal_length_mm = 50,
-	sensor_size_x_mm = 1.0,
-	sensor_size_y_mm = 1.0,
+	sensor_size_x_mm = 10.0,
+	sensor_size_y_mm = 10.0,
 	nx = 1024,
 	ny = 1024,
 )

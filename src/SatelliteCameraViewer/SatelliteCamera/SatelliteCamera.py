@@ -67,6 +67,9 @@ class SatelliteCamera():
                 self.camera_sensor = self.CameraSensors[camera_name]
             except IndexError:
                 raise ValueError('%s: not found' % (camera_name))
+            if focal_length_mm is None:
+                # default focal length - but UI will still be wrong (TODO)
+                focal_length_mm = self.camera_sensor.focal_length_mm
             self._camera = self.CameraIntrinsics(self.camera_sensor, focal_length_mm=focal_length_mm)
             return
         if focal_length_mm is None:
