@@ -469,13 +469,13 @@ class UserInterface:
 		""" do_focal_length """
 		self.core.do_focal_length(float(value))
 
-	def focal_length_buttons(self, parent, row, col, focal_lengths):
+	def focal_length_buttons(self, parent, row, col, focal_length_mm_list):
 		""" focal_length_buttons """
 		lf = self.labelframe(parent, 'Focal Length')
 		lf.grid(row=row, column=col)
-		f_default = focal_lengths[1]
+		f_default = focal_length_mm_list[1]
 		self._focal_length_buttons_variable = tk.IntVar(value=f_default)
-		for focal_length_mm in focal_lengths:
+		for focal_length_mm in focal_length_mm_list:
 			# radiobutton
 			b = ttk.Radiobutton(lf, text='%d mm' % focal_length_mm, variable=self._focal_length_buttons_variable, value=focal_length_mm, command=lambda value=focal_length_mm: self.do_focal_length(value))
 			b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
