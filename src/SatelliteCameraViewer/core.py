@@ -111,8 +111,8 @@ class CoreCode:
 
 		# camera (note that defaults are the same in the lower level functions)
 		camera_name = self._DEFAULT_CAMERA_NAME
-		focal_length = self._DEFAULT_FOCAL_LENGTH
-		self.my_camera = MyCamera(satellite_name=self._satellite_name, camera_name=camera_name, focal_length=focal_length)
+		focal_length_mm = self._DEFAULT_FOCAL_LENGTH
+		self.my_camera = MyCamera(satellite_name=self._satellite_name, camera_name=camera_name, focal_length_mm=focal_length_mm)
 
 		# switches
 		self._switch_accelerate_time = False
@@ -611,7 +611,6 @@ class CoreCode:
 		print('camera_image_matched_stars(): time:', self._mag, len(found_stars), (elapsed_t.seconds*1000.0 + elapsed_t.microseconds/1000.0), 'msec')
 
 		self._ci.stars(xy_list=xy_list, mag_list=stars_mag)
-		#self._ci.outline()
 
 		def build_mag_bucket_list(stars_mag):
 			""" build_mag_bucket_list """
@@ -720,9 +719,9 @@ class CoreCode:
 		self.ui.stars_button_set(True)
 		self._do_stars_real(True)
 
-	def do_focal_length(self, focal_length):
+	def do_focal_length(self, focal_length_mm):
 		""" do_focal_length """
-		self.my_camera.camera.reload(focal_length_mm=float(focal_length))
+		self.my_camera.camera.reload(focal_length_mm=focal_length_mm)
 		# refresh everything
 		self.update_starfield_and_more()
 		self.draw()
@@ -781,9 +780,9 @@ class CoreCode:
 	def do_reset(self):
 		""" do_reset """
 		# RESET focus
-		focal_length = self._DEFAULT_FOCAL_LENGTH
-		self.ui.focal_length_buttons_set(focal_length=focal_length)
-		self.my_camera.camera.reload(focal_length_mm=float(focal_length))
+		focal_length_mm = self._DEFAULT_FOCAL_LENGTH
+		self.ui.focal_length_buttons_set(focal_length_mm=focal_length_mm)
+		self.my_camera.camera.reload(focal_length_mm=focal_length_mm)
 
 		# RESET star magnitude
 		self._mag = 5.0
@@ -857,7 +856,6 @@ class CoreCode:
 
 	def do_camera_select(self, camera_name):
 		""" do_camera_select """
-		print('DEBUG: do_camera_select(): %s' % (camera_name))
 		self.my_camera.camera.reload(camera_name)
 		# need to resize the camera view area to match new camera sensor
 		self._ci.resize(self.my_camera.camera.nx, self.my_camera.camera.ny)

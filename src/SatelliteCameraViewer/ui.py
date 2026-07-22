@@ -475,16 +475,21 @@ class UserInterface:
 		lf.grid(row=row, column=col)
 		f_default = focal_lengths[1]
 		self._focal_length_buttons_variable = tk.IntVar(value=f_default)
-		for f in focal_lengths:
+		for focal_length_mm in focal_lengths:
 			# radiobutton
-			b = ttk.Radiobutton(lf, text='%d mm' % f, variable=self._focal_length_buttons_variable, value=f, command=lambda value=f: self.do_focal_length(value))
+			b = ttk.Radiobutton(lf, text='%d mm' % focal_length_mm, variable=self._focal_length_buttons_variable, value=focal_length_mm, command=lambda value=focal_length_mm: self.do_focal_length(value))
 			b.grid(row=row, column=col, padx=2, pady=2, sticky='nw')
-			self._focal_length_buttons[f] = b
+			self._focal_length_buttons[focal_length_mm] = b
 			row += 1
 
-	def focal_length_buttons_set(self, focal_length=50):
+	def focal_length_buttons_set(self, focal_length_mm=50):
 		""" focal_length_set """
-		self._focal_length_buttons_variable.set(focal_length)
+		self._focal_length_buttons_variable.set(focal_length_mm)
+
+	def focal_length_buttons_redo(self, focal_length_mm_list):
+		""" focal_length_redo """
+		# TODO XXX - remap buttons to new focal lengths
+		# self._focal_length_buttons_variable.set(focal_length_mm)
 
 	# SATELLITE SELECTION
 
@@ -563,7 +568,7 @@ class UserInterface:
 			self._rpy_sliders[k] = s
 			row += 1
 
-	# 3D cubesat image
+	# 3D CUBESAT IMAGE
 
 	def sat_label(self, parent, row, col, width=300, height=300):
 		""" sat_label """
@@ -572,14 +577,13 @@ class UserInterface:
 		self._sat_label = l
 		return self._sat_label
 
-	# photo image
+	# PHOTO IMAGE
 
 	def photo_label(self, parent, row, col, width=300, height=300):
 		""" photo_label """
 		l = tk.Label(parent, bg='cyan', borderwidth=0, width=width, height=height)
 		l.grid(row=row, column=col, padx=2, pady=2, sticky='w')
 		self._photo_label = l
-		# self._image150x150(width, height)
 		return self._photo_label
 
 	# RESET BUTTON

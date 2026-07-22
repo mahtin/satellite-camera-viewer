@@ -12,10 +12,13 @@ class DoCameraImage:
 		if label is None:
 			raise ValueError('DoCameraImage() needs label value') from None
 		self._label = label
+		# camera sensor ...
 		self.nx = nx
 		self.ny = ny
+		# painting area in ui ...
 		self.w = w
 		self.h = h
+		# scaling factors ...
 		self.scale_x = float(self.nx)/float(self.w)
 		self.scale_y = float(self.ny)/float(self.h)
 		# get camera image ready
@@ -27,11 +30,14 @@ class DoCameraImage:
 		self.stars()
 
 	def resize(self, nx:int=400, ny:int=300):
-		""" resize """
-		# actually do it - simply rescale the view and clear all the displayed info
+		""" resize - simply rescale the view and clear all the displayed info """
+		# camera sensor ...
+		self.nx = nx
+		self.ny = ny
+		# scaling factors ...
 		self.scale_x = float(self.nx)/float(self.w)
 		self.scale_y = float(self.ny)/float(self.h)
-		self.stars()
+		self.reset()
 
 	def stars(self, xy_list=None, mag_list=None):
 		""" stars """
@@ -47,7 +53,6 @@ class DoCameraImage:
 				mag = mag_list[ii]
 				diameter = mag_map(mag, multiplier=4.0) / self.scale_x
 				self._ci.circle((x,y), radius=diameter/2, color=(255,255,255))
-				# print('\tcamera=[%4d,%4d] -> pixel=[%3d,%3d]' % (x1, y1, x, y))
 				ii += 1
 		self._ci.paint(self._label)
 

@@ -97,10 +97,10 @@ def viewer(args=None):
 	def setup_focal_length(parent):
 		""" setup_focal_length """
 		focal_length_frame = ui.frame(parent, col=1, padx=0, borderwidth=0, sticky='ne')
-		focal_lengths = [35, 50, 100, 200, 400]
+		focal_length_mm_list = [35, 50, 100, 200, 400]
 		f_row = 0
 		f_col = 0
-		ui.focal_length_buttons(focal_length_frame, f_row, f_col, focal_lengths)
+		ui.focal_length_buttons(focal_length_frame, f_row, f_col, focal_length_mm_list)
 		f_row += len(focal_lengths)
 
 	# satellite selection

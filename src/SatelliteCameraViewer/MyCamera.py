@@ -7,9 +7,9 @@ from .static_list_satellites import static_list_satellites
 class MyCamera:
 	""" MyCamera """
 
-	def __init__(self, satellite_name=None, camera_name:str=None, focal_length:float=None):
+	def __init__(self, satellite_name=None, camera_name:str=None, focal_length_mm:float=None):
 		# Define camera on satellite
-		self._sc = SatelliteCamera(camera_name=camera_name, focal_length_mm=focal_length)
+		self._sc = SatelliteCamera(camera_name=camera_name, focal_length_mm=focal_length_mm)
 
 		# map SatelliteCamera() into this class (yes - there's a more pythonic way to do this)
 		self.now                        = self._sc.now
