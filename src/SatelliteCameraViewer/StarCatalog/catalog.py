@@ -43,16 +43,17 @@ class Catalog():
         self._use_database = use_database
 
         if directory:
-            self._directory = directory
+            self._base_directory = directory
         else:
-            self._directory = os.getenv('STAR_CATALOG')
-            if not self._directory:
-                self._directory = Path(self._DIR_STAR_CATALOG).expanduser()
+            self._base_directory = os.getenv('STAR_CATALOG')
+            if not self._base_directory:
+                self._base_directory = self._DIR_STAR_CATALOG
+        self._base_directory = Path(self._base_directory).expanduser()
 
-        if not os.path.exists(self._directory):
-            raise CatalogError(self._directory) from None
-        if not os.path.exists(self.directory()):
-            os.mkdir(self.directory())
+        d = self.directory()
+        d.mkdir(parents=True, exist_ok=True)
+        if not d.exists():
+            raise CatalogError(d) from None
 
         self._key = self._NOT_REALLY_A_SECRET_KEY
         self._db = None
@@ -101,10 +102,10 @@ class Catalog():
     def directory(self):
         """ directory() """
 
-        if not self._directory:
-            raise CatalogError(self._directory) from None
+        if not self._base_directory:
+            raise CatalogError(self._base_directory) from None
 
-        return self._directory / self._name
+        return self._base_directory / self._name
 
     def _star_set(self, v=None):
         """ _star_set() """
