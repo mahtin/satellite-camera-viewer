@@ -116,6 +116,23 @@ Standardoptical projection model used in computer vision and spacecraft optics. 
 ### HEALPix
 Hierarchicalequal‑area pixelization of the sphere. See: [HEALPix](https://healpix.sourceforge.io/)
 
+## Dependency
+
+The `requirements.txt` file defines what works well; however, its been tested with the newest releases listed below.
+
+```
+Package             Tested     Minimum
+astropy             8.0.1      7.2.0
+Cartopy             0.25.0     0.25.0
+matplotlib          3.11.1     3.10.0
+numpy               2.5.1      2.4.0
+pillow              12.3.0     12.2.0
+pyvista             0.48.4     0.47.0
+requests            2.34.2     2.33.0
+scipy               1.18.0     1.17.0
+sgp4                2.27       2.25
+spherical_geometry  1.4.0      1.4.0
+```
 
 ## Changelog
 
