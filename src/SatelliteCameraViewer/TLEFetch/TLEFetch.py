@@ -11,9 +11,12 @@ from pathlib import Path
 from dataclasses import dataclass
 
 import requests
+from sgp4.api import Satrec, WGS72
+from sgp4.exporter import export_tle, export_omm
+from sgp4 import omm
 
 #
-# This code can retrieve from either tle.ivanstanojevic.me or celestrak.org and uses the json format from the first one.
+# This code can retrieve from either tle.ivanstanojevic.me or celestrak.org and closely uses the json format from the first one.
 #
 
 #
@@ -33,6 +36,8 @@ import requests
 # Everything received is stored as json so that the metadata is preserved.
 # Files are timestamped based on the date returned in the json date value in the file (which is the decoded epoch date anyway).
 #
+# Ivan's api does not seem to handle ID's above 100,000
+#
 # CelesTrak is a three line acsii format and this code converts it back into the json format above.
 #
 # Date example... ~/.cache/tle-fetch/69792/69792.2026-07-05T05:54:20.tle.json
@@ -41,6 +46,10 @@ import requests
 # The dated file is touch'ed to adjust it's times to match the epoch. Hence ls -lt works (as does ls -l because of ISO date in name)
 #
 # No dependancies are used in this code. You're welcome to wrap this with 'sgp4.api' for Satrec processing, or another library.
+#
+
+#
+# If we fetch via a TLE format we use sgp4.api's Satrec() call to process the two lines and then write all the data back as OMM format.
 #
 
 @dataclass
@@ -109,12 +118,20 @@ class TLE:
 class TLEFetchError(Exception):
 	""" TLEFetchError """
 
+class TLEFetchNotFound(FileNotFoundError):
+	""" TLEFetchNotFound """
+
 class TLEFetch:
 	""" TLEFetch """
 
-	_SOURCES = {
+	_SOURCES_TLE = {
 		'Ivan': 'https://tle.ivanstanojevic.me/api/tle/%d',
 		'CelesTrak': 'https://celestrak.org/NORAD/elements/gp.php?CATNR=%d&FORMAT=TLE',
+	}
+
+	_SOURCES_JSON = {
+		'Ivan': 'https://tle.ivanstanojevic.me/api/tle/%d',
+		'CelesTrak': 'https://celestrak.org/NORAD/elements/gp.php?CATNR=%d&FORMAT=JSON',
 	}
 
 	_DIR_TLEFetch = '~/.cache/tle-fetch'
@@ -129,16 +146,25 @@ class TLEFetch:
 
 	_session = None				# we keep the requests session open over many calls - more efficient
 
-	def __init__(self, sat_id:int, source:str='Ivan', directory:str=None, debug:bool=False):
+	def __init__(self, sat_id:int, source:str='Ivan', encoding='TLE', directory:str=None,  debug:bool=False):
 		""" ConstellationLocations """
 		self._j = None
 		self._tle = None
 		self._debug = debug
 		self._sat_id = sat_id
-		if source not in self._SOURCES.keys():
-			raise TLEFetchError('%s: source not supported' % (source)) from None
 		self._source = source
-		self._url = self._SOURCES[self._source] % (self.sat_id)
+		self._encoding = encoding
+		if self._encoding == 'TLE':
+			if source not in self._SOURCES_TLE.keys():
+				raise TLEFetchError('%s: source not supported' % (source)) from None
+			self._url = self._SOURCES_TLE[self._source] % (self.sat_id)
+		elif self._encoding == 'JSON':
+			if source not in self._SOURCES_JSON.keys():
+				raise TLEFetchError('%s: source not supported' % (source)) from None
+			self._url = self._SOURCES_JSON[self._source] % (self.sat_id)
+		else:
+			raise TLEFetchError('%s: encoding not supported' % (self._encoding)) from None
+
 		if directory:
 			self._directory = directory
 		else:
@@ -146,9 +172,6 @@ class TLEFetch:
 			if not self._directory:
 				self._directory = self._DIR_TLEFetch
 		self._directory = Path(self._directory).expanduser() / str(self.sat_id)
-		self._directory.mkdir(parents=True, exist_ok=True)
-		if not self._directory.exists():
-			raise TLEFetchError('%s: directory does not exist' % (self._directory)) from None
 
 	@property
 	def sat_id(self):
@@ -238,6 +261,8 @@ class TLEFetch:
 			if self.sat_id != self.satelliteId:
 				# we didn't read what we expected to!
 				raise TLEFetchError('satelliteId mismatch on network fetch') from None
+			# add OMM or TLE fields - whichever is missing
+			self._omm_add_fields()
 			# save away the network result
 			try:
 				self._file_write()
@@ -277,6 +302,12 @@ class TLEFetch:
 		if self._j is None:
 			_ = self.get()
 
+	def _directory_mkdir(self):
+		""" _directory_mkdir """
+		self._directory.mkdir(parents=True, exist_ok=True)
+		if not self._directory.exists():
+			raise TLEFetchError('%s: directory does not exist' % (self._directory)) from None
+
 	def _local_filename(self, prefix=None):
 		""" _local_filename() """
 		if prefix is None:
@@ -300,8 +331,10 @@ class TLEFetch:
 		if self._debug:
 			print('TLEFetch: FILE_WRITE', self._sat_id, file=sys.stderr)
 		if self._j is None:
-			raise TLEFetchError('no daat to write') from None
+			raise TLEFetchError('no data to write') from None
 
+		# finally time to make the directory/folder for this sat_id
+		self._directory_mkdir()
 		# latest file ... no adjusted time ...
 		filename = self._local_filename()
 		with filename.open(mode='w', encoding='utf-8') as fd:
@@ -381,6 +414,9 @@ class TLEFetch:
 			# this would be something like a 404 (Not Found) or 406 (Not Acceptable) response
 			if self._debug:
 				print('TLEFetch: HTTP Error', self._sat_id, 'code=', e.response.status_code, file=sys.stderr)
+			if e.response.status_code == 404:
+				# specific error which should mean the satellite ID is not valid (vs an HTTP error.
+				raise TLEFetchNotFound('%d: satellite id not found' % (self._sat_id)) from None
 			if 400 <= e.response.status_code < 500:
 				raise TLEFetchError('HTTP Client Error %d: %s' % (e.response.status_code, self._url)) from None
 			raise TLEFetchError('HTTP Server Error %d: %s' % (e.response.status_code, self._url)) from None
@@ -393,26 +429,77 @@ class TLEFetch:
 
 		# process results depending on source chosen.
 		if self._source == 'Ivan':
-			# so simple
-			self._j = response.json()
-			self._tle = None
+			if self._encoding == 'JSON' or self._encoding == 'TLE':
+				# presently always JSON but TLE lines (see comments at top)
+				# so simple (it's actually always called TLE but actually JSON
+				self._j = response.json()
+				self._j['@type'] = 'Orbit'	# we overright the @Tle becuase SATNOGS uses 'Orbit'
+				self._j['omm'] = None
+				self._tle = None
+			else:
+				# can't happen, honest.
+				pass
+		elif self._source == 'CelesTrak':
+			if self._encoding == 'TLE':
+				# syntetic creation of JSON data - it's kinda reversed; but so be it.
+				tle_three_lines = response.text.splitlines()
+				self._j = {
+					# these three duplicate the info from Ivan ...
+					'@context': 'https://www.w3.org/ns/hydra/context.jsonld',
+					'@id': self._url,
+					'@type': 'Orbit',
+					# now synthesize the rest ...
+					'satelliteId': self._tle_to_sat_id(tle_three_lines[1]),
+					'name': tle_three_lines[0].strip(),
+					'date': self._tle_to_datetime(tle_three_lines[1]).isoformat(),
+					'line1': tle_three_lines[1],
+					'line2': tle_three_lines[2],
+					'omm': None
+				}
+				self._tle = None
+			elif self._encoding == 'JSON':
+				omm_fields_all = response.json()
+				# we assume there is only one record
+				omm_fields = omm_fields_all[0]
+				self._j = {
+					# these three duplicate the info from Ivan ...
+					'@context': 'https://www.w3.org/ns/hydra/context.jsonld',
+					'@id': self._url,
+					'@type': 'Orbit',
+					# now synthesize the rest ...
+					'satelliteId': omm_fields['NORAD_CAT_ID'],
+					'name': omm_fields['OBJECT_NAME'],
+					'date': omm_fields['EPOCH'],
+					'line1': None,
+					'line2': None,
+					'omm': omm_fields,
+				}
+				self._tle = None
+			else:
+				# can't happen, honest.
+				pass
+		else:
+			# can't happen, honest.
+			pass
 
-		if self._source == 'CelesTrak':
-			# syntetic creation of JSON data - it's kinda reversed; but so be it.
-			tle_three_lines = response.text.splitlines()
-			self._j = {
-				# these three duplicate the info from Ivan ...
-				'@context': 'https://www.w3.org/ns/hydra/context.jsonld',
-				'@id': self._url,
-				'@type': 'Tle',
-				# now synthesize the rest ...
-				'satelliteId': self._tle_to_sat_id(tle_three_lines[1]),
-				'name': tle_three_lines[0].strip(),
-				'date': self._tle_to_datetime(tle_three_lines[1]).isoformat(),
-				'line1': tle_three_lines[1],
-				'line2': tle_three_lines[2],
-			}
-			self._tle = None
+	def _omm_add_fields(self):
+		""" _omm_add_fields """
+		# we do this becuase we need to migrate to OMM format vs TLE or vieversa
+		if 'omm' in self._j and self._j['omm'] is not None:
+			# build a Satreg record from the omm info...
+			self._sat_rec = Satrec()
+			omm.initialize(self._sat_rec, self._j['omm'])
+			# rebuild the TLE lines...
+			line1, line2 = export_tle(self._sat_rec)
+			# insert back into the main record
+			self._j['line1'] = line1
+			self._j['line2'] = line2
+		else:
+			# we have TLE...
+			self._sat_rec = Satrec.twoline2rv(self._j['line1'], self._j['line2'], WGS72)
+			# and now we have OMM...
+			omm_fields = export_omm(self._sat_rec, self._j['name'])
+			self._j['omm'] = omm_fields
 
 	def _tle_to_sat_id(self, line1):
 		""" _tle_to_sat_id """
@@ -461,27 +548,41 @@ def _main(args=None):
 	if args and len(args) >= 1:
 		debug = bool(args[0] == '-d')
 
+	source = 'Ivan'
 	source = 'CelesTrak'
+	encoding = 'TLE'
+	encoding = 'JSON'
 
 	satellites = {
-		25544:	'ISS',
-		36411:	'GOES 15',
-		58584:	'Arktika-M 2',
-		49260:	'Landsat 9',
-		48274:	'CSS',
-		20580:	'HST',
-		28485:	'Swift',
-		69792:	'LINK',
-		64537:	'Otter Pup 2',
-		64539:	'ElaraSat',
+		25544:	'ISS',			# International Space Station
+		36411:	'GOES 15',		# GOES-15 geostationary weather satellite (now EWS-G2)
+		58584:	'Arktika-M 2',		# Russian weather and climate monitoring satellite
+		49260:	'Landsat 9',		# USGS Earth observation satellite
+		48274:	'CSS',			# Tiangong - Chinese Space Station
+		20580:	'HST',			# Hubble Space Telescope
+		28485:	'Swift',		# SWIFT Telescope
+		69792:	'LINK',			# Katalyst Space Technologies 
+		64537:	'Otter Pup 2',		# Starfish Space
+		64539:	'ElaraSat',		# Gilmour Space Technologies
+
+		# Now test the large sat id above the normal range
+		100000:	'SARAMAGO',		# Lusíada constellation from LusoSpace
+		100139:	'PESSOA',		# Portuguese maritime communication by LusoSpace
+
+		# stolen from HA - it does not exist in NORAD database - so it test's the Not Found error
+		123456:	'Test with large ID',
 	}
 
 	for sat_id, variable_name in satellites.items():
 		variable_name = variable_name.replace('-', '_').replace(' ', '_').lower()
 		try:
-			tf = TLEFetch(sat_id, source=source, debug=debug)
+			tf = TLEFetch(sat_id, source=source, encoding=encoding, debug=debug)
 			# j = tf.get()
 			tle = tf.tle
+		except TLEFetchNotFound:
+			# This satellite does not exist
+			print('ERROR: %d: SatelliteID not found' % (sat_id), file=sys.stderr)
+			continue
 		except TLEFetchError as e:
 			print('ERROR: TLEFetchError: %s' % (e), file=sys.stderr)
 			continue
