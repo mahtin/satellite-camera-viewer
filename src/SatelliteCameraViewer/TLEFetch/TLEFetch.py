@@ -149,6 +149,7 @@ class TLEFetch:
 	def __init__(self, sat_id:int, source:str='Ivan', encoding='TLE', directory:str=None,  debug:bool=False):
 		""" ConstellationLocations """
 		self._j = None
+		self._sat_rec = None
 		self._tle = None
 		self._debug = debug
 		self._sat_id = sat_id
@@ -181,21 +182,18 @@ class TLEFetch:
 	@property
 	def satelliteId(self):
 		""" satelliteId """
-		self._get()
-		return self._j['satelliteId']
+		return self.j['satelliteId']
 
 	@property
 	def name(self):
 		""" name """
-		self._get()
-		return self._j['name']
+		return self.j['name']
 
 	@property
 	def date(self):
 		""" date """
-		self._get()
 		try:
-			return datetime.fromisoformat(self._j['date']).replace(tzinfo=timezone.utc)
+			return datetime.fromisoformat(self.j['date']).replace(tzinfo=timezone.utc)
 		except ValueError:
 			# should not happen; but if it does...
 			raise TLEFetchError('date invalid in TLE info') from None
@@ -203,22 +201,26 @@ class TLEFetch:
 	@property
 	def tle(self):
 		""" tle"""
-		self._get()
 		if self._tle is None:
-			self._tle = TLE(self._j['name'], self._j['line1'], self._j['line2'])
+			self._tle = TLE(self.j['name'], self.j['line1'], self.j['line2'])
 		return self._tle
 
 	@property
 	def tle2line(self):
 		""" tle2line """
-		self._get()
-		return [self._j['line1'], self._j['line2']]
+		return [self.j['line1'], self.j['line2']]
 
 	@property
 	def tle3line(self):
 		""" tle3line """
-		self._get()
-		return [self._j['name'], self._j['line1'], self._j['line2']]
+		return [self.j['name'], self.j['line1'], self.j['line2']]
+
+	@property
+	def satrec(self):
+		""" satrec """
+		if self._sat_rec is None:
+			self._sat_rec = Satrec.twoline2rv(self.j['line1'], self.j['line2'], WGS72)
+		return self._sat_rec
 
 	def get(self):
 		""" get """
@@ -282,9 +284,8 @@ class TLEFetch:
 
 	def epoch_age(self):
 		""" epoch_age """
-		self._get()
-		if self._j is None:
-			return 0, 0
+		#if self.j is None:
+		#	return 0, 0
 		try:
 			tle_epoch_utc = self.date
 		except TLEFetchError:
@@ -297,10 +298,12 @@ class TLEFetch:
 		epoch_age_hours = int(epoch_age_timedelta.seconds / (60*60))
 		return epoch_age_days, epoch_age_hours
 
-	def _get(self):
-		""" _get() """
+	@property
+	def j(self):
+		""" j() """
 		if self._j is None:
 			_ = self.get()
+		return self._j
 
 	def _directory_mkdir(self):
 		""" _directory_mkdir """
