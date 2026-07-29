@@ -8,7 +8,7 @@ import time
 import random
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import requests
 from sgp4.api import Satrec, WGS72
@@ -61,6 +61,7 @@ class TLE:
 	""" line1 - first line of 2LE, second line of TLE/3LE """
 	line2: str = ''
 	""" line2 - second line of 2LE, third line of TLE/3LE """
+	_satrec: str = field(default=None, repr=False)
 
 	def __str__(self):
 		""" __str__ """
@@ -75,6 +76,13 @@ class TLE:
 	def tle2line(self):
 		""" tle2line """
 		return self.as_array[1:]
+
+	@property
+	def satrec(self):
+		""" satrec """
+		if self._satrec is None:
+			self._satrec = Satrec.twoline2rv(self.line1, self.line2, WGS72)
+		return self._satrec
 
 	@property
 	def tle3line(self):
@@ -218,9 +226,7 @@ class TLEFetch:
 	@property
 	def satrec(self):
 		""" satrec """
-		if self._sat_rec is None:
-			self._sat_rec = Satrec.twoline2rv(self.j['line1'], self.j['line2'], WGS72)
-		return self._sat_rec
+		return self.tle.satrec
 
 	def get(self):
 		""" get """
@@ -580,7 +586,7 @@ def _main(args=None):
 		variable_name = variable_name.replace('-', '_').replace(' ', '_').lower()
 		try:
 			tf = TLEFetch(sat_id, source=source, encoding=encoding, debug=debug)
-			# j = tf.get()
+			# print('# Satrec():', tf.satrec.satnum_str, tf.satrec.satnum, tf.satrec.epochyr, tf.satrec.epochdays)
 			tle = tf.tle
 		except TLEFetchNotFound:
 			# This satellite does not exist
