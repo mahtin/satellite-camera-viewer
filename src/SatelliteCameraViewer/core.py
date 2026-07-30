@@ -748,8 +748,18 @@ class CoreCode:
 
 	def do_satellite_selection(self, val):
 		""" do_satellite_selection """
-		self._satellite_name = val
-		self.my_camera.find_tle(self._satellite_name)
+		try:
+			self.my_camera.satellite_by_name(val)
+			# success
+			self._satellite_name = val
+		except SatelliteCameraError:
+			# This is bad - we have a satellite name in the menu that can't be found. Punt back to #1 satellite name.
+			print('do_satellite_selection(): %s: satellite not found - check code - should not happen - resetting to ISS' % (val))
+			self.ui.satellite_selection_set(0)
+			self._satellite_name = static_list_satellites[0].name
+			# we know this one works ... reset underlying code
+			self.my_camera.satellite_by_name(self._satellite_name)
+
 		# remove satellite track
 		self.plot_starfield_centerline_clear()
 		self.plot_earthtrack_dot_clear()
@@ -827,7 +837,7 @@ class CoreCode:
 		# RESET satellite selection
 		self.ui.satellite_selection_set(0)
 		self._satellite_name = static_list_satellites[0].name
-		self.my_camera.find_tle(self._satellite_name)
+		self.my_camera.satellite_by_name(self._satellite_name)
 
 		# RESET satelliite attitude
 		self._pointing = 'vv'

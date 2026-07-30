@@ -28,20 +28,21 @@ from astropy.coordinates import SkyCoord, TEME, GCRS, ITRS, EarthLocation, get_b
 import astropy.units as u
 from scipy.spatial.transform import Rotation as R
 
-from sgp4.api import Satrec, WGS72, SGP4_ERRORS
+from sgp4.api import SGP4_ERRORS
 from sgp4.conveniences import sat_epoch_datetime
+
+class SatelliteOrbitError(Exception):
+    """ SatelliteOrbitError """
 
 class SatelliteOrbit:
     """ SatelliteOrbit """
 
-    def __init__(self, tle:list=None):
+    def __init__(self, tle:TLE=None):
         """
-        SatelliteOrbit - accept a TLE/3LE or 2LE
-        2LE or two-line element sets (no satellite name on Line 0).
-        TLE/3LE or three-line element sets including 24-character satellite name on Line 0.
+        SatelliteOrbit - accept a TLE/3LE or 2LE via TLE class.
 
-        :param tle: TLEs as an array (2 or 3 lines long).
-        :type tle: list[str]
+        :param tle: TLEs.
+        :type tle: TLE
         """
         self.tle = tle
 
@@ -55,20 +56,20 @@ class SatelliteOrbit:
     @property
     def tle(self):
         """
-        tle - return array of TLE strings (2 or 3 lines long)
+        tle - return TLE class
 
-        :return: TLEs
-        :rtype: list[str]
+        :return: TLE class
+        :rtype: TLE
         """
         return self._tle
 
     @tle.setter
     def tle(self, tle=None):
         """
-        tle - return array of TLE strings (2 or 3 lines long).
+        tle - return TLE class
 
-        :param tle: TLEs as an array (2 or 3 lines long).
-        :type tle: list[str]
+        :param tle: TLE class
+        :type tle: TLE
         """
         self._tle = tle
         self._rebuild_from_tle()
@@ -76,21 +77,21 @@ class SatelliteOrbit:
     @property
     def sat_num(self):
         """ sat_num """
-        return self._sat.satnum
+        return self._satellite.satnum
 
     def _rebuild_from_tle(self):
         """ _rebuild_from_tle """
-        if self._tle is None or len(self._tle) not in [2,3] or None in self._tle:
-            self._sat = None
-            raise ValueError('TLEs must provide satellite info as two or three lines of text') from None
+        if self._tle is None:
+            self._satellite = None
+            raise SatelliteOrbitError('TLEs must provide satellite info as TLEFetch() value') from None
         try:
-            if len(self._tle) == 2:
-                self._sat = Satrec.twoline2rv(self._tle[0], self._tle[1], WGS72)
-            else:
-                self._sat = Satrec.twoline2rv(self._tle[1], self._tle[2], WGS72)
+            self._satellite = self._tle.satrec
         except ValueError:
-            self._sat = None
-            raise ValueError('TLEs have invalid format') from None
+            self._satellite = None
+            raise SatelliteOrbitError('TLEs have invalid format') from None
+        except FileNotFoundError:
+            self._satellite = None
+            raise SatelliteOrbitError('TLE not found') from None
 
     def _teme(self, observed_time):
         """
@@ -106,7 +107,7 @@ class SatelliteOrbit:
         # v_teme_km_s: velocity vectors in kilometers per second.
         # The positional vectors returned by SGP4 are in TEME (True Equator Mean Equinox)
         t = observed_time.t
-        error, r_teme_km, v_teme_km_s = self._sat.sgp4(t.jd1, t.jd2)
+        error, r_teme_km, v_teme_km_s = self._satellite.sgp4(t.jd1, t.jd2)
         if error != 0:
             raise RuntimeError('SGP4 error value/code: %d: "%s"' % (error, SGP4_ERRORS[error])) from None
         # r_teme_km, v_teme_km_s are in True Equator, Mean Equinox (TEME); for many RA/Dec uses, direction is close enough,
@@ -265,7 +266,7 @@ class SatelliteOrbit:
 
     def sat_rev_per_day(self):
         """ sat_rev_per_day """
-        mean_motion_per_min_rad = self._sat.no
+        mean_motion_per_min_rad = self._satellite.no
         # Convert to revolutions per day for easier reading
         rev_per_day = mean_motion_per_min_rad * 60.0 * 24.0 / (2.0 * np.pi)
         return rev_per_day
@@ -277,13 +278,14 @@ class SatelliteOrbit:
 
     def sat_epoch_age(self):
         """ sat_epoch_age """
-        tle_epoch_utc = sat_epoch_datetime(self._sat).replace(microsecond=0, tzinfo=timezone.utc)
+	# removing microseconds because this is just for display reasons only (not satellite orbit location)
+        tle_epoch_utc = sat_epoch_datetime(self._satellite).replace(microsecond=0, tzinfo=timezone.utc)
         current_time_utc = datetime.now(timezone.utc).replace(microsecond=0)
         return current_time_utc - tle_epoch_utc
 
     def sat_altitude_inclination(self):
         """ sat_altitude - Perigee, Apogee, and Inclination """
-        return self._sat.radiusearthkm * self._sat.altp, self._sat.radiusearthkm * self._sat.alta, self._sat.inclo
+        return self._satellite.radiusearthkm * self._satellite.altp, self._satellite.radiusearthkm * self._satellite.alta, self._satellite.inclo
 
     def sat_xvv_attitude_quaternion(self, observed_time):
         """

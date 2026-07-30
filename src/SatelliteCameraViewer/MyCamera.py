@@ -32,10 +32,10 @@ class MyCamera:
 
 		# set everything up
 		if satellite_name is not None:
-			self.find_tle(satellite_name)
+			self.satellite_by_name(satellite_name)
 		else:
 			# Define satellite orbit from TLE from a static set
-			self.tle = TLEFetch(static_list_satellites[0].sat_id).tle.as_array
+			self.satellite_by_id(static_list_satellites[0].sat_id)
 		self.now()
 		self.choose_attitude('vv')
 
@@ -59,16 +59,19 @@ class MyCamera:
 		""" tle """
 		self._sc.tle = value
 
-	def find_tle(self, satellite_name):
-		""" find_tle """
-		ii = 0
+	# By number
+	def satellite_by_id(self, sat_id):
+		""" satellite_by_id """
+		self.tle = TLEFetch(sat_id)
+
+	# By name
+	def satellite_by_name(self, satellite_name):
+		""" satellite_by_name """
 		for t in static_list_satellites:
 			if satellite_name == t.name:
-				break
-			ii += 1
-		if ii >= len(static_list_satellites):
-			raise ValueError('%s not in satellites list' % (satellite_name))
-		self.tle = TLEFetch(static_list_satellites[ii].sat_id).tle.as_array
+				self.satellite_by_id(t.sat_id)
+				return
+		raise ValueError('%s not in satellites list' % (satellite_name))
 
 	def camera_fov_radec_box(self):
 		""" camera_fov_radec_box """

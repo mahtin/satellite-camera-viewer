@@ -7,7 +7,7 @@ from .CameraIntrinsics import CameraIntrinsics as cCI, CameraIntrinsicsError
 from .CameraAttitude import CameraAttitude as cCA, Attitude as cA, Quaternion as cQ
 from .CameraSensors import CameraSensor as cS, CameraSensors as cSs
 from .CameraFOV import CameraFOV as cCF
-from .SatelliteOrbit import SatelliteOrbit as cSO
+from .SatelliteOrbit import SatelliteOrbit as cSO, SatelliteOrbitError
 from .Earth import Earth as cE, EarthError
 from .ObservedTime import ObservedTime as oT
 
@@ -78,10 +78,14 @@ class SatelliteCamera():
 
     def _rebuild_sat_orbit(self):
         """ _rebuild_sat_orbit """
-        if self._sat_orbit is None:
-            self._sat_orbit = self.SatelliteOrbit(tle=self._tle)
-        else:
-            self._sat_orbit.tle = self._tle
+        try:
+            if self._sat_orbit is None:
+                self._sat_orbit = self.SatelliteOrbit(tle=self.tle)
+            else:
+                self._sat_orbit.tle = self.tle
+        except SatelliteOrbitError:
+            raise SatelliteCameraError('Invalid Satellite Number') from None
+	# rebuild earth also
         self._earth = self.Earth(self.sat_orbit)
 
     def _rebuild_attitude(self):
