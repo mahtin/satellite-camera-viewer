@@ -18,6 +18,8 @@ from sgp4 import omm
 #
 # This code can retrieve from either tle.ivanstanojevic.me or celestrak.org and closely uses the json format from the first one.
 #
+# Celestrak is now the default (as it handles ID's above 100,000
+#
 
 #
 # https://tle.ivanstanojevic.me/#docs
@@ -154,7 +156,7 @@ class TLEFetch:
 
 	_session = None				# we keep the requests session open over many calls - more efficient
 
-	def __init__(self, sat_id:int, source:str='Ivan', encoding='TLE', directory:str=None,  debug:bool=False):
+	def __init__(self, sat_id:int, source:str='CelesTrak', encoding:str='TLE', directory:str=None,  debug:bool=False):
 		""" ConstellationLocations """
 		self._j = None
 		self._sat_rec = None
@@ -163,6 +165,7 @@ class TLEFetch:
 		self._sat_id = sat_id
 		self._source = source
 		self._encoding = encoding
+		# depending on the encoding, we choose different source URL's
 		if self._encoding == 'TLE':
 			if source not in self._SOURCES_TLE.keys():
 				raise TLEFetchError('%s: source not supported' % (source)) from None
@@ -174,12 +177,14 @@ class TLEFetch:
 		else:
 			raise TLEFetchError('%s: encoding not supported' % (self._encoding)) from None
 
+		# ~/.cache/tle-fetch is the default - but you can change it for testing
 		if directory:
 			self._directory = directory
 		else:
 			self._directory = os.getenv('TLECACHE_LOCATION')
 			if not self._directory:
 				self._directory = self._DIR_TLEFetch
+		# we don't make the directory yet - we only do that once we successfully fetch values
 		self._directory = Path(self._directory).expanduser() / str(self.sat_id)
 
 	@property
