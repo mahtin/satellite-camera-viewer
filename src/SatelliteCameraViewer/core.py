@@ -565,7 +565,7 @@ class CoreCode:
 		polygon_gcrs = self.my_camera.camera_fov_border_vectors(border_step=10)
 		c = SkyCoord(ra=polygon_gcrs.ra.value*u.deg, dec=polygon_gcrs.dec.value*u.deg, frame='icrs')
 		xyz = c.cartesian.xyz.value
-		border_vectors = xyz.T   # shape (N,3)
+		border_vectors = xyz.T # shape (N,3)
 
 		inside_mask = stars_in_polygon_icrs(self._scbsc5.vector, border_vectors)
 
@@ -577,7 +577,7 @@ class CoreCode:
 		# now find all stars inside camara view ...
 		found_stars, inside_mask = self._match_stars_in_polygon()
 		if len(found_stars) == 0:
-			#  paint an empty image
+			# paint an empty image
 			self._ci.stars()
 			return None
 
@@ -652,7 +652,7 @@ class CoreCode:
 			else:
 				c = None
 
-			s = 'camera [%.1f,%.1f] deg\n  star [%.1f,%.1f] deg +/- %.3f deg\n       %s%s @ %.1f mag' % (
+			s = 'camera [%.1f,%.1f] deg\n star [%.1f,%.1f] deg +/- %.3f deg\n %s%s @ %.1f mag' % (
 				math.degrees(center_ra_rad), math.degrees(center_dec_rad),
 				math.degrees(star_ra_rad), math.degrees(star_dec_rad),
 				math.degrees(arcseconds_to_radians(m['separation_arcsec'])),
@@ -874,6 +874,11 @@ class CoreCode:
 		self.draw()
 
 		print('do_camera_select(): equiv focal length = %d' % (self.my_camera.camera.equivilant_focal_length))
+
+	def do_tle_source_select(self, tle_source, tle_encoding):
+		""" do_tle_source_select """
+		print('do_tle_source_select():', tle_source, tle_encoding)
+		self.my_camera.tle_source(tle_source, tle_encoding)
 
 	def _match_against_bsc5(self):
 		""" _match_against_bsc5 """

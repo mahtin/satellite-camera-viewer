@@ -2,6 +2,6 @@
 
 __version__ = '0.6.1'
 
-from .TLEFetch import TLEFetch, TLEFetchError, TLEFetchNotFoundError
+from .TLEFetch import TLEFetch, TLEFetchError, TLEFetchNotFoundError, tle_valid_sources
 
-__all__ = ['TLEFetch', 'TLEFetchError', 'TLEFetchNotFoundError', '__version__']
+__all__ = ['TLEFetch', 'TLEFetchError', 'TLEFetchNotFoundError', 'tle_valid_sources', '__version__']

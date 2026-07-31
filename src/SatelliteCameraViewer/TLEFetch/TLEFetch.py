@@ -125,6 +125,13 @@ class TLE:
 
 		return epoch_date_utc, tle_age
 
+# TLE Source menu ...
+tle_valid_sources = {
+	'CelesTrak JSON':	{'source':'CelesTrak',	'encoding':'JSON'},
+	'CelesTrak TLE':	{'source':'CelesTrak',	'encoding':'TLE'},
+	'Ivan JSON':		{'source':'Ivan',	'encoding':'JSON'},
+}
+
 class TLEFetchError(Exception):
 	""" TLEFetchError """
 
@@ -575,7 +582,7 @@ def _main(args=None):
 		48274:	'CSS',			# Tiangong - Chinese Space Station
 		20580:	'HST',			# Hubble Space Telescope
 		28485:	'Swift',		# SWIFT Telescope
-		69792:	'LINK',			# Katalyst Space Technologies 
+		69792:	'LINK',			# Katalyst Space Technologies
 		64537:	'Otter Pup 2',		# Starfish Space
 		64539:	'ElaraSat',		# Gilmour Space Technologies
 

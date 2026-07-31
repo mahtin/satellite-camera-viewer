@@ -115,7 +115,7 @@ class UserInterface:
 			if self._window_system == 'win32':
 				# Windows handles .ico files perfectly via iconbitmap
 				self._root.iconbitmap('img/satellite-camera-viewer-icon.ico')
-			elif self._window_system == 'aqua':  # macOS
+			elif self._window_system == 'aqua': # macOS
 				# Use a PNG or GIF file with iconphoto
 				self._root.iconphoto(False, tk.PhotoImage(file='img/satellite-camera-viewer-icon.png'))
 			else:
@@ -293,6 +293,22 @@ class UserInterface:
 	def _camera_select(self, camera_name:str):
 		""" _camera_select """
 		self.core.do_camera_select(camera_name)
+
+	# TLE SOURCE MENU
+
+	def create_tle_sources_menu(self, tle_valid_sources):
+		""" create_tle_sources_menu( """
+		# TLE Source selection menu ...
+		tle_source_menu = tk.Menu(self._menubar, tearoff=False)
+		for tle_source_name, v in tle_valid_sources.items():
+			tle_source = v['source']
+			tle_encoding = v['encoding']
+			tle_source_menu.add_command(label=tle_source_name, command=lambda tle_source=tle_source,tle_encoding=tle_encoding: self._tle_source_select(tle_source, tle_encoding))
+		self._menubar.insert_cascade(1, label='TLE Source', menu=tle_source_menu)
+
+	def _tle_source_select(self, tle_source:str, tle_encoding:str):
+		""" _tle_source_select """
+		self.core.do_tle_source_select(tle_source, tle_encoding)
 
 	# TITLE
 

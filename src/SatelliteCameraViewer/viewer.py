@@ -27,8 +27,13 @@ def viewer(args=None):
 	# now core knows ui and ui knows core ... we continue just referencing ui from this point onwards
 	# ui = core.ui & core = ui.core ... QED
 
+	# Camera menu ...
 	camera_sensors = ui.core.my_camera.camera.CameraSensors.values()
 	ui.create_camera_menu(camera_sensors)
+
+	# TLE Source menu ...
+	tle_valid_sources = ui.core.my_camera.tle_valid_sources
+	ui.create_tle_sources_menu(tle_valid_sources)
 
 	# all the frames ...
 	top_frame = ui.frame(ui.root, padx=0, pady=0, borderwidth=0, anchor='n')
@@ -38,7 +43,7 @@ def viewer(args=None):
 	adjustments_frame = ui.frame(top_frame, col=1, padx=1, pady=1, borderwidth=0, sticky='ne')
 	# bottom
 	info_frame = ui.labelframe(bottom_frame, 'Info', col=0, padx=1, pady=1, borderwidth=0)
-	photo_frame = ui.labelframe(bottom_frame, 'Camera',  col=1, padx=1, pady=1, borderwidth=1)
+	photo_frame = ui.labelframe(bottom_frame, 'Camera', col=1, padx=1, pady=1, borderwidth=1)
 	earth_frame = ui.labelframe(bottom_frame, 'Earth', col=2, padx=1, pady=1, borderwidth=1)
 	sat_frame = ui.labelframe(bottom_frame, 'Satellite', col=3, padx=1, pady=1, borderwidth=1)
 
@@ -49,10 +54,10 @@ def viewer(args=None):
 	col = 0
 
 	# various buttons
-	buttons_frame = ui.frame(adjustments_frame, row=row, col=col, padx=0, pady=0,  borderwidth=0, sticky='nw')
+	buttons_frame = ui.frame(adjustments_frame, row=row, col=col, padx=0, pady=0, borderwidth=0, sticky='nw')
 	row += 1
 
-        # column 0
+	# column 0
 	b_row = 0
 	b_col = 0
 	ui.accelerate_button(buttons_frame, b_row, b_col)
@@ -62,7 +67,7 @@ def viewer(args=None):
 	ui.match_stars_button(buttons_frame, b_row, b_col)
 	b_row += 1
 
-        # column 1
+	# column 1
 	b_col += 1
 	b_row = 0
 	ui.planets_etc_button(buttons_frame, b_row, b_col)
@@ -76,18 +81,18 @@ def viewer(args=None):
 
 	# focal length and star magnitude choices
 
-	choices_frame = ui.frame(adjustments_frame, row=row, col=col, padx=0, pady=0,  borderwidth=0, sticky='nw')
+	choices_frame = ui.frame(adjustments_frame, row=row, col=col, padx=0, pady=0, borderwidth=0, sticky='nw')
 	row += 1
 
 	def setup_star_magnitude(parent):
 		""" setup_star_magnitude """
 		mag_frame = ui.frame(parent, padx=0, borderwidth=0, sticky='nw')
 		# The BSC5 catalog is best used with the following steps:
-		#   MAG  COUNT      %
-		#   1.0     15   0.2%
-		#   5.0   1630  17.9%
-		#   6.0   5080  55.8%
-		#   8.0   9096 100.0%
+		# MAG  COUNT      %
+		# 1.0     15   0.2%
+		# 5.0   1630  17.9%
+		# 6.0   5080  55.8%
+		# 8.0   9096 100.0%
 		star_magnitudes = {1.0: 15, 5.0: 1630, 6.0: 5080, 8.0: 9096}
 		m_row = 0
 		m_col = 0
@@ -158,7 +163,7 @@ def viewer(args=None):
 	w = 225
 	h = 200
 
-	#  place satellite image here ...
+	# place satellite image here ...
 	col = 0
 	row = 0
 	sat_label = ui.sat_label(sat_frame, row, col, width=w, height=h)

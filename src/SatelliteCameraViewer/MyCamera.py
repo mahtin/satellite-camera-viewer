@@ -1,7 +1,7 @@
 """ MyCamera """
 
 from .SatelliteCamera import SatelliteCamera
-from .TLEFetch import TLEFetch
+from .TLEFetch import TLEFetch, tle_valid_sources
 from .static_list_satellites import static_list_satellites
 
 class MyCamera:
@@ -10,6 +10,9 @@ class MyCamera:
 	def __init__(self, satellite_name=None, camera_name:str=None, focal_length_mm:float=None):
 		# Define camera on satellite
 		self._sc = SatelliteCamera(camera_name=camera_name, focal_length_mm=focal_length_mm)
+
+		#
+		self.tle_valid_sources = tle_valid_sources
 
 		# map SatelliteCamera() into this class (yes - there's a more pythonic way to do this)
 		self.now                        = self._sc.now
@@ -29,6 +32,9 @@ class MyCamera:
 		self.earth_center_radec         = self._sc.earth_center_radec
 		self.earth_angular_radius       = self._sc.earth_angular_radius
 		self.camera_fov_intercept_earth = self._sc.camera_fov_intercept_earth
+
+		# default sources
+		self.tle_source('CelesTrak', 'JSON')
 
 		# set everything up
 		if satellite_name is not None:
@@ -59,10 +65,16 @@ class MyCamera:
 		""" tle """
 		self._sc.tle = value
 
+	# TLE source
+	def tle_source(self, tle_source, tle_encoding):
+		print('tle_source():', tle_source, tle_encoding)
+		self._tle_source = tle_source
+		self._tle_encoding = tle_encoding
+
 	# By number
 	def satellite_by_id(self, sat_id):
 		""" satellite_by_id """
-		self.tle = TLEFetch(sat_id)
+		self.tle = TLEFetch(sat_id, source=self._tle_source, encoding=self._tle_encoding)
 
 	# By name
 	def satellite_by_name(self, satellite_name):
