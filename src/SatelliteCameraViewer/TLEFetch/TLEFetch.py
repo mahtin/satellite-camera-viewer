@@ -128,8 +128,8 @@ class TLE:
 class TLEFetchError(Exception):
 	""" TLEFetchError """
 
-class TLEFetchNotFound(FileNotFoundError):
-	""" TLEFetchNotFound """
+class TLEFetchNotFoundError(FileNotFoundError):
+	""" TLEFetchNotFoundError """
 
 class TLEFetch:
 	""" TLEFetch """
@@ -430,7 +430,7 @@ class TLEFetch:
 				print('TLEFetch: HTTP Error', self._sat_id, 'code=', e.response.status_code, file=sys.stderr)
 			if e.response.status_code == 404:
 				# specific error which should mean the satellite ID is not valid (vs an HTTP error.
-				raise TLEFetchNotFound('%d: satellite id not found' % (self._sat_id)) from None
+				raise TLEFetchNotFoundError('%d: satellite id not found' % (self._sat_id)) from None
 			if 400 <= e.response.status_code < 500:
 				raise TLEFetchError('HTTP Client Error %d: %s' % (e.response.status_code, self._url)) from None
 			raise TLEFetchError('HTTP Server Error %d: %s' % (e.response.status_code, self._url)) from None
@@ -526,8 +526,8 @@ class TLEFetch:
 			return int(line1[2:7].strip())
 		# deal with Alpha-5 format
 		n = ord(line1[2:3]) - ord('A') + 10
-		n -= int(c > 'I')
-		n -= int(c > 'O')
+		n -= int(n > 'I')
+		n -= int(n > 'O')
 		return n * 10000 + int(line1[3:7].strip())
 
 	def _tle_to_epoch(self, line1):
@@ -593,7 +593,7 @@ def _main(args=None):
 			tf = TLEFetch(sat_id, source=source, encoding=encoding, debug=debug)
 			# print('# Satrec():', tf.satrec.satnum_str, tf.satrec.satnum, tf.satrec.epochyr, tf.satrec.epochdays)
 			tle = tf.tle
-		except TLEFetchNotFound:
+		except TLEFetchNotFoundError:
 			# This satellite does not exist
 			print('ERROR: %d: SatelliteID not found' % (sat_id), file=sys.stderr)
 			continue
