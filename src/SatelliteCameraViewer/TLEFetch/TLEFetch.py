@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 import requests
 from sgp4.api import Satrec, WGS72
 from sgp4.exporter import export_tle, export_omm
+from sgp4.conveniences import sat_epoch_datetime
 from sgp4 import omm
 
 #
@@ -70,60 +71,67 @@ class TLE:
 		return '[%s,%s,%s]' % (self.name, self.line1, self.line2)
 
 	@property
-	def as_array(self):
-		""" as_array """
-		return [self.name, self.line1, self.line2]
-
-	@property
-	def tle2line(self):
-		""" tle2line """
-		return self.as_array[1:]
-
-	@property
 	def satrec(self):
 		""" satrec """
 		if self._satrec is None:
 			self._satrec = Satrec.twoline2rv(self.line1, self.line2, WGS72)
 		return self._satrec
 
-	@property
-	def tle3line(self):
-		""" tle3line """
-		return self.as_array
+	#@property
+	#def as_array(self):
+	#	""" as_array """
+	#	return [self.name, self.line1, self.line2]
 
-	@property
+	#@property
+	#def tle2line(self):
+	#	""" tle2line """
+	#	return self.as_array[1:]
+
+	#@property
+	#def tle3line(self):
+	#	""" tle3line """
+	#	return self.as_array
+
 	def epoch_age(self):
-		""" epoch_age - Extract the epoch string """
-
-		# line1, chars 18-31 (0-indexed)
-		epoch_str = self.line1[18:32].strip()
-
-		# Parse the year and the day of the year (including fractional day)
-		year_two_digit = int(epoch_str[:2])
-		day_fraction = float(epoch_str[2:])
-
-		# Determine the full 4-digit year (assumes post-1957 for space age)
-		epoch_year = (1900 if year_two_digit >= 57 else 2000) + year_two_digit
-
-		# Convert fractional day to hours, minutes, seconds
-		total_seconds = day_fraction * 24 * 60 * 60
-		days = int(total_seconds // (24 * 60 * 60))
-		remainder = total_seconds % (24 * 60 * 60)
-		hours = int(remainder // (60 * 60))
-		remainder %= (60 * 60)
-		minutes = int(remainder // 60)
-		seconds = int(remainder % 60)
-
-		# Create a datetime object for the epoch starting with month, day being Jan/1'st and then adding the rest
-		epoch_month = 1
-		epoch_day = 1
-		epoch_date_utc = datetime(epoch_year, epoch_month, epoch_day, tzinfo=timezone.utc) + timedelta(days=days - 1, hours=hours, minutes=minutes, seconds=seconds)
-
-		# Calculate the age
+		""" epoch_age """
+		# removing microseconds because this is just for display reasons only (not satellite orbit location)
+		tle_epoch_utc = sat_epoch_datetime(self.satrec).replace(microsecond=0, tzinfo=timezone.utc)
 		current_time_utc = datetime.now(timezone.utc).replace(microsecond=0)
-		tle_age = current_time_utc - epoch_date_utc
+		return current_time_utc - tle_epoch_utc
 
-		return epoch_date_utc, tle_age
+	#@property
+	#def epoch_age_alt(self):
+	#	""" epoch_age_alt - Extract the epoch string """
+
+	#	# line1, chars 18-31 (0-indexed)
+	#	epoch_str = self.line1[18:32].strip()
+
+	#	# Parse the year and the day of the year (including fractional day)
+	#	year_two_digit = int(epoch_str[:2])
+	#	day_fraction = float(epoch_str[2:])
+
+	#	# Determine the full 4-digit year (assumes post-1957 for space age)
+	#	epoch_year = (1900 if year_two_digit >= 57 else 2000) + year_two_digit
+
+	#	# Convert fractional day to hours, minutes, seconds
+	#	total_seconds = day_fraction * 24 * 60 * 60
+	#	days = int(total_seconds // (24 * 60 * 60))
+	#	remainder = total_seconds % (24 * 60 * 60)
+	#	hours = int(remainder // (60 * 60))
+	#	remainder %= (60 * 60)
+	#	minutes = int(remainder // 60)
+	#	seconds = int(remainder % 60)
+
+	#	# Create a datetime object for the epoch starting with month, day being Jan/1'st and then adding the rest
+	#	epoch_month = 1
+	#	epoch_day = 1
+	#	epoch_date_utc = datetime(epoch_year, epoch_month, epoch_day, tzinfo=timezone.utc) + timedelta(days=days - 1, hours=hours, minutes=minutes, seconds=seconds)
+
+	#	# Calculate the age
+	#	current_time_utc = datetime.now(timezone.utc).replace(microsecond=0)
+	#	tle_age = current_time_utc - epoch_date_utc
+
+	#	return epoch_date_utc, tle_age
 
 # TLE Source menu ...
 tle_valid_sources = {
@@ -226,19 +234,19 @@ class TLEFetch:
 		return self._tle
 
 	@property
-	def tle2line(self):
-		""" tle2line """
-		return [self.j['line1'], self.j['line2']]
-
-	@property
-	def tle3line(self):
-		""" tle3line """
-		return [self.j['name'], self.j['line1'], self.j['line2']]
-
-	@property
 	def satrec(self):
 		""" satrec """
 		return self.tle.satrec
+
+	@property
+	def source(self):
+		""" source """
+		return self._source
+
+	@property
+	def encoding(self):
+		""" encoding """
+		return self._encoding
 
 	def get(self):
 		""" get """
